@@ -1,0 +1,21 @@
+# UE5 Architecture Review Checklist
+
+- [ ] Existing project inspected before proposing structural changes.
+- [ ] Runtime owner is explicit.
+- [ ] Lifetime matches the chosen UE type.
+- [ ] Authoritative state is clear.
+- [ ] C++ / Blueprint boundary is intentional.
+- [ ] Composition is preferred over unnecessary inheritance.
+- [ ] Data likely to be tuned is data-driven where useful.
+- [ ] Dependency direction is clear.
+- [ ] No circular module/feature dependency is introduced.
+- [ ] Events are preferred over unnecessary polling.
+- [ ] Tick cost is justified.
+- [ ] Hard asset references are intentional.
+- [ ] GAS is used only where its semantics justify the cost.
+- [ ] AI complexity matches unit population.
+- [ ] UI does not own gameplay state.
+- [ ] Save data uses stable IDs and versioning where needed.
+- [ ] Performance-sensitive behavior has a profiling plan.
+- [ ] No project file/class/asset existence is claimed without verification.
+- [ ] No unnecessary module/plugin/subsystem/global manager was introduced.

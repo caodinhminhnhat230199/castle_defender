@@ -1,0 +1,14 @@
+{
+  "extraKnownMarketplaces": {
+    "caveman": {
+      "source": { "source": "git", "url": "https://github.com/juliusbrussee/caveman.git" }
+    },
+    "ponytail": {
+      "source": { "source": "git", "url": "https://github.com/dietrichgebert/ponytail.git" }
+    }
+  },
+  "enabledPlugins": {
+    "caveman@caveman": true,
+    "ponytail@ponytail": true
+  }
+}
