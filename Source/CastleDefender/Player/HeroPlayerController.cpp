@@ -1,5 +1,6 @@
 #include "Player/HeroPlayerController.h"
 
+#include "Core/GameCheatManager.h"
 #include "Core/GameLog.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -11,6 +12,11 @@ namespace
 	{
 		return StaticEnum<EPlayerMode>()->GetNameStringByValue(static_cast<int64>(Mode));
 	}
+}
+
+AHeroPlayerController::AHeroPlayerController()
+{
+	CheatClass = UGameCheatManager::StaticClass();
 }
 
 void AHeroPlayerController::PushMode(EPlayerMode Mode, FName Reason)

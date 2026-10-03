@@ -47,6 +47,8 @@ class CASTLEDEFENDER_API AHeroPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	AHeroPlayerController();
+
 	UFUNCTION(BlueprintCallable, Category = "Player Mode")
 	void PushMode(EPlayerMode Mode, FName Reason);
 

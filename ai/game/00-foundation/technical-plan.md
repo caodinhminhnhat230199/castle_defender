@@ -220,8 +220,8 @@ All definitions derive from `UGameDefinition` (T-FND-07). Primary Asset Type nam
 
 - Automation Spec (`Source/<Game>/Tests/*.spec.cpp`) for pure logic.
 - Functional Tests (`AFunctionalTest` actors in `Content/<Game>/Maps/Test/`) for scenario checks; runnable from Session Frontend and the command line (`-ExecCmds="Automation RunTests <Game>."`).
-- Visual Logger for AI decisions and paths.
-- CVars under `game.debug.*` (e.g., `game.debug.Combat 1`, `game.debug.Lanes 1`) toggling debug draw.
+- Visual Logger for AI decisions and paths. Convention: the VLog category is the domain log category (`LogGameAI`, `LogGameArmy`, ...), and every AI decision logs its state name: `UE_VLOG(this, LogGameAI, Log, TEXT("State %s -> %s"), ...)`.
+- CVars under `game.debug.*` (`Combat`, `AI`, `Army`, `Lanes`, `Director`; declared in `Core/GameDebug.h`, flagged cheat) toggling debug draw.
 - `UGameCheatManager` commands: spawn enemy/squad/wave, set stamina infinite, kill hero, damage Core, skip phase.
 
 ## 17. Source Control
