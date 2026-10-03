@@ -75,7 +75,8 @@ None. Everything else depends on this.
 - AC-FND-09: Packaged Development build launches `L_Boot` on the reference PC; `stat unit`, a `game.debug.*` CVar and an Insights trace capture work.
 
 ## 12. Open Questions / Assumptions
-- Q-15: project name, module name, UE version, reference PC spec.
+- Q-15: project name, module name, UE version, reference PC spec. **Answered 2026-10-04:** `CastleDefender`, UE 5.8, reference PC in technical-plan §15.
+- NEW-FND-1: `FT_Smoke` (and later functional tests) are Blueprint-only, because a C++ `AFunctionalTest` subclass needs the Developer module `FunctionalTesting`, which a single runtime module cannot link in Shipping (D-01). Default: Blueprint functional tests; revisit if an editor/test module is approved later.
 
 ## 13. System Contract
 
