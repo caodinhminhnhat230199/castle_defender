@@ -213,7 +213,19 @@ All definitions derive from `UGameDefinition` (T-FND-07). Primary Asset Type nam
 ## 15. Performance
 
 - Tools: Unreal Insights (CPU/GPU/memory traces), `stat unit`, `stat game`, `stat ai`, `stat navigation`.
-- Reference PC spec recorded in `T-FND-08`; all budgets measured there in a packaged Development build, never only in the editor.
+- Reference PC (recorded 2026-10-04, `T-FND-08`, Q-15). All budgets are measured here in a packaged Development build, never only in the editor.
+
+  | Item | Value |
+  |---|---|
+  | CPU | Intel Core i5-14500 (14 cores / 20 threads) |
+  | GPU | NVIDIA GeForce RTX 4070 Ti SUPER |
+  | RAM | 32 GB |
+  | OS | Windows 11 Pro |
+  | Resolution | 1920x1080, 144 Hz display |
+  | Target frame rate | 60 fps (16.7 ms frame) [TUNABLE] working number |
+
+  This is also the dev PC, so it sits above a typical player's machine. Re-check budgets on a lower-spec PC before VS.
+- How to capture: [profiling-checklist.md](profiling-checklist.md).
 - Known hot spots to watch: CharacterMovement per enemy, skeletal animation count, navmesh tile rebuilds, target queries (use spatial queries/overlaps with cached candidate sets, not all-to-all scans), projectile count.
 
 ## 16. Testing and Debug

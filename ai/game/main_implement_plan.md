@@ -67,7 +67,7 @@ Features `20-*` to `24-*` are provisional. Re-validate their specs and re-plan t
 | Engine version | Pinned | UE 5.8 (5.8.3 at creation), `EngineAssociation` "5.8" (`T-FND-01`, Q-15). |
 | Project / module name | Decided | `CastleDefender`. Docs write `<Game>` for it (Q-15, 2026-10-04). |
 | Version control | Set up | Git + Git LFS (`T-FND-02`). |
-| Target hardware | Open | "PC, smooth and input-responsive" (GDD §31.1). Pick a reference PC spec in `T-FND-08` before any benchmark. |
+| Target hardware | Decided | Reference PC (i5-14500, RTX 4070 Ti SUPER, 32 GB, 1080p) at 60 fps [TUNABLE]; foundation technical-plan §15 (`T-FND-08`). |
 | Art direction | Open | GDD §37 lists toon vs stylized realism as open. Prototypes use placeholder art only. |
 
 ---

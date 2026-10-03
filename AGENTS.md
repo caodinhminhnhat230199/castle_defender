@@ -108,9 +108,9 @@ Rows still marked TBD are filled by their task. **Do not guess them.**
 | Action | Command |
 |---|---|
 | Build editor target | `powershell -File Tools/build.ps1` (game target: `-Target CastleDefender`). Finds the engine from `EngineAssociation`; override with `UE_ROOT`. |
-| Run automation tests | `Toolsun_tests.bat` (or `powershell -File Tools/run_tests.ps1 [-Filter "CastleDefender.Combat"]`). Runs `CastleDefender.*` specs and `Project.Functional Tests.*` headless; exit 0 only if all pass. |
+| Run automation tests | `Tools/run_tests.bat` (or `powershell -File Tools/run_tests.ps1 [-Filter "CastleDefender.Combat"]`). Runs `CastleDefender.*` specs and `Project.Functional Tests.*` headless; exit 0 only if all pass. |
 | Create Foundation editor assets | `powershell -File Tools/create_foundation_assets.ps1` (idempotent Python script) |
-| Package a Development build | TBD (T-FND-08) |
+| Package a Development build | `powershell -File Tools/package.ps1` (output in `Saved/Packaged/Windows/`, not committed). Profiling: `ai/game/00-foundation/profiling-checklist.md`. |
 
 Test naming:
 - Automation Spec tests are named `<Game>.<Feature>.<Case>` and live in `Source/<Game>/Tests/`.
