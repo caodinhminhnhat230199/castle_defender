@@ -2,7 +2,9 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
+#if WITH_EDITOR
 #include "Misc/DataValidation.h"
+#endif
 #include "Tests/TestGameDefinition.h"
 
 BEGIN_DEFINE_SPEC(FGameDefinitionSpec, "CastleDefender.Core.GameDefinition", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
@@ -16,6 +18,7 @@ void FGameDefinitionSpec::Define()
 		Definition = NewObject<UTestGameDefinition>(GetTransientPackage(), TEXT("DA_TestDefinition"));
 	});
 
+#if WITH_EDITOR // IsDataValid is editor-only
 	It("fails validation without a DisplayName", [this]()
 	{
 		FDataValidationContext Context;
@@ -29,6 +32,7 @@ void FGameDefinitionSpec::Define()
 		FDataValidationContext Context;
 		TestTrue("Valid", Definition->IsDataValid(Context) == EDataValidationResult::Valid);
 	});
+#endif
 
 	It("uses the native class name without U as Primary Asset Type", [this]()
 	{
