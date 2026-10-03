@@ -140,3 +140,21 @@ controller = blueprint("BP_HeroPlayerController", CORE, unreal.HeroPlayerControl
 # Foundation-only game mode for L_Boot and test maps; feature maps override it (CMB sandbox mode).
 blueprint("BP_BootGameMode", CORE, unreal.GameModeBase,
           lambda cdo: cdo.set_editor_property("player_controller_class", controller.generated_class()))
+
+# T-FND-10: smoke functional test. Python cannot wire graph nodes, so the Start Test graph is a
+# manual step (ai/game/progress.md); until then the test fails by timeout, never passes silently.
+TEST_MAPS = f"{ROOT}/Maps/Test"
+ft_factory = unreal.BlueprintFactory()
+ft_factory.set_editor_property("parent_class", unreal.FunctionalTest)
+ft_bp = get_or_create("BP_FT_Smoke", TEST_MAPS, None, ft_factory,
+                      lambda bp: (unreal.BlueprintEditorLibrary.add_event_override(bp, "ReceiveStartTest", unreal.IntPoint(0, 0)),
+                                  unreal.BlueprintEditorLibrary.compile_blueprint(bp)))
+
+if not assets.does_asset_exist(f"{TEST_MAPS}/FT_Smoke"):
+    get_or_create("FT_Smoke", TEST_MAPS, unreal.World, unreal.WorldFactory())
+    unreal.EditorLoadingAndSavingUtils.load_map(f"{TEST_MAPS}/FT_Smoke")
+    actors = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    test = actors.spawn_actor_from_class(ft_bp.generated_class(), unreal.Vector(0, 0, 100))
+    test.set_actor_label("FT_Smoke_DummyDies")
+    unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
+    unreal.log(f"Placed {test.get_actor_label()} in {TEST_MAPS}/FT_Smoke")

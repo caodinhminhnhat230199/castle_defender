@@ -108,7 +108,8 @@ Rows still marked TBD are filled by their task. **Do not guess them.**
 | Action | Command |
 |---|---|
 | Build editor target | `powershell -File Tools/build.ps1` (game target: `-Target CastleDefender`). Finds the engine from `EngineAssociation`; override with `UE_ROOT`. |
-| Run automation tests | TBD (T-FND-10, `Tools/run_tests.*`) |
+| Run automation tests | `Toolsun_tests.bat` (or `powershell -File Tools/run_tests.ps1 [-Filter "CastleDefender.Combat"]`). Runs `CastleDefender.*` specs and `Project.Functional Tests.*` headless; exit 0 only if all pass. |
+| Create Foundation editor assets | `powershell -File Tools/create_foundation_assets.ps1` (idempotent Python script) |
 | Package a Development build | TBD (T-FND-08) |
 
 Test naming:
