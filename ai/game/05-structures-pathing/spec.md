@@ -61,14 +61,14 @@ Read lanes + forecast → Place / reposition structures in build zones → Watch
 - **R-DEF-16 (§21.1) Ballista [LOCKED role / TUNABLE numbers]**: Anti-Armor / Anti-Elite. Slow fire rate, high single-target damage, good vs Armored and Giant, can exploit Armor Broken. Example values in `DA_Structure_Ballista`.
 - **R-DEF-17 (§21.1) Bombard [LOCKED role / TUNABLE numbers]**: Anti-Swarm / AoE. Slower projectile, splash damage, weak vs fast or lone targets, strong at choke points. Values in `DA_Structure_Bombard`.
 - **R-DEF-18 (§21.1) Barricade [LOCKED role / TUNABLE numbers]**: Delay / Path Blocking. Deals almost no damage. Its job is to make enemies stop and attack, buying time. Values in `DA_Structure_Barricade`.
-- **R-DEF-19 (§10.3, §9.7, §10.2) [LOCKED]**: Towers take part in Battlefield Synergy: heavy tower impact (Bombard) deals poise damage that can cause Staggered; Ballista gains priority/effect vs Armor Broken (and vs Marked once a source exists, A-06). Consumers are implemented by SYN `T-SYN-06`; DEF exposes the data hooks.
+- **R-DEF-19 (§10.3, §9.7, §10.2) [LOCKED]**: Towers take part in Battlefield Synergy: heavy tower impact (Bombard) deals poise damage that can cause Staggered; Ballista gains priority/effect vs Armor Broken (and vs Marked once a source exists, A-06). Consumers are implemented by SYN `T-SYN-06`; DEF exposes the data hooks (`PreferredStates`, `PoiseDamage`, `AppliedStates`, state damage multipliers in the tower weapon data).
 - **R-DEF-20 (§21.3) [LOCKED]**: A tower is added only if it defines role, preferred target, weakness, synergy and placement question. All three prototype towers carry these five items in their definition description.
-- **R-DEF-21 (§32 P2, §18.1) [LOCKED]**: The Core is the protected objective at the end of every lane. Core destroyed → run lost (RUN `T-RUN-02`). Core HP is [TUNABLE] (`DA_Structure_Core`). The Core is placed in the level, never built.
+- **R-DEF-21 (§32 P2, §18.1) [LOCKED]**: The Core is the protected objective at the end of every lane. Core destroyed → run lost (RUN `T-RUN-02` binds the Core's `UHealthComponent::OnDeath`). Core critical state is RUN (`T-RUN-13`). Core HP is [TUNABLE] (`DA_Structure_Core`). The Core is placed in the level, never built.
 
 ### P2 scope: placement
 
 - **R-DEF-22 (§5.3, Assumption A-04, [OPEN] Q-05)**: Structures are placed only inside authored build zones, snapped to a soft grid, with 90° rotation steps. Revisited at G2.
-- **R-DEF-23 (Assumption A-05)**: P2 building is free, limited by a per-wave build allowance (default 3, `UGameTuningSettings`) and a total structure cap per Siege Site (default 15, from the foundation expected scale). Allowance refills when a wave ends; unused allowance does not carry over (NEW-DEF-03).
+- **R-DEF-23 (Assumption A-05)**: P2 building is free, limited by RUN's per-window build allowance (R-RUN-09, `T-RUN-09`: reset at every Prep/Intermission start). Placement asks RUN through `CanAfford/TrySpend`; in non-run sandbox maps placement is free. DEF adds a total structure cap per Siege Site (default 15, from the foundation expected scale, `UGameTuningSettings`).
 - **R-DEF-24 (§14.3, derived)**: A placement is invalid if any footprint cell is outside a zone allowing the structure's role, not walkable, already occupied, or overlapping a pawn (Hero, soldier, enemy). Placing on top of enemies is never allowed.
 - **R-DEF-25 (§12.2, §34.3, §28.1)**: While previewing a placement the player sees whether it would block a lane (enemies will stop and attack it) and the resulting route. This is feedback for R-DEF-05/08, not a new rule.
 
@@ -82,10 +82,10 @@ Read lanes + forecast → Place / reposition structures in build zones → Watch
 
 ### P3 scope
 
-- **R-DEF-31 (A-05, §16.3)**: Building costs the single run resource (`UStructureDefinition::BuildCost`); not enough resource → placement denied with feedback. The per-wave allowance is switched off by data when cost is on.
+- **R-DEF-31 (A-05, §16.3)**: Building costs the single run resource (`UStructureDefinition::BuildCost`). Placement passes `FRunCost{BuildCost, 1}` to RUN's `TrySpend`; RUN's economy mode decides allowance vs resource (`T-RUN-04`). Not enough → denied with RUN's reason feedback.
 - **R-DEF-32 (§23.1–23.2) [LOCKED]**: Defense perks (e.g. "Ballista shot N pierces") can change tower stats and shot behavior through DEF hooks without editing tower code. Effects are owned by PRK.
 - **R-DEF-33 (§12.2)**: Tactical Focus overlay can show tower HP and the predicted route per lane; DEF provides the route preview query (TFM `T-TFM-03` consumes it).
-- **R-DEF-34 (§18.2)**: Placement and structure queries work from the player controller, not only from the Hero pawn, so Commander Spirit Mode can reuse them (CSM `T-CSM-05` decides which interactions are allowed).
+- **R-DEF-34 (§18.2)**: Placement and structure queries work from the player controller, not only from the Hero pawn, so Commander Spirit Mode can reuse them (CSM `T-CSM-05` decides which interactions are allowed). Leaving build mode restores the previous input mode (Combat or Commander Spirit).
 
 ### VS scope (provisional, re-plan after G3)
 
@@ -115,7 +115,7 @@ Read lanes + forecast → Place / reposition structures in build zones → Watch
 ### In Scope
 - Core, Ballista, Bombard, Barricade; role classification; footprints; health; nav modifiers.
 - Lane routes, corridor grid, route selection, blocking detection, minimum-break search, dirty-region updates, route invalidation.
-- Build zones, soft-grid placement, preview, validation, route preview, P2 build allowance, P3 build cost.
+- Build zones, soft-grid placement, preview, validation, route preview, cost check through RUN's spend API (allowance P2, resource P3), site structure cap.
 - Tower targeting, projectiles, splash.
 - Structure/Core feedback events.
 - `L_SiegeSite_Proto` blockout: 2 lanes, Core, build zones.
@@ -143,14 +143,16 @@ Read lanes + forecast → Place / reposition structures in build zones → Watch
 | Needs | From | For |
 |---|---|---|
 | `UHealthComponent`, `FCombatHit`, team interface | FND `T-FND-05` | Structure HP, tower damage |
+| `UCombatLibrary::DeliverHit`, `IInteractable` (`Core/Interactable.h`) | CMB `T-CMB-04`, `T-CMB-12` | Tower hits, build zone interaction, repair |
+| `ACombatProjectile` (`Combat/`) | SQD `T-SQD-10` | Base for tower projectiles |
 | Tag roots, settings, data asset pattern, debug CVars, test harness | FND `T-FND-04/07/09/10` | Everything |
 | `IMC_Build` context | FND `T-FND-06` | Placement input |
 | Enemy base, route following, local aggro, obstacle attack, Giant/Siege | ENM `T-ENM-01, 07, 08, 09, 10` | Consumers of the lane layer |
 | Swarm, Armored | ENM `T-ENM-05, 06` | Tower role tests |
 | Tower state consumers | SYN `T-SYN-06` | Ballista vs Armor Broken, Bombard poise |
-| Wave events, spawner | DIR `T-DIR-01, 02` | Build allowance refill, benchmark spawns |
+| Spawner, lane spawn points | DIR `T-DIR-01` | Benchmark spawns, lane tags at spawn |
 | Core loss | RUN `T-RUN-02` | Run lost on Core destroyed |
-| Run resource | RUN `T-RUN-04` | P3 build cost |
+| Spend API (allowance P2, resource P3) | RUN `T-RUN-09`, `T-RUN-04` | Placement cost check |
 | Feedback subsystem, structure HP marker, Core HP/lane danger HUD | UXF `T-UXF-01, 04, 07` | Feedback contract |
 | Stat modifier query, perk manager | PRK `T-PRK-01, 02` | P3 Defense perk hooks |
 
@@ -187,14 +189,14 @@ Consumers of DEF: ENM, ZON (zones near lanes), DIR (lane tags, cap), RUN (Core),
 - **AC-DEF-07**: A structure built in front of walking enemies is attacked within one decision tick + recompute, with no enemies pushing against it for more than 1 s.
 - **AC-DEF-08**: Every `DA_Structure_*` has exactly one `Structure.Role.*` tag and the five §21.3 items for towers; `IsDataValid` fails otherwise.
 - **AC-DEF-09**: Placement ghost snaps to the zone grid; invalid placements (outside zone, wrong role, occupied, pawn overlap, allowance or cap reached) show red with a reason; confirming an invalid placement does nothing but deny feedback.
-- **AC-DEF-10**: After the per-wave allowance is used, placement is denied until the current wave ends; values come from data.
+- **AC-DEF-10**: After RUN's per-window allowance is used, placement is denied with RUN's reason until the next Prep/Intermission window; the site structure cap also denies with its own reason.
 - **AC-DEF-11**: With Swarm and Armored both in range, Ballista targets the Armored; Ballista kills an Armored in fewer shots than Bombard (data comparison in a test map).
 - **AC-DEF-12**: One Bombard shell hits ≥ 3 clustered Swarm at a choke; vs a single fast target moving across its line, Bombard hit rate is clearly below Ballista's (logged over 20 shots).
 - **AC-DEF-13**: Barricade deals no damage; a Barricade holds a Swarm group for roughly its HP / their DPS (logged), giving squads/towers time.
-- **AC-DEF-14**: Enemies that reach the end of the route attack the Core; Core HP shows on the HUD; Core at 0 HP fires the Core-destroyed event (RUN ends the run).
+- **AC-DEF-14**: Enemies that reach the end of the route attack the Core; Core HP shows on the HUD; Core at 0 HP fires its `UHealthComponent::OnDeath` (RUN ends the run).
 - **AC-DEF-15**: Build/destroy updates only the affected nav tiles and routes; lane field recompute ≤ 1 ms per route and no hitch > 5 ms from a structure change on the reference PC (Insights trace).
 - **AC-DEF-16**: The benchmark report states the concurrent enemy cap with method and numbers; the value is in `UGameTuningSettings` and reported for Q-04.
-- **AC-DEF-17**: Feedback per Section 14 fires for structure hit, critical, destroyed, path opened, Core under attack (throttled), Core critical.
+- **AC-DEF-17**: Feedback per Section 14 fires for structure hit, critical, destroyed, path opened, Core under attack (throttled). Core critical is RUN (`T-RUN-13`).
 - **AC-DEF-18**: `game.debug.Lanes 1` draws corridors, blocked cells, route paths, Path Obstacle targets; Visual Logger records each enemy route query.
 - **AC-DEF-19**: Structure Collapse (§33 17:00) scenario passes as a Functional Test: Giant breaks a Ballista blocking the corridor; enemies continue past its position.
 - **AC-DEF-20**: G2 gate checklist (master plan Section 3) passes for the DEF items.
@@ -212,28 +214,28 @@ Consumers of DEF: ENM, ZON (zones near lanes), DIR (lane tags, cap), RUN (Core),
 | ID | Item | Default until answered |
 |---|---|---|
 | A-04 / Q-05 | Placement: soft grid in build zones vs free vs sockets | Soft grid (A-04); decided at G2 (`T-DEF-20`) |
-| A-05 | P2 free + per-wave limit; P3 run resource | As stated in R-DEF-23 / R-DEF-31 |
+| A-05 | P2 free + per-window limit; P3 run resource | Owned by RUN (`T-RUN-09`, `T-RUN-04`); DEF calls the spend API |
 | Q-04 | Max concurrent enemies | Placeholder 40 until `T-DEF-12` |
 | NEW-DEF-01 | Body-size classes for gap passability (R-DEF-07) | Derived from capsule diameter vs cell size; 2 classes expected (small, large) |
 | NEW-DEF-02 | Should a very long in-corridor maze make enemies break through instead of walking it? | Strict: walk any open path (multiplier high); revisit after exploit tests `T-DEF-19` |
-| NEW-DEF-03 | Does unused P2 build allowance carry over? Is building allowed during a wave? | No carry-over; building allowed in any phase |
+| NEW-DEF-03 | Is building allowed during a wave? (allowance carry-over is RUN NEW-RUN-5) | Allowed in any phase; allowance only refills at windows |
 | NEW-DEF-04 | Repair: P3 (A-05 says "build/repair", §6.3 Reconfigure) or VS (lead plan)? | Provisional VS task `T-DEF-25`; pull into P3 if the G3 run needs a Reconfigure spend |
 | NEW-DEF-05 | Can the player dismantle own structures? (§14.3 says "destroyed/removed") | Cheat-only removal; same code path as destroyed |
 | NEW-DEF-06 | Can Hero/squads pass through own Barricades? | No ally pass-through in prototype |
 | NEW-DEF-07 | Bombard splash friendly fire? | No friendly fire |
 | NEW-DEF-08 | Ballista needs line of sight? | Data flag, on for Ballista, off for Bombard |
 
-Proposed new Gameplay Tag root `Lane.*` (e.g. `Lane.Left`, `Lane.Right`) needs an entry in `00-foundation/technical-plan.md` (request to FND `T-FND-04`). New leaves under existing roots: `Structure.Type.Core|Ballista|Bombard|Barricade`, `Feedback.Structure.*`, `Feedback.Core.*`, `Feedback.Lane.*`, `Feedback.Tower.*`, `Feedback.Build.*`.
+Proposed new Gameplay Tag root `Lane.*` (e.g. `Lane.Left`, `Lane.Right`) needs an entry in `00-foundation/technical-plan.md` (request to FND `T-FND-04`). Structures use a dedicated collision object channel `Structure` (project collision settings) so ENM aggro scans and placement overlaps can filter them. New leaves under existing roots: `Structure.Type.Core|Ballista|Bombard|Barricade`, `Feedback.Structure.*`, `Feedback.Core.*`, `Feedback.Lane.*`, `Feedback.Tower.*`, `Feedback.Build.*`.
 
 ## 13. System Contract
 
 | Item | Content |
 |---|---|
 | Responsibility | Own structures (state, footprint, HP, role), placement, the strategic lane layer (routes, blocking, min-break, dirty updates), tower weapons. Answer "where should this enemy go next and what must it break". |
-| Inputs | Level-authored `ALaneRoute`, `ABuildZone`, `ACoreStructure`; `UStructureDefinition` assets; placement requests from `AHeroPlayerController`; damage via `FCombatHit`; wave-ended event (DIR) for allowance; run resource (RUN, P3); stat modifiers (PRK, P3) |
-| Outputs | Route query results for ENM; route versions/events; `OnCoreDestroyed`, Core HP; structure HP/critical/destroyed events; feedback tags; route preview polylines (TFM, preview UI); `MaxConcurrentEnemies` value (benchmark) |
-| State | Structure: definition, HP, cells, rotation, alive/destroyed. Lane layer: grid cells (walkable, occupant per size class), per-route corridor + cost field + version + blocked flag. Placement: mode, selected definition, preview cells, allowance remaining (P2) |
-| Events | `AStructureBase::OnStructureDamaged / OnStructureCritical / OnStructureDestroyed`; `ACoreStructure::OnCoreDestroyed / OnCoreCritical`; `ULaneNavigationSubsystem::OnRouteChanged(Route, bOpened)` and per-route `Version`; `UStructurePlacementComponent::OnPlacementChanged / OnStructurePlaced / OnPlacementDenied(Reason)` |
+| Inputs | Level-authored `ALaneRoute`, `ABuildZone`, `ACoreStructure`; `UStructureDefinition` assets; placement requests from `AHeroPlayerController`; damage via `FCombatHit`; RUN spend API (allowance P2, resource P3); stat modifiers (PRK, P3) |
+| Outputs | Route query results for ENM; route versions/events; the Core actor and its `UHealthComponent` (RUN binds death/critical); structure HP/critical/destroyed events; feedback tags; route preview polylines (TFM, preview UI); `MaxConcurrentEnemies` value (benchmark) |
+| State | Structure: definition, HP, cells, rotation, alive/destroyed. Lane layer: grid cells (walkable, occupant per size class), per-route corridor + cost field + version + blocked flag. Placement: mode, selected definition, preview cells (allowance/resource state lives in RUN) |
+| Events | `AStructureBase::OnStructureDamaged / OnStructureCritical / OnStructureDestroyed`; `ULaneNavigationSubsystem::OnRouteInvalidated(Lane, bOpened)` (per lane) and per-route `Version`; `UStructurePlacementComponent::OnPlacementChanged / OnStructurePlaced / OnPlacementDenied(Reason)` |
 | Failure cases | See table below |
 | Performance | Route field recompute ≤ 1 ms per route; only dirty routes recompute, coalesced per frame; enemy queries are O(path length) walks of a cached field; tower acquisition on timers (0.2–0.25 s); nav modifiers rebuild only overlapped tiles; no Tick on structures; projectiles pooled only if measured |
 
@@ -242,23 +244,23 @@ Proposed new Gameplay Tag root `Lane.*` (e.g. `Lane.Left`, `Lane.Right`) needs a
 | Step | DEF provides | ENM does (`T-ENM-07/09`) |
 |---|---|---|
 | Spawn | `SelectRoute(LaneTag, Rng)` → route handle | Assign lane from spawner, select route |
-| Move | `QueryRoute(Route, From, Size)` → status (Clear / Blocked / NoRoute), waypoints, obstacle, attack location, version | Walk waypoints with navmesh MoveTo |
-| Re-query triggers | Route `Version` changes; major checkpoint distances; obstacle `OnStructureDestroyed` | Re-query only on these + §14.2 triggers, checked on the brain's decision tick |
+| Move | `QueryRoute(Route, From, Size)` → status (Clear / Blocked / NoRoute), waypoints with checkpoint flags, ordered obstacle list (structure + distance along the route; first entry = Path Obstacle Target, enemies past an entry ignore it), attack location, end target (Core), version, valid flag | Walk waypoints with navmesh MoveTo |
+| Re-query triggers | `OnRouteInvalidated(Lane, bOpened)`, one event per affected lane (ENM sets a dirty flag) or route `Version` change; checkpoint flags; obstacle `OnStructureDestroyed` | Re-query only on these + §14.2 triggers, checked on the brain's decision tick |
 | Blocked | Obstacle `AStructureBase`, `GetClosestPointOnFootprint(From)` | Move to attack location, stop, set Path Obstacle Target, attack until destroyed or re-query returns Clear |
 | Objective | `GetObjective(Route)` → Core | Attack the Core at route end |
-| Lane change | — | `AssignLane(NewLane)` from Director/event (R-DEF-06c) |
+| Lane change | — | `AssignLane(NewLane)` from Director/event (R-DEF-06 case c) |
 | Fallback | `GetStructuresInRadius(Location, Radius)` | NoRoute or 3 failed moves → attack nearest structure, else move to nearest corridor point; Visual Logger warning (R-DEF-10) |
 
 ### Data model (design level)
 
 | Definition / actor | Fields |
 |---|---|
-| `UStructureDefinition` (`DA_Structure_*`) | DisplayName, Icon, RoleTag (`Structure.Role.*`), TypeTag (`Structure.Type.*`), StructureClass, MaxHealth, Armor, FootprintCells (W×L), bCanRotate, CriticalHealthFraction (default 0.25), BuildCost (P3), DesignNotes (role, preferred target, weakness, synergy, placement question), optional `FTowerWeaponParams` |
-| `FTowerWeaponParams` | Range, FireInterval, Damage, PoiseDamage, SplashRadius (0 = single target), ProjectileClass, ProjectileSpeed, bArcing, LeadFactor (0–1), AimSpreadDegrees, bRequiresLineOfSight, TargetPriority (list of tag + weight), DistanceWeight, Fire/Impact feedback tags |
+| `UStructureDefinition` (`DA_Structure_*`) | DisplayName, Icon, RoleTag (`Structure.Role.*`), TypeTag (`Structure.Type.*`), StructureClass, MaxHealth, Armor, FootprintCells (W×L), bCanRotate, CriticalHealthFraction (default 0.25), BuildCost (P3, run resource), DesignNotes (role, preferred target, weakness, synergy, placement question), optional `FTowerWeaponParams` |
+| `FTowerWeaponParams` | Range, FireInterval, Damage, PoiseDamage, SplashRadius (0 = single target), ProjectileClass, ProjectileSpeed, bArcing, LeadFactor (0–1), AimSpreadDegrees, bRequiresLineOfSight, TargetPriority (unit tag + weight), PreferredStates (state tag + weight), AppliedStates, StateDamageMultipliers (state tag → multiplier, e.g. Armor Broken), DistanceWeight, Fire/Impact feedback tags. State values filled by SYN `T-SYN-06` |
 | `ALaneRoute` (level actor) | LaneTag (`Lane.*`), Spline (spawn → Core), CorridorHalfWidth, MajorCheckpoints (spline distances), SelectionWeight, bValid (design flag) |
 | `ABuildZone` (level actor) | Box extent, AllowedRoles (`Structure.Role.*` container) |
 | `ACoreStructure` | Uses `DA_Structure_Core` (MaxHealth, critical fraction) |
-| `UGameTuningSettings` (Lane/Build groups) | GridCellSize (default 100 cm), RefMoveSpeed, RefBreakDPS, BreakCostMultiplier (strict default), WaypointSpacing, MoveRetryDelay, BuildAllowancePerWave (3), MaxStructuresPerSite (15), bUseBuildAllowance, CoreUnderAttackThrottle, MaxConcurrentEnemies (from benchmark) |
+| `UGameTuningSettings` (Lane/Build groups) | GridCellSize (default 100 cm), RefMoveSpeed, RefBreakDPS, BreakCostMultiplier (strict default), WaypointSpacing (spike output), MoveRetryDelay, MaxStructuresPerSite (15), BuildTraceDistance, CoreUnderAttackThrottle, MaxConcurrentEnemies (from benchmark) |
 
 ### Failure cases (GDD §34.4)
 
@@ -266,8 +268,8 @@ Proposed new Gameplay Tag root `Lane.*` (e.g. `Lane.Left`, `Lane.Right`) needs a
 |---|---|
 | Tower destroyed | Unregister from lane layer first (cells freed, routes dirty), disable collision + nav modifier, play collapse feedback, destroy actor after debris delay. Projectiles in flight continue. No refund. |
 | Blocked path opened | Route recompute sets `bOpened`; version bump; enemies re-query; `Feedback.Lane.PathOpened` on that lane; lane danger indicator (UXF) |
-| Core critical HP | `OnCoreCritical` once per threshold crossing; `Feedback.Core.Critical`; HUD Core bar critical state |
-| Core destroyed | `OnCoreDestroyed` → RUN lose flow; lane layer stops issuing routes |
+| Core critical HP | Owned by RUN `T-RUN-13` (`OnCoreCriticalChanged`, `Feedback.Run.CoreCritical`); DEF only provides the Core's `UHealthComponent` and per-hit feedback |
+| Core destroyed | RUN binds the Core's `OnDeath` → lose flow (`T-RUN-02`); lane layer stops issuing routes |
 | Boss reset / bug recovery | Structures keep their state; boss re-uses normal route queries (BOS) |
 | Player leaving Siege Site | Build mode cancels when the player leaves the playable bounds (placement trace finds no zone); boundary itself is RUN (Q-16) |
 | Invalid authoring (route not reaching Core, zone outside grid) | Logged as error at BeginPlay with the actor name; route marked invalid |
@@ -283,7 +285,7 @@ Proposed new Gameplay Tag root `Lane.*` (e.g. `Lane.Left`, `Lane.Right`) needs a
 | Structure destroyed | Collapse VFX, debris | `Feedback.Structure.Destroyed` | Marker removed | Distinct from hit sound |
 | Blocked path opened | Brief highlight along the reopened lane | `Feedback.Lane.PathOpened` | Lane danger indicator pulses (UXF `T-UXF-07`) | Player learns a lane is breached even off-screen |
 | Core under attack | Core hit flash | `Feedback.Core.UnderAttack`, throttled (§28.3) | Core HP bar flashes | Never spams; at most one cue per throttle window |
-| Core critical HP | Core damage state | `Feedback.Core.Critical` | Core bar critical color | Distinct from structure critical |
+| Core critical HP | Core damage state (BP hook on HP fraction) | `Feedback.Run.CoreCritical` (RUN `T-RUN-13`) | Core bar critical color (UXF) | Distinct from structure critical |
 | Ballista fire / impact | Long bolt silhouette, tracer | `Feedback.Tower.Fire.Ballista`, `Feedback.Tower.Impact.Ballista` | — | Role readable by shape/VFX (§28.2) |
 | Bombard fire / impact | Arcing shell, splash decal sized to radius | `Feedback.Tower.Fire.Bombard`, `Feedback.Tower.Impact.Bombard` | — | Splash area readable at a glance |
 

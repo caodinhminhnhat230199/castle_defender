@@ -16,10 +16,10 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 | T-RUN-09 | P2 build allowance + spend API for placement | GAMEPLAY | P2 | High | T-RUN-01 | Todo |
 | T-RUN-10 | Run status HUD widget | UI | P2 | Medium | T-RUN-01, T-UXF-02 | Todo |
 | T-RUN-11 | P2 Functional Tests (sequence, Core loss, Hero death, allowance) | QA | P2 | High | T-RUN-02, T-RUN-08, T-RUN-09 | Todo |
-| T-RUN-03 | Full run step sequence: prep, intermissions, mid-run event, boss, resolve | GAMEPLAY | P3 | High | T-RUN-08, T-DIR-05; soft: T-DIR-08, T-BOS-05 | Todo |
+| T-RUN-03 | Full run step sequence: prep, intermissions, mid-run event, boss, resolve | GAMEPLAY | P3 | High | T-RUN-08, T-DIR-05 | Todo |
 | T-RUN-12 | Forecast handshake + minimum warning time gate | GAMEPLAY | P3 | High | T-RUN-03, T-DIR-04, T-DIR-06 | Todo |
 | T-RUN-04 | Run resource earn/spend | GAMEPLAY | P3 | High | T-RUN-08, T-RUN-09 | Todo |
-| T-RUN-05 | Perk-offer step hook | GAMEPLAY | P3 | High | T-RUN-03, T-PRK-04; soft: T-PRK-05 | Todo |
+| T-RUN-05 | Perk-offer step hook | GAMEPLAY | P3 | High | T-RUN-03, T-PRK-04 | Todo |
 | T-RUN-06 | Win/lose resolve + run result + reward stub | GAMEPLAY | P3 | High | T-RUN-02, T-RUN-03 | Todo |
 | T-RUN-07 | Siege Site boundary handling (Q-16) | GAMEPLAY | P3 | Medium | T-RUN-01, T-CMB-01, T-UXF-01 | Todo |
 | T-RUN-13 | Core critical HP state + feedback | GAMEPLAY | P3 | Medium | T-RUN-02, T-UXF-01 | Todo |
@@ -27,7 +27,7 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 | T-RUN-15 | Run state snapshot structs + serialization round-trip spec | TOOLS | P3 | Medium | T-RUN-04, T-RUN-06 | Todo |
 | T-RUN-16 | P3 Functional Tests (full short run, warning gate, spend, boundary, resolve) | QA | P3 | High | T-RUN-04, T-RUN-05, T-RUN-06, T-RUN-07, T-RUN-12, T-RUN-13 | Todo |
 | T-RUN-17 | Pacing tuning pass toward ~25 min using the §33 script | DESIGN | P3 | High | T-RUN-14, T-RUN-16, T-DIR-08, T-BOS-05, T-PRK-06 | Todo |
-| T-RUN-18 | G3 gate playtest: 5 waves + boss end-to-end, replay desire | QA | P3 | High | T-RUN-17, T-CSM-10, T-TFM-12, T-UXF-09 | Todo |
+| T-RUN-18 | G3 gate playtest: 5 waves + boss end-to-end, replay desire | QA | P3 | High | T-RUN-17, T-CSM-10, T-TFM-12, T-UXF-09, T-BOS-04, T-BOS-06, T-BOS-07, T-BOS-08, T-BOS-09, T-BOS-10, T-CSM-08, T-DEF-21, T-DEF-23, T-DIR-07, T-DIR-13, T-DIR-14, T-DIR-15, T-DIR-16, T-DIR-17, T-PRK-05, T-PRK-12, T-PRK-13, T-RUN-15, T-TFM-06, T-TFM-10, T-TFM-11, T-UXF-19, T-UXF-20, T-ZON-08 | Todo |
 
 ## 3. Detailed Tasks
 
@@ -134,7 +134,9 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 
 **Related Requirements** R-RUN-09, R-RUN-18, AC-RUN-05
 
-**Dependencies** T-RUN-01 (consumer: T-DEF-07)
+**Dependencies** T-RUN-01
+
+**Consumers (not dependencies)** T-DEF-07
 
 **Implementation Notes**
 - [ ] `FRunCost { int32 Resource; int32 BuildSlots; }`, `ERunSpendReason { Build, Repair }`.
@@ -219,7 +221,9 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 
 **Related Requirements** R-RUN-12, R-RUN-14, R-RUN-16, R-RUN-24, AC-RUN-07, AC-RUN-09
 
-**Dependencies** T-RUN-08, T-DIR-05; soft (stub until ready): T-DIR-08, T-BOS-05
+**Dependencies** T-RUN-08, T-DIR-05
+
+**Integrates with (not blocking; stub the boss step until they land)** T-DIR-08 boss wave hook, T-BOS-05 boss integration (BOS depends on this task)
 
 **Implementation Notes**
 - [ ] PressureEvent step: timed window; play `Feedback.Run.PressureEvent` with the modifier display name; resets build allowance (BuildLimit mode).
@@ -310,7 +314,9 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 
 **Related Requirements** R-RUN-15, AC-RUN-10
 
-**Dependencies** T-RUN-03, T-PRK-04; soft: T-PRK-05 (UI)
+**Dependencies** T-RUN-03, T-PRK-04
+
+**Integrates with (not blocking)** T-PRK-07 offer flow and T-PRK-05 UI build on this hook; until then the step auto-picks the first offer
 
 **Implementation Notes**
 - [ ] On entering PerkChoice: call PRK's offer API on `ARunPlayerState`'s `UPerkManagerComponent`; bind its chosen callback → `AdvanceStep()`.
@@ -538,7 +544,7 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 
 **Related Requirements** §32 P3 gate, §36 Full Run DoD, master plan §3 G3 checklist, AC-RUN-07, AC-RUN-18
 
-**Dependencies** T-RUN-17, T-CSM-10, T-TFM-12, T-UXF-09 (and all P3 tasks of DIR, PRK, BOS)
+**Dependencies** T-RUN-17, T-CSM-10, T-TFM-12, T-UXF-09 (and all P3 tasks of DIR, PRK, BOS). Gate evidence (all phase QA/content tasks): T-BOS-04, T-BOS-06, T-BOS-07, T-BOS-08, T-BOS-09, T-BOS-10, T-CSM-08, T-DEF-21, T-DEF-23, T-DIR-07, T-DIR-13, T-DIR-14, T-DIR-15, T-DIR-16, T-DIR-17, T-PRK-05, T-PRK-12, T-PRK-13, T-RUN-15, T-TFM-06, T-TFM-10, T-TFM-11, T-UXF-19, T-UXF-20, T-ZON-08
 
 **Implementation Notes**
 - [ ] Packaged Development build on the reference PC (T-FND-08), telemetry on.

@@ -20,10 +20,10 @@
 
 | System | Impact |
 |---|---|
-| Combat contract (FND/CMB) | Soldiers use `UHealthComponent`, `UCombatStateComponent`, `FCombatHit` (source layer `Army`). Melee soldiers reuse the CMB hit-window anim notify state and trace helper from `T-CMB-04` if it is generic; otherwise a sphere sweep at the notify |
+| Combat contract (FND/CMB) | Soldiers use `UHealthComponent`, `UCombatStateComponent`, `FCombatHit` (source layer `Army`). Every soldier hit goes through `UCombatLibrary::DeliverHit`. Melee soldiers reuse the CMB hit-window notify state + `UMeleeTraceComponent` (`T-CMB-04`) |
 | Input (FND) | Adds `IMC_CommandWheel` (higher priority than `IMC_Combat`, movement and dodge stay in `IMC_Combat`) |
-| Enemies (ENM) | Enemies must treat soldiers as hostile targets in P1 (see §10). SQD reads archetype tag + HP from `AEnemyCharacter` |
-| Synergy (SYN) | Target rules include a `HasState` rule type; SYN fills state entries in squad data (`T-SYN-05`) |
+| Enemies (ENM) | Enemies already target soldiers in P1 (R-ENM-15, no SQD change). SQD reads archetype tag + HP from `AEnemyCharacter` |
+| Synergy (SYN) | Target scorer = priority tier + numeric score; SYN adds state weights (Staggered / Armor Broken / Marked) to the score term (`T-SYN-05`) |
 | UI/Feedback (UXF) | Fires `Feedback.Command.*` / `Feedback.Squad.*`; uses the world marker component; adds `WBP_CommandWheel` and a squad strip in `WBP_GameHUD` |
 | Navigation | Uses the Recast navmesh; no strategic lane layer use in P1. P2: re-path on structure changes |
 | Structures (DEF, P2) | Retreat to `ACoreStructure`; Infantry structure-defense rule |
@@ -45,16 +45,16 @@
 
 | Type | Kind | Folder | Responsibility |
 |---|---|---|---|
-| `USquadDefinition` | `UPrimaryDataAsset` | `Army/` | All squad tuning (spec §13 data model). `IsDataValid` checks soldier class, count > 0, columns > 0, engage ≤ leash, at least one target rule |
+| `USquadDefinition` | `UPrimaryDataAsset` | `Army/` | All squad tuning (spec §13 data model), incl. `BaseArmor` and an embedded `FCombatStateConfig` (MaxPoise, regen delay, regen rate, StaggerDuration; same struct as enemy definitions) used to init soldier `UHealthComponent` / `UCombatStateComponent`, and `TMap<FGameplayTag, float> StateScoreWeights` (filled by SYN). `IsDataValid` checks soldier class, count > 0, columns > 0, engage ≤ leash, at least one target rule |
 | `ASquad` | `AActor` (root scene component, no mesh) | `Army/` | Anchor transform, order, FSM, formation, `TArray<FSoldierRuntime>`, candidate cache, strength, timers, delegates |
 | `ASoldierCharacter` | `ACharacter` + `IGenericTeamAgentInterface` | `Army/` | Body; health/state components; `MoveToSlot(Location)`, `AttackTarget(Actor)`, `StopAttack()`, `HiddenTeleport(Location)`; attack execution (melee montage or projectile) |
 | `ASoldierAIController` | `ADetourCrowdAIController` | `Army/` | Team id; crowd avoidance group setup; move requests |
-| `ACombatProjectile` | `AActor` + `UProjectileMovementComponent` + sphere | `Combat/` | Arrow; applies `FCombatHit` on first hostile hit. Generic so DEF towers can reuse it |
+| `ACombatProjectile` | `AActor` + `UProjectileMovementComponent` + sphere | `Combat/` | Arrow; `DeliverHit` on first hostile hit. Generic: DEF's `ATowerProjectile` (P2) can derive from it instead of duplicating flight/hit code |
 | `UCommandComponent` | `UActorComponent` | `Player/` | Squad registry, current squad, wheel open/close, per-frame aim resolve while open (tick enabled only while open), issue order, delegates |
 | `FSquadOrder` | `USTRUCT` | `Army/SquadTypes.h` | `CommandTag`, `Location`, `Facing`, `TWeakObjectPtr<AActor> TargetActor`, `TWeakObjectPtr<AActor> ContextActor` (zone, P2), `LeashRadiusOverride` (≤0 = none), `OrderId` |
 | `FCommandTargetContext` | `USTRUCT` | `Player/CommandTypes.h` | Kind (`None, Ground, Enemy, Hero`; ZON adds `Zone`), hit location, target actor, context actor, suggested command, display text, `bValid` |
 | `ESquadState` | `UENUM` | `Army/SquadTypes.h` | Idle, Follow, MoveToOrder, Guard, Engage, Reform, Retreat, Recover, Wiped |
-| `FSquadTargetRule` | `USTRUCT` | `Army/SquadTypes.h` | `ESquadTargetRuleType` (`InGuardArea, FocusTarget, NearestWithTags, LowestHealthWithTags, NearestToGuardCenter, HasState, AttackingStructureNearGuard`), `FGameplayTagContainer Tags`, `float MaxRange` |
+| `FSquadTargetRule` | `USTRUCT` | `Army/SquadTypes.h` | `ESquadTargetRuleType` (`InGuardArea, FocusTarget, NearestWithTags, LowestHealthWithTags, NearestToGuardCenter, AttackingStructureNearGuard`), `FGameplayTagContainer Tags`, `float MaxRange`. Rule order = priority tier |
 | Formation / FSM / targeting logic | Free functions | `Army/SquadFormation.*`, `Army/SquadStateMachine.*`, `Army/SquadTargeting.*` | Pure, Spec-tested |
 
 Gameplay Tag leaves (added to the `T-FND-04` tag file): `Feedback.Command.Acknowledged`, `Feedback.Command.Invalid`, `Feedback.Squad.LowStrength`, `Feedback.Squad.Wiped`, `Feedback.Squad.Reinforced`. `Command.*` and `Unit.Squad.*` already exist.
@@ -143,7 +143,7 @@ None in prototype (A-11). Order and squad state use tags, locations and weak poi
 
 ### 3.10 Existing systems reused
 
-Combat contract, team interface, `UFeedbackSubsystem`, world marker component, Enhanced Input contexts, `UGameTuningSettings`, `UGameCheatManager`, `game.debug.*` CVar pattern, Visual Logger, CMB hit window notify, CMB lock-on target, UXF telemetry log.
+Combat contract + `UCombatLibrary::DeliverHit`, team interface, `UFeedbackSubsystem`, world marker component, Enhanced Input contexts, `UGameTuningSettings`, `UGameCheatManager`, `game.debug.*` CVar pattern, Visual Logger, CMB hit window notify + `UMeleeTraceComponent`, `AHeroCharacter::GetLockOnTarget` / `OnHeroDeath`, UXF telemetry log.
 
 ### 3.11 New files proposed
 
@@ -245,7 +245,7 @@ Greedy: for slots front-to-back, pick the nearest unassigned, non-stuck soldier.
 
 1. Candidates from the cache: location, archetype tag, HP ratio, combat state tags, `bIsFocus`, `bAttackingStructureNearGuard` (P2).
 2. Rules in definition order; an Attack order moves `FocusTarget` to the front while the target is inside the Attack leash (R-SQD-16).
-3. Each candidate gets (first matching rule index, rule metric). Sort.
+3. Each candidate gets a **tier** (first matching rule index) and a **score** = rule metric term (e.g. −distance, −HP ratio) + Σ `StateScoreWeights[tag]` for its active `State.Combat.*` tags (SYN fills the weights, `T-SYN-05`). Sort by tier, then score. The scorer returns both values so SYN and debug draw can read them.
 4. Soldiers take the best candidate whose attacker count < `MaxAttackersPerTarget` (Infantry spreads, Archer focuses: large cap). Keep the current target unless a lower rule index appears (stickiness, avoids thrashing).
 5. Soldier farther than leash from leash centre drops its target and returns to its slot.
 
@@ -281,7 +281,7 @@ Strength = alive / definition count. Low strength crossing fires once and re-arm
 
 | Level | What | Where |
 |---|---|---|
-| Automation Spec | Slot grid, column reduction by width, breadcrumb placement, greedy assignment (no duplicates, all assigned), every FSM table row, each target rule type, Attack focus promotion, stickiness | `Tests/Squad*.spec.cpp` |
+| Automation Spec | Slot grid, column reduction by width, breadcrumb placement, greedy assignment (no duplicates, all assigned), every FSM table row, each target rule type, tier-then-score ordering, state weight term, Attack focus promotion, stickiness | `Tests/Squad*.spec.cpp` |
 | Functional Test | Guard + leash disengage, Follow leash, Attack target dies → Guard, Retreat → Recover → Idle, choke pass + width restore, caged soldier, hidden teleport never on screen, wipe → respawn, 4th squad refused | `Maps/Test/L_Test_Squad` (`T-SQD-14`) |
 | PIE manual | Wheel feel, context pre-selection, readability | `L_CombinedArms` |
 | PERF | 3 squads engaged, packaged Development, reference PC | `T-SQD-15` |
@@ -301,11 +301,11 @@ Strength = alive / definition count. Low strength crossing fires once and re-arm
 
 | Item | Note |
 |---|---|
-| ENM targeting of soldiers in P1 | P1 enemies must pick soldiers (any hostile pawn) as targets, not only the Hero. Local Aggro (`T-ENM-08`) is P2. **No anchor task states this for P1**; confirm inside `T-ENM-02/05` or add an ENM task |
-| Crowd vs enemies | If enemies also use Detour crowd, avoidance may make lines slide around each other instead of holding. Tune avoidance groups; fallback: soldiers in Engage stop crowd avoidance against enemies |
+| ENM targeting of soldiers in P1 | Covered by ENM R-ENM-15 / AC-ENM-11 (enemies fight soldiers they meet). SQD only needs soldiers to carry the ally team id |
+| Crowd vs enemies | ENM starts with CharacterMovement RVO while soldiers use Detour crowd; mixed agents may not avoid each other (capsules still block). ENM `T-ENM-16` measures; SQD keeps capsule blocking so Infantry can hold a line |
 | Formation at chokes | High risk (master plan risk register). Width probe + breadcrumb column + stuck ladder from day one; Visual Logger |
 | Wheel input feel | Mouse-wheel cycling may be slow for Retreat; G1 measures; alternative bindings are data only |
-| Lock-on interplay | Needs CMB lock-on target accessor (`T-CMB-10`) |
+| Lock-on interplay | Uses `AHeroCharacter::GetLockOnTarget` (`T-CMB-10`) |
 | Zone hook | `FSquadOrder.ContextActor` + resolver insertion point are the only P1 cost for ZON |
 
 No change requests to D-01..D-18.
@@ -332,7 +332,7 @@ No change requests to D-01..D-18.
 | R-SQD-16, R-SQD-17 | Target rules data + `SquadTargeting` | `T-SQD-07`, `T-SQD-10` |
 | R-SQD-18 | Leash centres per order | `T-SQD-08` |
 | R-SQD-19 | Stuck ladder | `T-SQD-09` |
-| R-SQD-20 | `HasState` rule type | `T-SQD-07` (type), `T-SYN-05` (entries) |
+| R-SQD-20 | Tier + score, `StateScoreWeights` | `T-SQD-07` (scorer), `T-SYN-05` (weights) |
 | R-SQD-21 | No Marked application in Attack | `T-SQD-04` |
 | R-SQD-22 | Markers + squad strip | `T-SQD-13` |
 | R-SQD-23 | Feedback tags | `T-SQD-13`, `T-UXF-06` |

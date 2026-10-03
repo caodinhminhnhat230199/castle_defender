@@ -24,6 +24,7 @@ This file is the index for all implementation work. It summarizes every phase, f
    - `[OPEN]`: do not decide silently. Use the assumption written in Section 11 or ask.
    - `[DEFERRED]`: do not build in prototype or launch scope unless re-requested.
 5. New ideas during implementation go through the intake check in Section 10. A good idea is not automatically in scope.
+6. Coding agents (Claude Code, Codex, Cursor, Copilot, …) follow [/AGENTS.md](../../AGENTS.md); Claude Code loads it through `/CLAUDE.md`.
 
 ### Document layout
 
@@ -31,6 +32,8 @@ This file is the index for all implementation work. It summarizes every phase, f
 ai/game/
 ├── main_implement_plan.md        ← this file
 ├── production-plan.md            ← art/anim/VFX/audio/level content per phase
+├── spec-audit.md                 ← completeness review 2026-10-03: open issues by phase, missing lifecycle docs
+├── progress.md                   ← session log and handoff for every agent session (rules: /AGENTS.md)
 ├── 00-foundation/                ← UE5 project architecture + project setup
 ├── 01-hero-combat/               ← Prototype 0
 ├── 02-enemies/                   ← Prototype 0 → 2
@@ -114,6 +117,7 @@ Gate reviews use these checks (from GDD §32 and §36). Each gate also needs: bu
 - [ ] Stuck recovery works (one stuck soldier never freezes the squad).
 - [ ] Player understands what each squad is doing.
 - [ ] Hero + squads plays better than Hero alone (playtest comparison).
+- [ ] Basic shared combat states work across layers: Staggered and Armor Broken created by one layer and used by another (GDD §32 P1 "basic shared combat states").
 
 **G2: Defense & Pathing** (GDD §32 P2, §36 Defense Core DoD)
 - [ ] Tower placement changes route/encounter.
@@ -167,6 +171,23 @@ Gate reviews use these checks (from GDD §32 and §36). Each gate also needs: bu
 | ONB | `24-onboarding` | Tutorial order: combat → one squad → one tower → forecast → focus → blocking → combine | §34.3 | VS | Provisional |
 
 Production content (placeholder and final art, animation, VFX, audio, levels) is tracked in [production-plan.md](production-plan.md).
+
+### Doc status (2026-10-02)
+
+All 19 feature folders have `spec.md`, `technical-plan.md` and `tasks.md`. Cross-references (task, rule and acceptance IDs) are checked: none missing, no duplicate task IDs.
+
+| Feature | Tasks | Feature | Tasks |
+|---|---|---|---|
+| FND | 10 | DIR | 17 |
+| CMB | 19 | RUN | 18 |
+| ENM | 17 | CSM | 10 |
+| SQD | 21 | TFM | 12 |
+| SYN | 11 | PRK | 14 |
+| DEF | 25 | BOS | 15 |
+| ZON | 8 | UXF | 20 |
+| **Prototype + Foundation total** | **217** | MET / WLD / ECO / CNV / ONB (provisional) | 12 / 12 / 12 / 8 / 10 = **54** |
+
+Grand total: **271** tasks, a few of them provisional VS tasks inside prototype features (e.g. T-CMB-17..19, T-SQD-18..21, T-DEF-24..25, T-BOS-11..15).
 
 ---
 
@@ -229,6 +250,43 @@ What must exist at the end of each phase. Task IDs live in each feature `tasks.m
 - One polished boss; art/audio/UI near target quality.
 - Basic meta save with save version, migration strategy, corruption fallback, settings persistence.
 - Tutorial / onboarding sequence (GDD §34.3).
+
+### Demo Milestones
+
+Each phase ends in a playable demo. "To play" is the smallest task set that lets you press Play and test the experience; "to pass gate" adds the tests, telemetry and gate playtest needed before moving on. Counts are cumulative.
+
+| Demo | After | What you can play | Tasks to play | Tasks to pass gate | Status |
+|---|---|---|---|---|---|
+| **D0: Walk around** | Steps 1–2 below | Hero runs, sprints, camera orbits in an empty map | 9 | — | Not started |
+| **D1: Combat Sandbox** | **P0** | Warlord vs melee enemy: light/heavy, dodge, block, parry, stamina, stagger, hit feel. **First real feel test.** | 29 | 40 (G0) | Not started |
+| **D2: Combined Arms** | P1 | Hero + Infantry and Archer squads vs Swarm and Armored, Command Wheel orders | ~60 | 73 (G1) | Not started |
+| **D3: Defense & Pathing** | P2 | Siege Site with 2 lanes: build Ballista/Bombard/Barricade, enemies stop and break structures, 3 waves, Core loss = defeat. **First time the game's identity shows.** | ~110 | 128 (G2) | Not started |
+| **D4: Full Run** | **P3** | Complete ~25-minute run: forecast, 5 waves, perks, Tactical Focus, Commander Spirit, two-phase boss. **First version that is the actual game loop.** | ~180 | 203 (G3) | Not started |
+| **D5: Vertical Slice** | VS | Polished slice for external viewers | — | 271 (VS Gate) | Not started |
+
+Prototype demos D1–D4 use placeholder art (production-plan.md): they test feel and decisions, not visuals.
+
+#### D0 and D1 minimal path (29 tasks, dependency-checked)
+
+| Step | Tasks | Result |
+|---|---|---|
+| 1 | `T-FND-01, 03, 04, 05, 06, 07, 09` | Project builds; input, tags, damage contract, cheats/debug exist |
+| 2 | `T-CMB-01`, `T-CMB-13` | Hero walks around `L_CombatSandbox` (**D0**, 9 tasks) |
+| 3 | `T-FND-10`, `T-UXF-01`, `T-CMB-02, 03, 04, 05` | Test harness + feedback subsystem; light 3-hit chain, stamina cost, hits deal damage |
+| 4 | `T-ENM-01, 02, 03` | Enemy chases and attacks back with a telegraph |
+| 5 | `T-CMB-06, 07, 08, 09`, `T-SYN-01`, `T-ENM-04` | Heavy, dodge, block, parry; poise break → Staggered. Rough combat is playable here. |
+| 6 | `T-UXF-02, 03` | HP/stamina bars, hit stop, camera shake, hit SFX/VFX (what G0 judges) |
+| 7 | `T-CMB-10, 11`, `T-ENM-11` | Lock-on, Hero takes damage/dies, enemy tuned for 3–5 minutes of combat (**D1 playable**) |
+
+To pass G0, finish the rest of Phase F and P0 (11 tasks): `T-FND-02, 08`, `T-CMB-14, 15, 16`, `T-ENM-12`, `T-SYN-08`, `T-UXF-08, 09, 10, 11`. The gate task `T-CMB-16` now depends on all of them. Do not start squads or towers before G0 passes (GDD §32).
+
+#### Task count per phase
+
+| F | P0 | P1 | P2 | P3 | VS | Total |
+|---|---|---|---|---|---|---|
+| 10 | 30 | 33 | 55 | 75 | 68 | 271 |
+
+VS includes the 54 tasks of features 20–24 and 14 provisional VS tasks inside prototype features.
 
 ---
 
@@ -302,7 +360,7 @@ Full detail and rationale: [00-foundation/technical-plan.md](00-foundation/techn
 | D-02 | Source and Content organized by domain: `Core, Combat, Hero, Army, Enemy, Structures, Navigation, Encounter, Run, Perks, Boss, Player, UI, Feedback`. | Ownership obvious; no `Managers/` or `Utils/` junk folders. |
 | D-03 | C++ owns rules, state, AI, pathing, Director, damage. Blueprint owns content assembly, tuning, animation wiring, VFX/SFX, UI layout. Pattern: C++ base → Blueprint child → data asset tuning. | GDD implementation direction + skill default. |
 | D-04 | **No GAS in prototype.** Gameplay Tags + lightweight components. Re-evaluate at G3 if perk/ability/status complexity outgrows components. | Many simple units (swarm, soldiers) would pay GAS cost for nothing; smaller learning surface for a solo dev. |
-| D-05 | Shared damage contract: `UHealthComponent` + `FCombatHit` struct (damage, poise damage, damage tag, source layer, applied states). `UCombatStateComponent` owns poise and timed state tags (Staggered, Armor Broken, Marked). Used by hero, soldiers, enemies, boss; structures use `UHealthComponent` only. | One pipeline lets Hero, Army and Tower create openings for each other (GDD §10). |
+| D-05 | Shared damage contract: `UHealthComponent` + `FCombatHit` struct (damage, poise damage, damage tag, source layer, applied states). `UCombatStateComponent` owns poise and timed state tags (Staggered, Armor Broken, Marked). Used by hero, soldiers, enemies, boss; structures use `UHealthComponent` only. Every hit goes through `UCombatLibrary::DeliverHit` (T-CMB-04); see foundation technical plan §7 for the full contract. | One pipeline lets Hero, Army and Tower create openings for each other (GDD §10). |
 | D-06 | Data-driven content via Primary Data Assets: `UHeroClassDefinition`, `USquadDefinition`, `UEnemyArchetypeDefinition`, `UStructureDefinition`, `UWaveDefinition`, `URunDefinition`, `UPerkDefinition`, `UTacticalZoneDefinition`, `UBossDefinition`, later `UConversionRecipeDefinition`. Global [TUNABLE] values in `UGameTuningSettings` (UDeveloperSettings). Flat lookup data (feedback events) in Data Tables. | GDD §34.1, §38: every [TUNABLE] number is data; adding content needs no core code change. |
 | D-07 | State ownership per GDD §34.2 (table below). | Single authority per state; UI only observes. |
 | D-08 | AI: lightweight C++ state machines for enemies, soldiers, squads and the prototype boss. StateTree reconsidered for boss polish at VS. Squads move as anchor + formation slots; soldiers use crowd local avoidance. | GDD §13.3, §31.2: squad/group logic before individual AI. |
@@ -316,6 +374,8 @@ Full detail and rationale: [00-foundation/technical-plan.md](00-foundation/techn
 | D-16 | Testing: Automation Spec tests for pure logic (stamina rules, Director solver, break-cost search, perk offers); Functional Tests in test maps for gameplay scenarios (enemy breaks barricade, squad recovers from stuck); manual gate playtests with checklists. Visual Logger for AI/path debugging. | Every task ships with its own verification (GDD §38). |
 | D-17 | Levels: one map per prototype stage; Siege Site maps are separate levels. Level Streaming vs World Partition for the Controlled Open World is decided at VS (OPEN Q-09). | Do not pick World Partition before the world exists. |
 | D-18 | Source control: Git + Git LFS for binary assets. Ignore `Binaries/`, `Intermediate/`, `Saved/`, `DerivedDataCache/`, `.codegraph/`. | Project README rule. |
+| D-19 | `AHeroPlayerController` is the single owner of player mode: a push/pop stack (`Combat, Wheel, Build, Focus, Spirit, Modal`) that sets mapping contexts and UI input mode and broadcasts `OnPlayerModeChanged`. Features push/pop; HUD layers and overlays only listen. (Added 2026-10-03 after the spec audit; consumer docs DEF/CSM/TFM/PRK/UXF still to align.) | Mode was stored three times and features patched around a switch. |
+| D-20 | Clock domains: timers that gate player input or hero actions (input buffer, counter window, i-frames, combo windows) run in the hero's dilated time, so hit stop never shortens them; world timers (AI decisions, states, waves, respawn) run in world game time and slow with Tactical Focus; UI animation uses real time. (Added 2026-10-03; CMB/UXF/SYN docs still to align.) | Hit stop was eating up to 0.15 s of a 0.2 s input buffer. |
 
 ### State ownership (GDD §34.2)
 
@@ -362,6 +422,9 @@ Perk.Category.Hero | Army | Defense
 Stat.<Domain>.<Name>          (perk / zone modifier targets)
 Feedback.<Event>              (feedback contract, see 13-hud-feedback)
 Modifier.Encounter.<Name>     (Director modifiers)
+Lane.<Name>                   (lane identity: routes, spawners, forecast)
+Resource.<Name>               (VS economy: Food, Gold, MonsterMaterial)
+Tutorial.Gate.<Name>          (VS onboarding gates)
 ```
 
 Features may add leaf tags under these roots; new roots need an entry in `00-foundation/technical-plan.md`.
@@ -378,6 +441,59 @@ Each task has: objective, related requirements, dependencies, implementation not
 Implemented + integrated + verified in the editor PIE **and** the phase sandbox map + no new warnings/errors in the log + tuning values exposed as data + verification steps recorded in the task.
 
 ---
+
+## 8a. Cross-Feature Integration Contracts
+
+Agreements between features that one feature defines and another consumes. When you implement the provider task, check the consumer column. When a consumer task starts before the provider has the hook, add the hook in the consumer task and ask the owner to review it.
+
+| Contract | Provider (owner task) | Consumers |
+|---|---|---|
+| `UCombatLibrary::DeliverHit` is the only way to apply a hit | T-CMB-04 | T-ENM-03, T-SQD-07/10, T-DEF-09, BOS attacks, T-SYN-07 (multipliers) |
+| `UMeleeTraceComponent`, `ICombatHitInterceptor` | T-CMB-04 | T-ENM-03, soldier melee (T-SQD-10), boss |
+| `ACombatProjectile` base | T-SQD-10 | T-DEF-09 tower projectiles; pierce extension for T-PRK-11 / T-CNV-* |
+| `FCombatStateConfig` + `BaseArmor` in every combatant definition | T-SYN-01 | T-ENM-01, T-SQD-01, T-BOS-01, hero class data |
+| `DT_CombatStatePresentation` + `OnStateAdded/Removed` | T-SYN-01, T-SYN-04 | T-UXF-05, T-PRK-03 |
+| Target scorer: priority tier + numeric score term | T-SQD-07 | T-SYN-05 (state weights) |
+| `IInteractable` (`Core/Interactable.h`) | T-CMB-12 | T-DEF-07 `ABuildZone` |
+| `UStaminaComponent::Restore(float)` | T-CMB-03 (added by T-PRK-03, CMB review) | T-PRK-03 |
+| Hero `FellOutOfWorld` → boundary recovery instead of death | T-RUN-07 | T-CMB-01 |
+| Hero death event → Commander Spirit (replaces sandbox respawn) | T-CMB-11 | T-CSM-01 |
+| Hide Follow command while Hero is dead | T-SQD-05 | T-CSM-02 |
+| Lane route result: ordered obstacles with distance along route, end target = Core | T-DEF-05 | T-ENM-07, T-ENM-09 |
+| `OnRouteInvalidated(Lane, bOpened)` per lane; `Structure` collision channel | T-DEF-06, T-DEF-02 | T-ENM-07/08/09 |
+| Build-mode exit restores previous input mode (incl. Commander Spirit) | T-DEF-07 | T-CSM-05 |
+| `TrySpawnEnemy` (null when cap full), `RequestScriptedSpawn` (queues), `InitFromSpawn`, `OnEnemyRemoved` | T-DIR-01 | T-BOS-03 summons, T-RUN-04 kill rewards |
+| `OnWaveEnemyRemoved(enemy, archetype, lane, cause)` | T-DIR-02 | T-RUN-04, T-UXF-08 |
+| `CounterTags` field on `UEnemyArchetypeDefinition` | T-ENM-01 (field), T-DIR-04 (use) | T-DIR-04 |
+| `MaxConcurrentEnemies` from benchmark | T-DEF-12 | T-DIR-04; update Q-04 |
+| `ARunGameState` slots: `FWaveStateView`, `FThreatForecast`, `ActiveBoss` + `OnActiveBossChanged` | T-RUN-01 (owner) | Added by T-DIR-02, T-DIR-06, T-BOS-05 |
+| `URunDefinition.PerkPool` + perk-offer step | T-RUN-05 | T-PRK-07 |
+| Build allowance / run resource: `CanAfford`, `TrySpend` | T-RUN-09, T-RUN-04 | T-DEF-07 |
+| `UStatModifierSubsystem` (`AddModifier`, `RemoveModifier`, `GetStatFor`), `Stat.*` tags | T-PRK-02 | T-ZON-04, perks, T-CNV-* |
+| `IGameplayTagAssetInterface` on `AStructureBase`, `ASquad` | T-DEF-02, T-SQD-01 (added by T-PRK-10/11) | Perk filters |
+| Perk pawn-side effects re-apply on pawn change | T-PRK-01 | T-CSM-03 respawn |
+| `FFeedbackContext` (Instigator, Target, `bIsHeavy`, `bTargetArmored`, Variant, Lane), per-row cooldown/burst limit | T-UXF-01 | All features playing `Feedback.*` |
+| Hit stop uses per-actor time dilation only | T-UXF-03 | Protects T-TFM-01 global dilation (D-13) |
+| HUD rebinds on pawn change; tactical display mode for markers | T-UXF-02, T-UXF-04 | T-CSM-03, T-TFM-03 |
+| `ULaneDangerSubsystem` (`GetLaneDanger`, `PulseLane`, `OnLaneDangerChanged`) | T-UXF-07 | DEF (path opened, Core attacked), T-DIR (lane incoming), T-BOS-03, T-TFM-03 |
+| `UPlaytestLogSubsystem::LogEvent` | T-UXF-08 | Every gate playtest task, T-BOS-08, T-TFM-12 |
+| Boss Focus restriction stored in boss phase data | T-BOS-07 | T-TFM-05 |
+
+### Feature-level open questions
+
+Each spec lists its own questions as `NEW-<FEAT>-n` with a default in section 12. Defaults apply until answered. Questions that should be decided **before the phase that needs them**:
+
+| Before | Question | Why it matters |
+|---|---|---|
+| P0 | NEW-CMB-01: what a successful parry does (stagger vs vulnerability window) and whether parry has its own input | Core combat feel, G0 |
+| P0 | NEW-CMB-02: default stamina costs | G0 tuning baseline |
+| P1 | NEW-SYN-02: is Armor Broken a **baseline** Warlord Heavy effect (GDD §10.2, §19.1) or a **perk** (GDD §33, 05:00)? The GDD says both. | Changes SYN, PRK and the G1 synergy test |
+| P1 | NEW-SYN-01: armor model and Armor Broken strength | Armored archetype balance |
+| P1 | NEW-SQD-01/02: what Recover does; squad wipe rule | §34.4 squad wipe |
+| P2 | NEW-DEF-02: maze vs break-through (enemies walk any open path inside the lane corridor?) | Core of §14 path rule, G2 exploit check |
+| P2 | NEW-DEF-03: building during waves allowed? | Pacing, A-05 |
+| P3 | NEW-PRK-07: approve the 7 proposed perks beyond the GDD examples | G3 build variety |
+| P3 | NEW-UXF-04 vs BOS: off-screen markers for boss summons (UXF default: no, lane pulses only) | Boss Phase 2 readability |
 
 ## 9. Launch Production (not planned in detail)
 

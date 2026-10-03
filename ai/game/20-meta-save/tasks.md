@@ -276,7 +276,7 @@ Build the persistent profile (`UMetaProgressionSubsystem` + `UMetaSaveGame`) wit
 **Dependencies** T-MET-04, T-MET-08
 
 **Implementation Notes**
-- [ ] `L_MainMenu` + `WBP_MainMenu`: Continue (→ hub), New / first launch (→ ONB entry, T-ONB-08), Settings, Reset progress (confirm; backup kept), Quit.
+- [ ] `L_MainMenu` + `WBP_MainMenu`: Continue (→ hub), New / first launch (→ ONB entry, T-ONB-09), Settings, Reset progress (confirm; backup kept), Quit.
 - [ ] `WBP_ProfileNotice` for Recovered / Reset / TooNew / SaveFailed.
 - [ ] Reset waits for any in-flight write.
 

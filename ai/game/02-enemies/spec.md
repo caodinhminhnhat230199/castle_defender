@@ -232,6 +232,7 @@ Depended on by: CMB (target to hit), SQD (enemies to fight), DEF (enemies that b
 |---|---|---|---|
 | Archetype tags (`Unit.Enemy.Swarm/Armored/Siege/Melee`, optional `Unit.Enemy.Elite`) | P0 | Melee enemy: `Unit.Enemy.Melee` | Data |
 | Display name | P0 | "Raider" (placeholder) | Data |
+| Enemy actor class (Blueprint child to spawn) | P0 | `BP_Enemy_Melee` | Data |
 | Max health | P0 | per archetype | [TUNABLE] |
 | Armor | P1 | Armored high, others 0 | [TUNABLE] |
 | Max poise, poise regen delay/rate | P0 | Swarm low, Armored high | [TUNABLE] |
@@ -286,8 +287,8 @@ Global enemy tunables in `UGameTuningSettings`: stuck check time, max stuck atte
 |---|---|---|---|---|---|
 | Attack wind-up | Wind-up pose + weapon flash | Wind-up whoosh | — | Starts before the hit window by at least the minimum telegraph time; heavy attacks look different from light | `Feedback.Enemy.Telegraph`, `Feedback.Enemy.Telegraph.Heavy` |
 | Hit taken (normal / armored) | Flinch + impact VFX by material | Impact SFX by material | — | Armored hits look and sound different (§9.8) | `Feedback.Hit.*` (UXF-03) |
-| Staggered | Stagger animation + state VFX/icon | Stagger SFX | State icon | Same icon/VFX on every unit (§28.2) | `Feedback.State.Staggered` (SYN-04) |
-| Armor Broken | State VFX/icon | Armor break SFX (§28.3) | State icon | Same as above | `Feedback.State.ArmorBroken` (SYN-04) |
+| Staggered | Stagger animation + state VFX/icon | Stagger SFX | State icon | Same icon/VFX on every unit (§28.2) | `Feedback.State.Staggered.Applied` (SYN-04) |
+| Armor Broken | State VFX/icon | Armor break SFX (§28.3) | State icon | Same as above | `Feedback.State.ArmorBroken.Applied` (SYN-04) |
 | Death | Death animation, body stops blocking | Death SFX | — | Body never blocks lanes | `Feedback.Enemy.Death` |
 | Attacking a structure | Attack animation facing the structure | Structure impact SFX (DEF/UXF) | Structure HP marker (UXF-04) | Player can tell which structure is being broken (G2 check) | `Feedback.Structure.*` (DEF/UXF) |
 | Class identity | Silhouette per archetype | — | Class marker (UXF-04, Tactical Focus overlay) | Siege/elite readable in 1–2 s (§28.1) | `Unit.Enemy.*` |

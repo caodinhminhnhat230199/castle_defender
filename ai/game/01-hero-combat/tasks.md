@@ -31,8 +31,8 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 | T-CMB-12 | Interact verb (`IInteractable`) | GAMEPLAY | P2 | Must | T-CMB-02, T-FND-06 | Todo |
 | T-CMB-13 | `L_CombatSandbox` map + `BP_SandboxGameMode` | TOOLS | P0 | Must | T-FND-06, T-FND-09 | Todo |
 | T-CMB-14 | Sandbox enemy respawner + scenario presets | TOOLS | P0 | Must | T-CMB-13, T-ENM-01, T-ENM-03 | Todo |
-| T-CMB-15 | Combat Functional Test suite (`L_Test_HeroCombat`) | QA | P0 | Must | T-CMB-05…T-CMB-11, T-FND-10 | Todo |
-| T-CMB-16 | G0 gate playtest: Combat Sandbox | QA | P0 | Must | T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08 | Todo |
+| T-CMB-15 | Combat Functional Test suite (`L_Test_HeroCombat`) | QA | P0 | Must | T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-FND-10 | Todo |
+| T-CMB-16 | G0 gate playtest: Combat Sandbox | QA | P0 | Must | T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08, T-ENM-11, T-ENM-12, T-FND-02, T-FND-08, T-UXF-09, T-UXF-10, T-UXF-11 | Todo |
 | T-CMB-17 | Warlord proximity buff (provisional) | GAMEPLAY | VS | Should | T-PRK-02, T-SQD-01 | Todo |
 | T-CMB-18 | Rally / charge / hold-line design spike (provisional) | DESIGN | VS | Could | T-CMB-17 | Todo |
 | T-CMB-19 | Combat animation polish with production animation (provisional) | ANIM | VS | Should | T-CMB-15, T-CMB-16 | Todo |
@@ -371,7 +371,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 - [ ] `FHeroHitReactData`: front and back montages; death montage.
 - [ ] Bind own `UHealthComponent::OnDamaged`: if alive and the hit was not blocked → stop the current montage (windows close), play front/back by hit direction, state HitReact, play `Feedback.Hero.Damaged`. HitReact late cancel window allows Dodge.
 - [ ] Bind `OnDeath`: state Dead, clear buffer, release lock-on, ignore input, death montage, `Feedback.Hero.Death`, broadcast `AHeroCharacter::OnHeroDeath` once.
-- [ ] `BP_SandboxGameMode` binds `OnHeroDeath` → after `RespawnDelay` (3 s) destroy pawn and `RestartPlayer`. Comment: sandbox only, CSM T-CMB-01 replaces it in P3.
+- [ ] `BP_SandboxGameMode` binds `OnHeroDeath` → after `RespawnDelay` (3 s) destroy pawn and `RestartPlayer`. Comment: sandbox only, CSM T-CSM-01 replaces it in P3.
 - [ ] FND cheat `KillHero` exercises the path.
 
 **Expected Files / Assets** `HeroCombatComponent.cpp`, `HeroCharacter.cpp`; `Content/<Game>/Hero/AM_Warlord_HitReact_F`, `_B`, `AM_Warlord_Death`; `BP_SandboxGameMode` (respawn graph)
@@ -447,7 +447,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 **Objective** Automated regression for every P0 combat rule, runnable from the command line.
 
-**Related Requirements** AC-CMB-02…AC-CMB-12, AC-CMB-16
+**Related Requirements** AC-CMB-02…AC-CMB-12, AC-CMB-14 (no key overlap, R-CMB-36), AC-CMB-16
 
 **Dependencies** T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-FND-10
 
@@ -478,7 +478,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 **Related Requirements** R-CMB-02, all P0 R-CMB; AC-CMB-17; master plan §3 G0 checklist; GDD §32 P0, §36 Combat Core DoD
 
-**Dependencies** T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08
+**Dependencies** T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08. Gate evidence (all phase QA/content tasks): T-ENM-11, T-ENM-12, T-FND-02, T-FND-08, T-UXF-09, T-UXF-10, T-UXF-11
 
 **Implementation Notes**
 - [ ] Build: packaged Development build on the reference PC (T-FND-08), `L_CombatSandbox`, "Duel" preset.
@@ -512,7 +512,9 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 **Related Requirements** R-CMB-39; AC-CMB-18
 
-**Dependencies** T-CMB-02, T-FND-06 (first consumer: T-DEF-07 build zones)
+**Dependencies** T-CMB-02, T-FND-06
+
+**Consumers (not dependencies)** T-DEF-07 build zones (first `IInteractable` user)
 
 **Implementation Notes**
 - [ ] `IInteractable` (`Core/`): `CanInteract(AHeroCharacter*)`, `GetInteractPrompt()` (FText), `Interact(AHeroCharacter*)`.

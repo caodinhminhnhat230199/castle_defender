@@ -57,6 +57,8 @@ Source/<Game>/
   Feedback/      UFeedbackSubsystem, feedback row struct
   UI/            C++ widget bases only when Blueprint widgets need typed data
   Tests/         Automation Spec files (*.spec.cpp), test helpers
+  # Vertical Slice only (provisional, created by their first task):
+  Meta/  World/  Economy/  Conversion/  Tutorial/
 ```
 
 Each folder uses `Public/`/`Private/` only if a second module ever needs its headers; with one module, keep headers next to sources inside the domain folder.
@@ -127,6 +129,19 @@ UCombatStateComponent
   OnStateAdded(Tag, Instigator), OnStateRemoved(Tag)
 ```
 
+Contract additions agreed during feature planning (owners in brackets):
+
+| Type | Where | Purpose |
+|---|---|---|
+| `UCombatLibrary::DeliverHit(Target, FCombatHit)` | `Combat/` (T-CMB-04) | **Single entry point for every hit** (hero, enemy, soldier, tower, boss). Applies i-frames, block, parry, armor, poise and states in a fixed order. Calling `UHealthComponent::ApplyHit` directly is a bug. |
+| `ICombatHitInterceptor` | `Combat/` (T-CMB-04) | Lets a target modify or reject a hit (hero block/parry, future enemy block). |
+| `UMeleeTraceComponent` | `Combat/` (T-CMB-04) | Owner-agnostic hit-window trace, one hit per target per swing. Used by hero, enemies, melee soldiers, boss. |
+| `ACombatProjectile` | `Combat/` (T-SQD-10) | Base projectile delivering hits via `DeliverHit`. Archer arrows (P1) and tower projectiles (T-DEF-09) derive from it. |
+| `FCombatStateConfig` + `BaseArmor` | embedded in `UEnemyArchetypeDefinition`, `USquadDefinition`, `UBossDefinition`, hero class data (T-SYN-01) | Poise max/regen delay/regen rate, Staggered duration, base armor per definition. |
+| `FStateDamageMultipliers` | `Combat/` (T-SYN-07) | Optional per-attacker multipliers vs Staggered / Armor Broken / Marked targets. |
+| `IInteractable` | `Core/Interactable.h` (T-CMB-12) | Interact verb; first consumer `ABuildZone` (T-DEF-07). |
+| `UStatModifierSubsystem` (`AddModifier`, `RemoveModifier`, `GetStatFor`) | `Perks/` (T-PRK-02) | Actor-scoped stat modifiers keyed by `Stat.*` tags; zone bonuses (P2) and perks (P3). |
+
 Team affiliation uses UE's `IGenericTeamAgentInterface` (`FGenericTeamId`: 0 Player/Ally, 1 Enemy). No custom faction system.
 
 ## 8. C++ / Blueprint Boundary
@@ -143,17 +158,20 @@ Blueprint-exposed API rules: `BlueprintReadOnly` by default; `BlueprintCallable`
 
 ## 9. Data Architecture
 
-| Definition (Primary Data Asset) | Feature | Key data |
-|---|---|---|
-| `UHeroClassDefinition` | CMB | movement, stamina costs/regen, attack chain, dodge/block/parry windows, poise damage |
-| `UEnemyArchetypeDefinition` | ENM | archetype tag, stats, armor, poise, threat cost, aggro radius, leash, structure preference |
-| `USquadDefinition` | SQD | soldier class, count, formation slots, target priority rules, leash radius, stats |
-| `UStructureDefinition` | DEF | role tag, HP, footprint cells, cost, weapon data, nav behavior |
-| `UTacticalZoneDefinition` | ZON | zone tag, suggested commands per squad type, bonuses |
-| `UWaveDefinition` | DIR | budget or authored list, allowed archetypes, lane caps, modifiers |
-| `URunDefinition` | RUN | step sequence (prep, waves, intermissions, perk offers, event, boss), timings |
-| `UPerkDefinition` | PRK | category tags, weight, instanced effects |
-| `UBossDefinition` | BOS | phases, thresholds, attacks, layer tests |
+All definitions derive from `UGameDefinition` (T-FND-07). Primary Asset Type name = class name without `U`; this list is canonical and must not change once VS saves exist.
+
+| Definition (Primary Data Asset) | Primary Asset Type | Feature | Key data |
+|---|---|---|---|
+| `UHeroClassDefinition` | `HeroClassDefinition` | CMB | movement, stamina costs/regen, attack chain, dodge/block/parry windows, poise damage |
+| `UEnemyArchetypeDefinition` | `EnemyArchetypeDefinition` | ENM | archetype tag, stats, armor, poise, threat cost, aggro radius, leash, structure preference |
+| `USquadDefinition` | `SquadDefinition` | SQD | soldier class, count, formation slots, target priority rules, leash radius, stats |
+| `UStructureDefinition` | `StructureDefinition` | DEF | role tag, HP, footprint cells, cost, weapon data, nav behavior |
+| `UTacticalZoneDefinition` | `TacticalZoneDefinition` | ZON | zone tag, suggested commands per squad type, bonuses |
+| `UWaveDefinition` | `WaveDefinition` | DIR | budget or authored list, allowed archetypes, lane caps, modifiers |
+| `URunDefinition` | `RunDefinition` | RUN | step sequence (prep, waves, intermissions, perk offers, event, boss), timings |
+| `UPerkDefinition` | `PerkDefinition` | PRK | category tags, weight, instanced effects |
+| `UBossDefinition` | `BossDefinition` | BOS | phases, thresholds, attacks, layer tests |
+| VS: `UConversionRecipeDefinition`, `UMetaUnlockDefinition`, `UBiomeDefinition`, `USiegeSiteDefinition` | same rule (`ConversionRecipeDefinition`, …) | CNV, MET, WLD | see feature plans |
 
 - Register each type with the Asset Manager (Primary Asset Types in Project Settings) so they get stable `FPrimaryAssetId`s for future save data (D-14).
 - Hard references inside definitions are fine in prototype; switch large meshes/sounds to soft references at VS when load profiles show a need.
@@ -221,4 +239,28 @@ Blueprint-exposed API rules: `BlueprintReadOnly` by default; `BlueprintCallable`
 | D-11 | No CommonUI in prototype | Review at VS |
 | R-F1 | Character-based enemies may not scale | Benchmark in DEF `PERF` task |
 
+| D-07 | Conditional change: if spike T-WLD-01 chooses seamless Siege Site entry inside the open world, `ARunGameMode` can no longer own run state; move run state to a run-scoped actor/component | Open until VS |
+| Q-04 | `MaxConcurrentEnemies` is written by benchmark T-DEF-12; copy the result into master plan Q-04 | Pending P2 |
+
 New Gameplay Tag roots or changes to D-xx decisions are recorded here with date and reason.
+
+| Date | Change | Reason |
+|---|---|---|
+| 2026-10-02 | New tag root `Lane.*` | Lane identity for routes, spawners, forecast (DEF, DIR) |
+| 2026-10-02 | New tag roots `Resource.*`, `Tutorial.Gate.*` (VS) | Economy resources (ECO, CNV), tutorial gating (ONB) |
+| 2026-10-02 | `UGameTuningSettings` gains `StateDefaultDurations`, `ArmorBrokenArmorMultiplier`, combat state presentation table ref | SYN tunables |
+| 2026-10-02 | Cheat `SpawnEnemy <Archetype> <Count> [Lane]` | ENM/DIR testing (extends T-FND-09) |
+
+## 19. Requirement Coverage
+
+| Requirement | Technical area | Task |
+|---|---|---|
+| R-FND-01 UE5, PC, single-player | §1, §3 | T-FND-01 |
+| R-FND-02 C++ core, Blueprint content | §8 | T-FND-03 |
+| R-FND-03 Content as data | §9 | T-FND-07 |
+| R-FND-04 [TUNABLE] values in data | §9, `UGameTuningSettings` | T-FND-07 |
+| R-FND-05 One owner per §34.2 state | §6, master plan D-07 | Gate reviews (FND regression checklist) |
+| R-FND-06 Action-based input, gamepad later | §3, master plan D-12 | T-FND-06 |
+| R-FND-07 Profile packaged builds on reference PC | §15 | T-FND-08 |
+| R-FND-08 Every task verifiable | §16 | T-FND-10 |
+| R-FND-09 No generated folders in git | §17 | T-FND-02 |

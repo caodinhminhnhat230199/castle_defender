@@ -287,7 +287,7 @@ Sum of targets ≈ 1530 s (~25.5 min). The "10:00 Conversion Decision" beat from
 |---|---|
 | Ordering with DIR | T-RUN-01 does not depend on DIR: waves can be completed by cheat. T-RUN-08 wires real waves once T-DIR-02 exists, so there is no task cycle whichever way DIR hosts its component. |
 | DIR per-enemy death event | Kill rewards need it. If T-DIR-02 only exposes spawn events, RUN binds `UHealthComponent::OnDeath` on each spawned enemy. Confirm with DIR. |
-| Repair interaction | A-05 says the resource is spent on build/repair, but no anchored DEF task builds repair. RUN exposes `TrySpend(..., Repair)`; until DEF adds repair, P3 spending is build only. |
+| Repair interaction | A-05 says the resource is spent on build/repair. DEF plans repair as provisional VS task `T-DEF-25` (open item NEW-DEF-04). RUN exposes `TrySpend(..., Repair)`; until `T-DEF-25` is pulled into P3, P3 spending is build only. |
 | Telemetry API name | Uses whatever T-UXF-08 defines (`13-hud-feedback`). |
 | Time dilation | Step timers slow under Focus (D-13). Accepted; pacing records real time. |
 | D-xx | No change request. |

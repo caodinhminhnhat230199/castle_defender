@@ -72,6 +72,7 @@ Gọi skill bằng `/<tên-skill>`, hoặc mô tả việc cần làm để Clau
 
 ## Lưu ý
 
+- **Quy tắc cho coding agent:** mọi agent (Claude Code, Codex, Cursor, Copilot, …) làm theo [AGENTS.md](AGENTS.md). Claude Code đọc file này qua [CLAUDE.md](CLAUDE.md). Mỗi phiên làm việc ghi nhật ký vào [ai/game/progress.md](ai/game/progress.md).
 - **Chỉ thêm hoặc bớt skill trong `.claude/skills/`.** Không sửa skill global trong `~/.claude`. Khi thay đổi skill, nhớ cập nhật `project_init.md` và bảng ở trên.
 - **Không commit thư mục build của UE5:** `Binaries/`, `Intermediate/`, `Saved/`, `DerivedDataCache/`. Cũng không commit `.codegraph/`.
 - **Thiếu skill `game-development-workflow` hoặc `ue5-project-architecture`?** Xin file zip từ lead, đặt vào thư mục gốc của project, rồi chạy lại `execute project_init.md`.

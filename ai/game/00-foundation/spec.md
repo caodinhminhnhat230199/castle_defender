@@ -72,7 +72,7 @@ None. Everything else depends on this.
 - AC-FND-06: `UGameTuningSettings` appears in Project Settings; Primary Asset Types are registered; a Data Asset with a missing required field fails `IsDataValid`.
 - AC-FND-07: `game.debug.*` CVars toggle debug draw; cheat `SpawnTestDummy` works in PIE.
 - AC-FND-08: One Automation Spec and one Functional Test pass from the command line runner.
-- AC-FND-09: Packaged Development build launches the sandbox map on the reference PC; `stat unit` and an Insights trace capture work.
+- AC-FND-09: Packaged Development build launches `L_Boot` on the reference PC; `stat unit`, a `game.debug.*` CVar and an Insights trace capture work.
 
 ## 12. Open Questions / Assumptions
 - Q-15: project name, module name, UE version, reference PC spec.

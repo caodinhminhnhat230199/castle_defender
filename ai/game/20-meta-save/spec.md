@@ -134,8 +134,8 @@ Run resolves (win / lose / abandon)
 | Build menu / placement (filter tower blueprints) | DEF | T-DEF-07 |
 | Squad roster at run start (filter squad types) | SQD | T-SQD-01 |
 | Siege Site reward table, campaign rules | WLD | T-WLD-02 |
-| Conversion recipe filter | CNV | T-CNV-02 |
-| Tutorial completion flag write | ONB | T-ONB-08 |
+| Conversion recipe filter | CNV | T-CNV-04 |
+| Tutorial completion flag write | ONB | T-ONB-09 |
 | Feedback rows | UXF | T-UXF-01 |
 
 ## 10. Edge Cases

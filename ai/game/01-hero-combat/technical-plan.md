@@ -67,7 +67,7 @@ No GAS (D-04). No Tick except movement, camera, an open hit window, active lock-
 | HP, poise, states | `UHealthComponent`, `UCombatStateComponent` (FND/SYN) | Yes, transient |
 | Feedback rows | `DT_Feedback` (UXF) | Never |
 
-`UHeroClassDefinition` layout (structs proposed): `FHeroMovementData`, `FHeroCameraData`, `FStaminaConfig`, `TArray<FHeroAttackData> LightChain` (3 entries), `FHeroAttackData Heavy`, `FHeroDodgeData`, `FHeroBlockData`, `FHeroParryData`, `FHeroHitReactData`, `FHeroLockOnData`, `float InputBufferTime`, `float MaxHealth`, `FCombatStateConfig CombatState` (SYN struct; hero poise off), `FHeroInteractData` (P2). `FHeroAttackData` = montage, damage, poise damage, stamina cost, trace radius, `AppliedStates` (tag container), `StateDuration`, `StateDamageMultipliers` (`TMap<FGameplayTag, float>`, added by T-SYN-07).
+`UHeroClassDefinition` layout (structs proposed): `FHeroMovementData`, `FHeroCameraData`, `FStaminaConfig`, `TArray<FHeroAttackData> LightChain` (3 entries), `FHeroAttackData Heavy`, `FHeroDodgeData`, `FHeroBlockData`, `FHeroParryData`, `FHeroHitReactData`, `FHeroLockOnData`, `float InputBufferTime`, `float MaxHealth`, `FCombatStateConfig CombatState` (SYN struct; hero poise off), `FHeroInteractData` (P2). `FHeroAttackData` = montage, damage, poise damage, stamina cost, trace radius, `AppliedStates` (tag container), `StateDuration`, `StateDamageMultipliers` (`FStateDamageMultipliers`, added by T-SYN-07).
 
 `IsDataValid` checks: 3 light entries, every referenced montage set, every attack montage has exactly one hit window and at least one cancel window, the dodge montage has an invulnerable window, the parry montage has a parry window, Light stamina cost < Heavy stamina cost (R-CMB-10).
 
@@ -180,8 +180,9 @@ sequenceDiagram
 ### 4.2 Hit resolution (`DeliverHit`)
 
 ```text
-DeliverHit(Target, Hit) -> ECombatHitResult
+DeliverHit(Target, Hit, Multipliers = {}) -> ECombatHitResult   // Multipliers param added by T-SYN-07
   if Target invalid, dead, or not hostile to Hit.Instigator: return Ignored
+  Hit.Damage *= GetStateDamageMultiplier(Target, Multipliers)   // target states before this hit (SYN)
   for each component on Target implementing ICombatHitInterceptor:
       r = InterceptHit(Hit)                 // may change Hit.Damage / PoiseDamage
       if r == Evaded:  return Evaded        // i-frames, no feedback

@@ -37,6 +37,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 - [ ] Create from the Blank C++ template (not the Third Person template, to avoid template code; copy only needed input/anim assets later).
 - [ ] Set `EngineAssociation` in `.uproject` to the pinned version.
 - [ ] Default maps: an empty `L_Boot` in `Content/<Game>/Maps/`.
+- [ ] Fill `AGENTS.md`: §1 engine/module line and §7 "Build editor target" command (the exact command you ran). Decide where Win64 builds are made if development stays on macOS.
 
 **Expected Files / Assets** `<Game>.uproject`, `Source/<Game>/<Game>.Build.cs`, `Source/<Game>.Target.cs`, `Source/<Game>Editor.Target.cs`, `Config/DefaultEngine.ini`, `Config/DefaultGame.ini`
 
@@ -63,7 +64,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 - [ ] `git init`, `git lfs install`.
 - [ ] `.gitattributes`: LFS for `*.uasset *.umap *.fbx *.png *.tga *.exr *.wav *.ogg *.psd *.blend`.
 - [ ] `.gitignore`: `Binaries/ Intermediate/ Saved/ DerivedDataCache/ .vs/ .idea/ *.sln *.xcworkspace .codegraph/`.
-- [ ] Commit GDD, `ai/`, `.claude/` with the project.
+- [ ] Commit GDD, `ai/`, `.claude/`, `AGENTS.md`, `CLAUDE.md` with the project. Commit and branch format: `AGENTS.md` §8.
 - [ ] Create branch `main`; work on feature branches per task group.
 
 **Expected Files / Assets** `.gitignore`, `.gitattributes`
@@ -142,7 +143,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 
 **Implementation Notes**
 - [ ] `Combat/CombatTypes.h`: `ECombatLayer`, `FCombatHit` (fields from technical-plan §7, `USTRUCT(BlueprintType)`).
-- [ ] `Combat/HealthComponent`: Max/Current health, `ApplyHit`, armor hook (flat reduction value, read from owner's definition; Armor Broken effect filled by SYN), `OnDamaged`, `OnDeath`. Death fires once.
+- [ ] `Combat/HealthComponent`: Max/Current health, `BaseArmor` (fraction of damage blocked, clamped 0–0.9, set by the owner from its definition), `ApplyHit`, `OnDamaged`, `OnDeath`. Death fires once. The armor math and the Armor Broken multiplier are added by T-SYN-02.
 - [ ] `Combat/CombatStateComponent`: API only (`ApplyPoiseDamage`, `ApplyState`, `RemoveState`, `HasState`, delegates). Minimal implementation: store tags without timing. Timing/poise logic is `T-SYN-01`.
 - [ ] Team: implement `IGenericTeamAgentInterface` on a small base used by characters (or per class later); team IDs constants `Team_Player = 0`, `Team_Enemy = 1` in `CombatTypes.h`.
 - [ ] Helper `static bool AreHostile(const AActor*, const AActor*)`.
@@ -164,22 +165,23 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 
 **Objective** Device-agnostic input with one mapping context per mode.
 
-**Related Requirements** R-FND-06, AC-FND-05, D-12
+**Related Requirements** R-FND-06, AC-FND-05, D-12, R-CMB-36
 
 **Dependencies** T-FND-03
 
 **Implementation Notes**
 - [ ] Input Actions (P0 set): `IA_Move, IA_Look, IA_Sprint, IA_LightAttack, IA_HeavyAttack, IA_Dodge, IA_Block, IA_LockOn, IA_Interact`. Later sets are created by owning features (`IA_CommandWheel`, `IA_TacticalFocus`, build actions).
 - [ ] Mapping contexts: `IMC_Combat` (KBM), empty `IMC_CommandWheel`, `IMC_TacticalFocus`, `IMC_CommanderSpirit`, `IMC_Build` with priorities documented.
-- [ ] `AHeroPlayerController`: `SetInputMode(EInputMode)` that swaps contexts via `UEnhancedInputLocalPlayerSubsystem`; logs active mode.
-- [ ] Parry has no separate action: GDD treats Block/Parry as one verb pair; CMB decides the parry input (timed block press) in `T-CMB-09`.
+- [ ] `AHeroPlayerController` is the **single owner of player mode** (D-19): `PushMode(EPlayerMode, FName Reason)` / `PopMode(Reason)` on a stack (`Combat, Wheel, Build, Focus, Spirit, Modal`). The top mode decides the active mapping contexts (via `UEnhancedInputLocalPlayerSubsystem`) and the UI input mode; every change broadcasts `OnPlayerModeChanged(Old, New)` and is logged. Features push/pop; they never set mapping contexts or UI input mode directly, and HUD layers / tactical overlays only listen to this event.
+- [ ] Parry and lock-on target switching are CMB-owned actions (`IA_Parry`, `IA_LockOnSwitch`); whether Parry is a separate key or a timed block press is NEW-CMB-01, decided by CMB before P0. Reserve a key for it either way.
+- [ ] Write the default KBM key map in `00-foundation/input-keymap.md` and **reserve** keys for Command Wheel, squad selection, Tactical Focus and build mode now, so combat bindings never collide with them (GDD §29.2, R-CMB-36 / AC-CMB-14). Owners fill the reserved actions later.
 
-**Expected Files / Assets** `Source/<Game>/Player/HeroPlayerController.h/.cpp`, `Content/<Game>/Core/Input/IA_*`, `IMC_*`
+**Expected Files / Assets** `Source/<Game>/Player/HeroPlayerController.h/.cpp`, `Content/<Game>/Core/Input/IA_*`, `IMC_*`, `ai/game/00-foundation/input-keymap.md`
 
-**Test Case** PIE: debug key toggles `Combat` ↔ `Build` → log shows switch; `IA_LightAttack` only fires in Combat.
+**Test Case** PIE: debug key pushes `Build` → log shows switch, `IA_LightAttack` no longer fires; push `Modal` then pop it → back to `Build`, not `Combat`; pop `Build` → `Combat`. Automation Spec on the stack: pop of a reason not on top removes only that entry and the top mode is unchanged.
 
 **Acceptance Criteria**
-- [ ] Context switching works and is logged.
+- [ ] Mode stack works (push/pop, out-of-order pop), every change is logged and broadcast.
 - [ ] No input bound directly to keys in C++ (all via actions).
 
 **Verification** PIE manual check.
@@ -197,7 +199,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 
 **Implementation Notes**
 - [ ] `Core/GameTuningSettings` (`UDeveloperSettings`, `Config=Game, DefaultConfig`): empty categories `Combat`, `Army`, `Focus`, `Respawn`, `Debug`. Features add properties.
-- [ ] Base class `UGameDefinition : UPrimaryDataAsset` overriding `GetPrimaryAssetId()` with a per-type `FPrimaryAssetType`.
+- [ ] Base class `UGameDefinition : UPrimaryDataAsset` overriding `GetPrimaryAssetId()`. **Every** definition class derives from it. The Primary Asset Type name is the class name without the `U` prefix (e.g. `HeroClassDefinition`, `StructureDefinition`); the canonical list lives in technical-plan §9 and is frozen before VS save data exists.
 - [ ] Register Primary Asset Types for the definitions in technical-plan §9 in `DefaultGame.ini` (Asset Manager settings) as each type lands; register `UGameDefinition` scan paths now.
 - [ ] `IsDataValid` example on `UGameDefinition` (e.g., DisplayName required).
 
@@ -224,12 +226,12 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 
 **Implementation Notes**
 - [ ] Record reference PC (CPU, GPU, RAM, resolution, target frame rate as a working number, marked [TUNABLE]) in `00-foundation/technical-plan.md` §15.
-- [ ] Package Win64 Development build of `L_Boot`.
+- [ ] Package Win64 Development build of `L_Boot` (needs a Windows machine; UE does not build Win64 on macOS — verify for the pinned version). Fill `AGENTS.md` §7 "Package a Development build".
 - [ ] Write `ai/game/00-foundation/profiling-checklist.md`: how to launch with `-trace=cpu,gpu,frame,memory`, open Unreal Insights, which `stat` commands to capture, where to store traces (outside git).
 
 **Expected Files / Assets** packaged build (not committed), `profiling-checklist.md`
 
-**Test Case** Launch packaged build → `stat unit` visible → capture 30 s trace → open in Insights.
+**Test Case** Launch packaged build → `stat unit` visible → `game.debug.Combat 1` works in the Development build → capture 30 s trace → open in Insights.
 
 **Acceptance Criteria**
 - [ ] Packaged build runs on the reference PC.
@@ -279,6 +281,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 - [ ] Enable Functional Testing Editor plugin; create `Content/<Game>/Maps/Test/FT_Smoke` with one `AFunctionalTest` that spawns a dummy, damages it and asserts death.
 - [ ] Script `Tools/run_tests.sh` / `.bat` invoking `UnrealEditor-Cmd <Game>.uproject -ExecCmds="Automation RunTests <Game>.;Quit" -unattended -nullrhi -log` (verify flags for the pinned UE version; Functional Tests may need RHI).
 - [ ] Document test naming: `<Game>.<Feature>.<Case>`; Functional Test maps `FT_<Feature>_<Case>`.
+- [ ] Fill `AGENTS.md` §7 "Run automation tests" with the script command.
 
 **Expected Files / Assets** `Source/<Game>/Tests/*.spec.cpp`, `Content/<Game>/Maps/Test/FT_Smoke.umap`, `Tools/run_tests.*`
 
@@ -310,6 +313,7 @@ flowchart LR
 - [ ] Test script passes.
 - [ ] Packaged Development build launches.
 - [ ] No gameplay logic added in Foundation tasks.
+- [ ] State ownership in code matches the D-07 table (R-FND-05); review at every gate.
 
 ## 6. Final Definition of Done
 All AC-FND-01…09 pass; master plan §2 updated with project name, UE version and reference PC.
