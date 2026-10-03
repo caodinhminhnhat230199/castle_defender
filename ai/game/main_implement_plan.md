@@ -448,6 +448,7 @@ Agreements between features that one feature defines and another consumes. When 
 
 | Contract | Provider (owner task) | Consumers |
 |---|---|---|
+| `AHeroPlayerController::PushMode(EPlayerMode, Reason)` / `PopMode(Reason)`, `OnPlayerModeChanged(Old, New)`; per-mode contexts in `BP_HeroPlayerController.ModeInput`; key map `00-foundation/input-keymap.md` (D-19) | T-FND-06 | T-SQD (Wheel), T-DEF-07 (Build), T-TFM-01 (Focus), T-CSM (Spirit), UXF/PRK modals, HUD listeners |
 | `UCombatLibrary::DeliverHit` is the only way to apply a hit | T-CMB-04 | T-ENM-03, T-SQD-07/10, T-DEF-09, BOS attacks, T-SYN-07 (multipliers) |
 | `UMeleeTraceComponent`, `ICombatHitInterceptor` | T-CMB-04 | T-ENM-03, soldier melee (T-SQD-10), boss |
 | `ACombatProjectile` base | T-SQD-10 | T-DEF-09 tower projectiles; pierce extension for T-PRK-11 / T-CNV-* |
