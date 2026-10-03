@@ -15,18 +15,18 @@ class CASTLEDEFENDER_API UGameCheatManager : public UCheatManager
 	GENERATED_BODY()
 
 public:
-	/** Spawns an ATestDummy in front of the view. */
+	/** Spawns an ATestDummy in front of the view (default 400 cm). */
 	UFUNCTION(Exec)
-	void SpawnTestDummy(float Distance = 400.f);
+	void SpawnTestDummy(float Distance);
 
 	/** Global time dilation for debugging. In gameplay only Tactical Focus changes it (D-20). */
 	UFUNCTION(Exec)
 	void SetTimeDilation(float Value);
 
-	/** Pushes a player mode by name (Combat, Wheel, Build, Focus, Spirit, Modal). */
+	/** Pushes a player mode by name (Combat, Wheel, Build, Focus, Spirit, Modal). Reason defaults to Cheat. */
 	UFUNCTION(Exec)
-	void DebugPushMode(const FString& Mode, FName Reason = TEXT("Cheat"));
+	void DebugPushMode(const FString& Mode, FName Reason);
 
 	UFUNCTION(Exec)
-	void DebugPopMode(FName Reason = TEXT("Cheat"));
+	void DebugPopMode(FName Reason);
 };

@@ -8,6 +8,11 @@
 void UGameCheatManager::SpawnTestDummy(float Distance)
 {
 #if UE_WITH_CHEAT_MANAGER
+	// Exec parsing passes 0 / None for missing arguments, so defaults live here.
+	if (Distance <= 0.f)
+	{
+		Distance = 400.f;
+	}
 	APlayerController* PC = GetOuterAPlayerController();
 	FVector ViewLocation;
 	FRotator ViewRotation;
@@ -38,7 +43,7 @@ void UGameCheatManager::DebugPushMode(const FString& Mode, FName Reason)
 		UE_LOG(LogGamePlayer, Warning, TEXT("DebugPushMode: needs AHeroPlayerController and a valid mode, got '%s'"), *Mode);
 		return;
 	}
-	PC->PushMode(static_cast<EPlayerMode>(Value), Reason);
+	PC->PushMode(static_cast<EPlayerMode>(Value), Reason.IsNone() ? FName(TEXT("Cheat")) : Reason);
 #endif
 }
 
@@ -47,7 +52,7 @@ void UGameCheatManager::DebugPopMode(FName Reason)
 #if UE_WITH_CHEAT_MANAGER
 	if (AHeroPlayerController* PC = Cast<AHeroPlayerController>(GetOuterAPlayerController()))
 	{
-		PC->PopMode(Reason);
+		PC->PopMode(Reason.IsNone() ? FName(TEXT("Cheat")) : Reason);
 	}
 #endif
 }
