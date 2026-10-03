@@ -6,7 +6,8 @@ Source: GDD v2 header (platform, engine, implementation direction), §29, §31, 
 
 ## 1. Project Context
 
-- Engine: UE 5.x, latest stable at creation, pinned in `T-FND-01` (Q-15).
+- Engine: **UE 5.8** (5.8.3 at creation), pinned in `T-FND-01` (Q-15). Project and runtime module: **`CastleDefender`** (written `<Game>` in docs).
+- Toolchain on the dev PC: Visual Studio 2026 Community, MSVC 14.51 (UBT warns it is newer than the preferred 14.50; builds succeed).
 - Platform: Windows PC. Keyboard + mouse first; gamepad mappable later (GDD §29.1).
 - Game type: third-person action + squad command + tower defense roguelite.
 - Expected scale (prototype): 1 hero, ≤3 squads × ~8–12 soldiers, enemy count capped by the P2 benchmark (Q-04), ≤ ~15 structures per Siege Site.

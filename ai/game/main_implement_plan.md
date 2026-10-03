@@ -63,10 +63,10 @@ Features `20-*` to `24-*` are provisional. Re-validate their specs and re-plan t
 
 | Item | Status | Note |
 |---|---|---|
-| Unreal project exists | **No** | Repo holds the GDD, skills and README only. No `.uproject`, no `Source/`. All file/class paths in these docs are **proposals**. |
-| Engine version | Assumption | Latest stable UE 5.x at project creation. Pin it in task `T-FND-01`. |
-| Project / module name | Open | Docs write `<Game>` for the runtime module. Pick the name in `T-FND-01`. |
-| Version control | Not set up | Folder is not a git repo yet. `T-FND-02` sets up Git + LFS. |
+| Unreal project exists | Yes (2026-10-04) | `CastleDefender.uproject`, created in `T-FND-01`. Class/asset paths in feature docs stay proposals until their task lands. |
+| Engine version | Pinned | UE 5.8 (5.8.3 at creation), `EngineAssociation` "5.8" (`T-FND-01`, Q-15). |
+| Project / module name | Decided | `CastleDefender`. Docs write `<Game>` for it (Q-15, 2026-10-04). |
+| Version control | Set up | Git + Git LFS (`T-FND-02`). |
 | Target hardware | Open | "PC, smooth and input-responsive" (GDD §31.1). Pick a reference PC spec in `T-FND-08` before any benchmark. |
 | Art direction | Open | GDD §37 lists toon vs stylized realism as open. Prototypes use placeholder art only. |
 
@@ -560,7 +560,7 @@ If questions 2, 3 and 7 are all close to "no", it stays out of scope. Classify e
 | Q-12 | How many classes/towers/squads for 1.0? | After VS | Not planned |
 | Q-13 | Art direction: toon vs stylized realism? | Before VS art | Placeholder art only |
 | Q-14 | Should Attack/Focus Target apply Marked in prototype? | P1 | A-06 (no) |
-| Q-15 | Project name, module name, pinned UE 5.x version, reference PC spec? | Phase F | Choose in `T-FND-01` / `T-FND-08` |
+| Q-15 | Project name, module name, pinned UE 5.x version, reference PC spec? | Phase F | **Answered 2026-10-04:** `CastleDefender`, UE 5.8; reference PC in foundation technical-plan §15 |
 | Q-16 | What happens when the player leaves the Siege Site boundary mid-run (§34.4)? | P3 | Soft boundary: warning + push-back volume, no run fail |
 | Q-17 | Which waves get the "mid-run pressure/event" and what is it in the prototype? | P3 | One Director modifier event before wave 4 (split-lane pressure) |
 

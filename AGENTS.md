@@ -20,9 +20,9 @@ Action Strategy Roguelite: a third-person Hero fights alongside squads while tow
 
 | Item | Value |
 |---|---|
-| Current phase | **F (Foundation), not started. No Unreal project exists yet.** Update this line when a gate passes. |
-| Engine / module | UE 5.x and the runtime module name `<Game>` are chosen in T-FND-01 (open question Q-15) |
-| Dev OS | macOS so far. Packaging and profiling Win64 builds needs a Windows machine; confirm in T-FND-01 / T-FND-08. |
+| Current phase | **F (Foundation), in progress.** Update this line when a gate passes. |
+| Engine / module | UE 5.8, runtime module `CastleDefender` (docs write `<Game>`). Project file `CastleDefender.uproject`. |
+| Dev OS | Windows 11 (Visual Studio 2026, MSVC 14.51). Win64 builds and profiling run on the dev PC. |
 | Language | Code, comments, docs and commit messages in English. Reply to the user in the language they write (often Vietnamese). |
 
 ## 2. Where Things Are
@@ -103,11 +103,11 @@ If a task cannot be finished in one session, leave it `In Progress` and write th
 
 ## 7. Commands
 
-These don't exist until the Unreal project does. **Do not guess them.** The tasks below fill them in.
+Rows still marked TBD are filled by their task. **Do not guess them.**
 
 | Action | Command |
 |---|---|
-| Build editor target | TBD (T-FND-01) |
+| Build editor target | `powershell -File Tools/build.ps1` (game target: `-Target CastleDefender`). Finds the engine from `EngineAssociation`; override with `UE_ROOT`. |
 | Run automation tests | TBD (T-FND-10, `Tools/run_tests.*`) |
 | Package a Development build | TBD (T-FND-08) |
 
