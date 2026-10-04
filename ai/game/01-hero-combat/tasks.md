@@ -17,7 +17,7 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
-| T-CMB-01 | `AHeroCharacter` + `UHeroClassDefinition` + locomotion/sprint + third-person camera | GAMEPLAY | P0A | Must | T-FND-05, T-FND-06, T-FND-07, T-CMB-13 | Todo |
+| T-CMB-01 | `AHeroCharacter` + `UHeroClassDefinition` + locomotion/sprint + third-person camera | GAMEPLAY | P0A | Must | T-FND-05, T-FND-06, T-FND-07, T-CMB-13 | Done |
 | T-CMB-02 | `UHeroCombatComponent` action state machine, commitment and cancel windows via anim notify states | GAMEPLAY | P0A | Must | T-CMB-01 | Todo |
 | T-CMB-03 | `UStaminaComponent` + stamina rules | GAMEPLAY | P0A | Must | T-CMB-01, T-FND-10 | Todo |
 | T-CMB-04 | Melee hit detection → `FCombatHit` dispatch (`DeliverHit`, interceptor, one hit per target per swing) | GAMEPLAY | P0A | Must | T-CMB-02, T-FND-05, T-UXF-01 | Todo |
@@ -56,26 +56,26 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-FND-05, T-FND-06, T-FND-07, T-CMB-13
 
 **Implementation Notes**
-- [ ] Create `AHeroCharacter : ACharacter` with `USpringArmComponent` + `UCameraComponent`, `UHealthComponent`, `UCombatStateComponent`; team = Player (FND team interface).
-- [ ] Create `UHeroClassDefinition : UGameDefinition` (foundation §9; inherits `DisplayName`, required by validation) with only what this task uses: `MaxHealth`, `FHeroMovementData` (jog, sprint, turn rate), `FHeroCameraData` (arm length, lag). Later tasks add their own structs.
-- [ ] Register Primary Asset Type `HeroClassDefinition` in `DefaultGame.ini` (replace the commented example in `[/Script/Engine.AssetManagerSettings]`); `IsDataValid` calls `Super` and rejects `MaxHealth <= 0` and sprint ≤ jog.
-- [ ] Bind `IA_Move`, `IA_Look`, `IA_Sprint` (hold) in `SetupPlayerInputComponent`; movement camera-relative, orient rotation to movement.
-- [ ] Sprint sets `MaxWalkSpeed` to sprint speed; release restores jog. Public `StopSprint()` for the combat component.
-- [ ] `ApplyTuning()` on BeginPlay copies init-time values (speeds, max HP, camera); cheat `ReloadHeroTuning` calls it again.
-- [ ] `BP_Hero_Warlord`: mannequin, sword + shield attached, weapon mesh tagged `Weapon` with sockets `Trace_Start` / `Trace_End`; `ABP_Warlord` with free locomotion blendspace + sprint.
-- [ ] Author `DA_HeroClass_Warlord` with spec §4.4 starting values; set `BP_SandboxGameMode` default pawn to `BP_Hero_Warlord`.
+- [x] Create `AHeroCharacter : ACharacter` with `USpringArmComponent` + `UCameraComponent`, `UHealthComponent`, `UCombatStateComponent`; team = Player (FND team interface).
+- [x] Create `UHeroClassDefinition : UGameDefinition` (foundation §9; inherits `DisplayName`, required by validation) with only what this task uses: `MaxHealth`, `FHeroMovementData` (jog, sprint, turn rate), `FHeroCameraData` (arm length, lag). Later tasks add their own structs.
+- [x] Register Primary Asset Type `HeroClassDefinition` in `DefaultGame.ini` (replace the commented example in `[/Script/Engine.AssetManagerSettings]`); `IsDataValid` calls `Super` and rejects `MaxHealth <= 0` and sprint ≤ jog.
+- [x] Bind `IA_Move`, `IA_Look`, `IA_Sprint` (hold) in `SetupPlayerInputComponent`; movement camera-relative, orient rotation to movement.
+- [x] Sprint sets `MaxWalkSpeed` to sprint speed; release restores jog. Public `StopSprint()` for the combat component.
+- [x] `ApplyTuning()` on BeginPlay copies init-time values (speeds, max HP, camera); cheat `ReloadHeroTuning` calls it again.
+- [x] `BP_Hero_Warlord`: mannequin, sword + shield attached, weapon mesh tagged `Weapon` with sockets `Trace_Start` / `Trace_End`; `ABP_Warlord` with free locomotion blendspace + sprint.
+- [x] Author `DA_HeroClass_Warlord` with spec §4.4 starting values; set `BP_SandboxGameMode` default pawn to `BP_Hero_Warlord`.
 
 **Expected Files / Assets** `Source/<Game>/Hero/HeroCharacter.h/.cpp`, `HeroClassDefinition.h/.cpp`, `HeroCombatTypes.h`; `Content/<Game>/Hero/BP_Hero_Warlord`, `ABP_Warlord`, `BS_Warlord_Free`, `DA_HeroClass_Warlord`; `Content/<Game>/Core/Input/IA_Move`, `IA_Look`, `IA_Sprint`
 
 **Test Case** PIE in `L_CombatSandbox` → WASD moves relative to camera; hold Shift → speed readout 700; set `SprintSpeed` 900 in the DA during PIE, run `ReloadHeroTuning` → readout 900.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-01 passes.
-- [ ] "Validate Data" on a copy of the DA with `MaxHealth = 0` reports an error.
-- [ ] Asset Manager lists the `HeroClassDefinition` type with `DA_HeroClass_Warlord` (first gameplay definition type; same check as the `TestGameDefinition` spec in Foundation).
-- [ ] No new log warnings in PIE.
+- [x] AC-CMB-01 passes.
+- [x] "Validate Data" on a copy of the DA with `MaxHealth = 0` reports an error.
+- [x] Asset Manager lists the `HeroClassDefinition` type with `DA_HeroClass_Warlord` (first gameplay definition type; same check as the `TestGameDefinition` spec in Foundation).
+- [x] No new log warnings in PIE.
 
-**Verification** PIE manual steps above; Data Validation on `DA_HeroClass_Warlord`.
+**Verification** Passed: 7 Automation Specs in `CastleDefender.Combat.HeroClassDefinition.*` (total 22 passed); automated PIE verified in `L_CombatSandbox` (`Saved/combat-hero-pie.json`), dynamic tuning reload tested via `ReloadHeroTuning` (700 -> 900 -> 700); Win64 Development packaged and verified headless.
 
 ---
 

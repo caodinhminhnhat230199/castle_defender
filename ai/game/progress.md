@@ -16,6 +16,27 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-04: Antigravity: T-CMB-01 Warlord character locomotion sprint camera implemented
+- **Tasks:** T-CMB-01 Todo → Done. Unblocks T-CMB-02 and T-CMB-03.
+- **Changed:**
+  - `Source/CastleDefender/Hero/HeroCombatTypes.h`: `FHeroMovementData` (Jog 450, Sprint 700, Yaw 720) and `FHeroCameraData` (ArmLength 400, Lag true, LagSpeed 10).
+  - `Source/CastleDefender/Hero/HeroClassDefinition.h/.cpp`: `UHeroClassDefinition : UGameDefinition` with MaxHealth (200), Movement, Camera; editor `IsDataValid` validating positive MaxHealth, JogSpeed > 0, and SprintSpeed > JogSpeed.
+  - `Source/CastleDefender/Hero/HeroCharacter.h/.cpp`: `AHeroCharacter : ACharacter`, `IGenericTeamAgentInterface` (Player team 0), `CameraBoom`, `FollowCamera`, `Health` (`UHealthComponent`), `CombatState` (`UCombatStateComponent`), camera-relative locomotion (`IA_Move`, `IA_Look`), hold sprint (`IA_Sprint`), `ApplyTuning()`, `StartSprint()`, `StopSprint()`, `OnHeroDeath`.
+  - `Source/CastleDefender/Core/GameCheatManager.h/.cpp`: added `ReloadHeroTuning` exec cheat to re-apply tunables from definition asset to controlled hero at runtime.
+  - `Source/CastleDefender/Tests/HeroClassDefinition.spec.cpp`: 7 Automation Specs covering data validation (defaults, MaxHealth <= 0, Sprint <= Jog, Jog <= 0, empty DisplayName) and AssetManager discovery of `DA_HeroClass_Warlord`.
+  - `Config/DefaultGame.ini`: registered Primary Asset Type `HeroClassDefinition` and added `L_CombatSandbox` to `MapsToCook`.
+  - Content assets generated via `Tools/create_hero_assets.bat`: `Content/CastleDefender/Hero/DA_HeroClass_Warlord.uasset`, `Content/CastleDefender/Hero/BP_Hero_Warlord.uasset`, configured `BP_SandboxGameMode` default pawn to `BP_Hero_Warlord`.
+  - `ai/game/01-hero-combat/tasks.md`: marked T-CMB-01 Done.
+- **Verified:**
+  - Automated tests: `Tools/run_tests.bat` passes all 22 tests (17 specs including all 7 `CastleDefender.Combat.HeroClassDefinition.*` tests + FT_Smoke), 0 failed, editor exit 0.
+  - Scripted PIE: `Saved/run_hero_pie.ps1` runs PIE on `L_CombatSandbox`, verifies `BP_HeroPlayerController_C` possessing `BP_Hero_Warlord_C` at PlayerStart, validates camera boom (400 arm length, lag enabled) and health (200 HP), verifies initial jog speed 450, sprint speed 700 upon `StartSprint()`, return to 450 upon `StopSprint()`, dynamic tuning modification to 900 via `ReloadHeroTuning` cheat, restoration to 700/450 (`Saved/combat-hero-pie.json`).
+  - Packaging: `Tools/build.bat` (Editor & Game targets) and `Tools/package.bat` succeed with 0 errors.
+  - Packaged headless smoke: `Saved/Packaged/Windows/CastleDefender.exe` runs `L_CombatSandbox` with `BP_Hero_Warlord` default pawn for 5 seconds without errors (`Saved/packaged-hero-smoke.log`).
+- **Manual steps for the user:**
+  - In editor, attach skeletal mesh/mannequin with weapon/shield and animation blueprint `ABP_Warlord` to `BP_Hero_Warlord` when production/mannequin animations land.
+- **Open questions / blockers:** none.
+- **Next:** T-CMB-02 (`UHeroCombatComponent` action state machine, commitment and cancel windows) or T-CMB-03 (`UStaminaComponent` + stamina rules).
+
 ### 2026-10-04: Antigravity: T-CMB-13 Combat Sandbox map and game mode implemented
 - **Tasks:** T-CMB-13 Todo → Done. Unblocks T-CMB-01.
 - **Changed:** `Tools/create_combat_sandbox.py`, `Tools/create_combat_sandbox.ps1`, `Tools/create_combat_sandbox.bat`, `Content/CastleDefender/Maps/L_CombatSandbox.umap`, `Content/CastleDefender/Core/BP_SandboxGameMode.uasset`, `Config/DefaultEngine.ini` (GameDefaultMap and EditorStartupMap set to `L_CombatSandbox`), `Source/CastleDefender/Tests/GameDefinition.spec.cpp` (wrapped `GetSectionText` in `#if WITH_EDITOR` to fix non-editor Game build target), `ai/game/01-hero-combat/tasks.md`, this log.

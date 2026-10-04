@@ -29,4 +29,8 @@ public:
 
 	UFUNCTION(Exec)
 	void DebugPopMode(FName Reason);
+
+	/** Reloads hero tuning from its class definition asset. */
+	UFUNCTION(Exec)
+	void ReloadHeroTuning();
 };

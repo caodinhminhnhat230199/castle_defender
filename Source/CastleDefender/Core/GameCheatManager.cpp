@@ -3,6 +3,7 @@
 #include "Combat/TestDummy.h"
 #include "Core/GameLog.h"
 #include "Engine/World.h"
+#include "Hero/HeroCharacter.h"
 #include "Player/HeroPlayerController.h"
 
 void UGameCheatManager::SpawnTestDummy(float Distance)
@@ -56,3 +57,25 @@ void UGameCheatManager::DebugPopMode(FName Reason)
 	}
 #endif
 }
+
+void UGameCheatManager::ReloadHeroTuning()
+{
+#if UE_WITH_CHEAT_MANAGER
+	APlayerController* PC = GetOuterAPlayerController();
+	if (!PC)
+	{
+		return;
+	}
+
+	if (AHeroCharacter* Hero = Cast<AHeroCharacter>(PC->GetPawn()))
+	{
+		Hero->ApplyTuning();
+		UE_LOG(LogGamePlayer, Log, TEXT("ReloadHeroTuning: applied tuning to hero '%s'"), *Hero->GetName());
+	}
+	else
+	{
+		UE_LOG(LogGamePlayer, Warning, TEXT("ReloadHeroTuning: controlled pawn is not an AHeroCharacter"));
+	}
+#endif
+}
+
