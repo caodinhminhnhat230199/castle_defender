@@ -18,7 +18,7 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
 | T-CMB-01 | `AHeroCharacter` + `UHeroClassDefinition` + locomotion/sprint + third-person camera | GAMEPLAY | P0A | Must | T-FND-05, T-FND-06, T-FND-07, T-CMB-13 | Done |
-| T-CMB-02 | `UHeroCombatComponent` action state machine, commitment and cancel windows via anim notify states | GAMEPLAY | P0A | Must | T-CMB-01 | Todo |
+| T-CMB-02 | `UHeroCombatComponent` action state machine, commitment and cancel windows via anim notify states | GAMEPLAY | P0A | Must | T-CMB-01 | Done |
 | T-CMB-03 | `UStaminaComponent` + stamina rules | GAMEPLAY | P0A | Must | T-CMB-01, T-FND-10 | Todo |
 | T-CMB-04 | Melee hit detection → `FCombatHit` dispatch (`DeliverHit`, interceptor, one hit per target per swing) | GAMEPLAY | P0A | Must | T-CMB-02, T-FND-05, T-UXF-01 | Todo |
 | T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Todo |
@@ -90,27 +90,27 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-01
 
 **Implementation Notes**
-- [ ] Enums `EHeroAction` (Light, Heavy, Dodge, BlockStart, BlockEnd, Parry, Interact) and `EHeroActionState` (Idle, LightAttack, HeavyAttack, Dodge, Block, Parry, HitReact, Dead); Staggered is a derived label from `UCombatStateComponent::HasState`, never an owned action enum/timer in `HeroCombatTypes.h`.
-- [ ] `RequestAction(EHeroAction)`, `GetActionState()`, `GetActionTag()` (maps to `State.Hero.*`), `OnActionStateChanged`.
-- [ ] Pure function `FHeroActionRules::CanStart(State, AllowedByOpenWindow, bStaminaOk, bSharedStaggered)` behind `CanStartAction()`; Automation Spec covers every state × action pair in the cancel table (technical-plan §5.1).
-- [ ] Add `FCombatActionTiming` derived from montage windows, plus notify authoring for Startup/Active/Recovery, Chain, RotationAssist and optional InterruptResistance. Phase boundaries are authored once; the hit window supplies Active/Hit. Validate required phases/windows, ordering, bounds, duplicates and incompatible overlaps per action; optional windows may overlap when allowed. No duplicate timing constants.
-- [ ] Notify states `UAnimNotifyState_CancelWindow` (`TArray<EHeroAction> AllowedActions`), `_Invulnerable`, `_ParryWindow`: Begin/End call the owner's combat component (resolve the owner per callback; per-action window state belongs to the component, never a shared notify UObject).
-- [ ] `PlayActionMontage(Montage, State)` binds montage end/blend-out; on end or interrupt it force-closes open windows and returns to Idle if the montage still owns the state.
-- [ ] Input buffer: keep the latest rejected press with timestamp in the hero's dilated action clock (D-20); consume it when a window allows it or on Idle, if age ≤ `InputBufferTime` (new `FHeroInputData` in the DA). Clear on shared Staggered/Dead. Query shared Staggered on every start/interrupt decision, and bind its add/remove events to close windows/clear buffer; removal cannot revive a Dead hero.
-- [ ] Starting any action calls `StopSprint()`.
-- [ ] Refuse invalid actions before stamina spend or state changes; log the action/montage/window once using `LogGameCombat`. T-CMB-21 expands the debugger. Cheat `ReportHeroWindows` prints every DA montage's window start/end times (used by production-plan "notify windows match data" check).
-- [ ] For this task only, a temporary debug montage on Light proves the flow; T-CMB-05 replaces it.
+- [x] Enums `EHeroAction` (Light, Heavy, Dodge, BlockStart, BlockEnd, Parry, Interact) and `EHeroActionState` (Idle, LightAttack, HeavyAttack, Dodge, Block, Parry, HitReact, Dead); Staggered is a derived label from `UCombatStateComponent::HasState`, never an owned action enum/timer in `HeroCombatTypes.h`.
+- [x] `RequestAction(EHeroAction)`, `GetActionState()`, `GetActionTag()` (maps to `State.Hero.*`), `OnActionStateChanged`.
+- [x] Pure function `FHeroActionRules::CanStart(State, AllowedByOpenWindow, bStaminaOk, bSharedStaggered)` behind `CanStartAction()`; Automation Spec covers every state × action pair in the cancel table (technical-plan §5.1).
+- [x] Add `FCombatActionTiming` derived from montage windows, plus notify authoring for Startup/Active/Recovery, Chain, RotationAssist and optional InterruptResistance. Phase boundaries are authored once; the hit window supplies Active/Hit. Validate required phases/windows, ordering, bounds, duplicates and incompatible overlaps per action; optional windows may overlap when allowed. No duplicate timing constants.
+- [x] Notify states `UAnimNotifyState_CancelWindow` (`TArray<EHeroAction> AllowedActions`), `_Invulnerable`, `_ParryWindow`: Begin/End call the owner's combat component (resolve the owner per callback; per-action window state belongs to the component, never a shared notify UObject).
+- [x] `PlayActionMontage(Montage, State)` binds montage end/blend-out; on end or interrupt it force-closes open windows and returns to Idle if the montage still owns the state.
+- [x] Input buffer: keep the latest rejected press with timestamp in the hero's dilated action clock (D-20); consume it when a window allows it or on Idle, if age ≤ `InputBufferTime` (new `FHeroInputData` in the DA). Clear on shared Staggered/Dead. Query shared Staggered on every start/interrupt decision, and bind its add/remove events to close windows/clear buffer; removal cannot revive a Dead hero.
+- [x] Starting any action calls `StopSprint()`.
+- [x] Refuse invalid actions before stamina spend or state changes; log the action/montage/window once using `LogGameCombat`. T-CMB-21 expands the debugger. Cheat `ReportHeroWindows` prints every DA montage's window start/end times (used by production-plan "notify windows match data" check).
+- [x] For this task only, a temporary debug montage on Light proves the flow; T-CMB-05 replaces it.
 
 **Expected Files / Assets** `Source/<Game>/Hero/HeroCombatComponent.h/.cpp`, `HeroCombatTypes.h`; `Source/<Game>/Combat/CombatActionTiming.h/.cpp`, timing/chain/rotation-assist/interrupt-resistance notify types; `Source/<Game>/Combat/AnimNotifyState_CancelWindow.*`, `AnimNotifyState_Invulnerable.*`, `AnimNotifyState_ParryWindow.*`; `Source/<Game>/Tests/HeroActionRules.spec.cpp`
 
 **Test Case** Debug montage 1.0 s with cancel window 0.6–0.9 s allowing Light. Press Light at 0.45 s → buffered, runs at 0.6 s. Press at 0.30 s with buffer 0.2 s → dropped. `Montage_Stop` via cheat mid-montage → state Idle, no window left open.
 
 **Acceptance Criteria**
-- [ ] Normal montage end returns to Idle; interruption closes owned windows without overwriting a newer HitReact/Dead state or bypassing the shared Staggered gate.
-- [ ] `HeroActionRules` Spec passes.
-- [ ] Buffer behaves as in the test case, including actor hit stop (D-20).
-- [ ] AC-CMB-20 timing validation passes for available actions; Dodge/Parry coverage completes in T-CMB-07/09.
-- [ ] AC-CMB-22: shared Staggered rejects actions until the owning component removes it; test add/remove against the existing skeleton here, then timed expiry with T-SYN-01 in T-CMB-08/15. CMB has no independent expiry timer.
+- [x] Normal montage end returns to Idle; interruption closes owned windows without overwriting a newer HitReact/Dead state or bypassing the shared Staggered gate.
+- [x] `HeroActionRules` Spec passes.
+- [x] Buffer behaves as in the test case, including actor hit stop (D-20).
+- [x] AC-CMB-20 timing validation passes for available actions; Dodge/Parry coverage completes in T-CMB-07/09.
+- [x] AC-CMB-22: shared Staggered rejects actions until the owning component removes it; test add/remove against the existing skeleton here, then timed expiry with T-SYN-01 in T-CMB-08/15. CMB has no independent expiry timer.
 
 **Verification** Automation Spec `CastleDefender.Combat.Hero.ActionRules`; PIE with `game.debug.Combat 1`.
 

@@ -55,6 +55,10 @@ hero_char_class = unreal.load_class(None, "/Script/CastleDefender.HeroCharacter"
 ia_move = assets.load_asset(f"{INPUT_DIR}/IA_Move")
 ia_look = assets.load_asset(f"{INPUT_DIR}/IA_Look")
 ia_sprint = assets.load_asset(f"{INPUT_DIR}/IA_Sprint")
+ia_light = assets.load_asset(f"{INPUT_DIR}/IA_LightAttack")
+ia_heavy = assets.load_asset(f"{INPUT_DIR}/IA_HeavyAttack")
+ia_dodge = assets.load_asset(f"{INPUT_DIR}/IA_Dodge")
+ia_block = assets.load_asset(f"{INPUT_DIR}/IA_Block")
 
 if not assets.does_asset_exist(bp_path):
     bp_factory = unreal.BlueprintFactory()
@@ -68,6 +72,10 @@ hero_cdo.set_editor_property("hero_class_definition", da)
 hero_cdo.set_editor_property("move_action", ia_move)
 hero_cdo.set_editor_property("look_action", ia_look)
 hero_cdo.set_editor_property("sprint_action", ia_sprint)
+hero_cdo.set_editor_property("light_attack_action", ia_light)
+hero_cdo.set_editor_property("heavy_attack_action", ia_heavy)
+hero_cdo.set_editor_property("dodge_action", ia_dodge)
+hero_cdo.set_editor_property("block_action", ia_block)
 
 unreal.BlueprintEditorLibrary.compile_blueprint(hero_bp)
 assets.save_loaded_asset(hero_bp, only_if_is_dirty=False)

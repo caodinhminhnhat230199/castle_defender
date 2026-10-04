@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "Combat/HealthComponent.h"
 #include "Combat/CombatStateComponent.h"
+#include "Hero/HeroCombatComponent.h"
 #include "Core/GameLog.h"
 
 AHeroCharacter::AHeroCharacter()
@@ -34,6 +35,7 @@ AHeroCharacter::AHeroCharacter()
 
 	Health = CreateDefaultSubobject<UHealthComponent>(TEXT("Health"));
 	CombatState = CreateDefaultSubobject<UCombatStateComponent>(TEXT("CombatState"));
+	CombatComponent = CreateDefaultSubobject<UHeroCombatComponent>(TEXT("CombatComponent"));
 }
 
 void AHeroCharacter::BeginPlay()
@@ -67,6 +69,28 @@ void AHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			EnhancedInput->BindAction(SprintAction, ETriggerEvent::Started, this, &AHeroCharacter::OnSprintStarted);
 			EnhancedInput->BindAction(SprintAction, ETriggerEvent::Completed, this, &AHeroCharacter::OnSprintCompleted);
 			EnhancedInput->BindAction(SprintAction, ETriggerEvent::Canceled, this, &AHeroCharacter::OnSprintCompleted);
+		}
+		if (LightAttackAction)
+		{
+			EnhancedInput->BindAction(LightAttackAction, ETriggerEvent::Triggered, this, &AHeroCharacter::OnLightAttack);
+		}
+		if (HeavyAttackAction)
+		{
+			EnhancedInput->BindAction(HeavyAttackAction, ETriggerEvent::Triggered, this, &AHeroCharacter::OnHeavyAttack);
+		}
+		if (DodgeAction)
+		{
+			EnhancedInput->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &AHeroCharacter::OnDodge);
+		}
+		if (BlockAction)
+		{
+			EnhancedInput->BindAction(BlockAction, ETriggerEvent::Started, this, &AHeroCharacter::OnBlockStarted);
+			EnhancedInput->BindAction(BlockAction, ETriggerEvent::Completed, this, &AHeroCharacter::OnBlockCompleted);
+			EnhancedInput->BindAction(BlockAction, ETriggerEvent::Canceled, this, &AHeroCharacter::OnBlockCompleted);
+		}
+		if (ParryAction)
+		{
+			EnhancedInput->BindAction(ParryAction, ETriggerEvent::Triggered, this, &AHeroCharacter::OnParry);
 		}
 	}
 }
@@ -151,8 +175,57 @@ void AHeroCharacter::OnSprintCompleted(const FInputActionValue& Value)
 	StopSprint();
 }
 
+void AHeroCharacter::OnLightAttack(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->RequestAction(EHeroAction::Light);
+	}
+}
+
+void AHeroCharacter::OnHeavyAttack(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->RequestAction(EHeroAction::Heavy);
+	}
+}
+
+void AHeroCharacter::OnDodge(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->RequestAction(EHeroAction::Dodge);
+	}
+}
+
+void AHeroCharacter::OnBlockStarted(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->RequestAction(EHeroAction::BlockStart);
+	}
+}
+
+void AHeroCharacter::OnBlockCompleted(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->RequestAction(EHeroAction::BlockEnd);
+	}
+}
+
+void AHeroCharacter::OnParry(const FInputActionValue& Value)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->RequestAction(EHeroAction::Parry);
+	}
+}
+
 void AHeroCharacter::HandleDeath(const FCombatHit& KillingHit)
 {
 	StopSprint();
 	OnHeroDeath.Broadcast(KillingHit);
 }
+

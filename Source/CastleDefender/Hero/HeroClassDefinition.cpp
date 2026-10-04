@@ -12,6 +12,7 @@ UHeroClassDefinition::UHeroClassDefinition()
 	MaxHealth = 200.f;
 	Movement = FHeroMovementData();
 	Camera = FHeroCameraData();
+	Input = FHeroInputData();
 }
 
 #if WITH_EDITOR
@@ -40,6 +41,12 @@ EDataValidationResult UHeroClassDefinition::IsDataValid(FDataValidationContext& 
 	if (Movement.RotationRateYaw <= 0.f)
 	{
 		Context.AddError(LOCTEXT("InvalidRotationRate", "Movement.RotationRateYaw must be greater than 0."));
+		Result = EDataValidationResult::Invalid;
+	}
+
+	if (Input.InputBufferTime < 0.f)
+	{
+		Context.AddError(LOCTEXT("InvalidInputBufferTime", "Input.InputBufferTime must be non-negative."));
 		Result = EDataValidationResult::Invalid;
 	}
 

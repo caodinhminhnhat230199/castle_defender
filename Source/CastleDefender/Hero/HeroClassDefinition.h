@@ -29,4 +29,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera")
 	FHeroCameraData Camera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	FHeroInputData Input;
 };

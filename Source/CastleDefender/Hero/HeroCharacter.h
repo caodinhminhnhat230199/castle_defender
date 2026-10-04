@@ -12,6 +12,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UHealthComponent;
 class UCombatStateComponent;
+class UHeroCombatComponent;
 class UInputAction;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHeroDeathSignature, const FCombatHit&, KillingHit);
@@ -60,6 +61,9 @@ public:
 	UCombatStateComponent* GetCombatStateComponent() const { return CombatState; }
 
 	UFUNCTION(BlueprintPure, Category = "Hero")
+	UHeroCombatComponent* GetCombatComponent() const { return CombatComponent; }
+
+	UFUNCTION(BlueprintPure, Category = "Hero")
 	USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 	UFUNCTION(BlueprintPure, Category = "Hero")
@@ -81,6 +85,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<UCombatStateComponent> CombatState;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<UHeroCombatComponent> CombatComponent;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hero")
 	TObjectPtr<UHeroClassDefinition> HeroClassDefinition;
 
@@ -96,10 +103,31 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> SprintAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> LightAttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> HeavyAttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> DodgeAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> BlockAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> ParryAction;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void OnSprintStarted(const FInputActionValue& Value);
 	void OnSprintCompleted(const FInputActionValue& Value);
+	void OnLightAttack(const FInputActionValue& Value);
+	void OnHeavyAttack(const FInputActionValue& Value);
+	void OnDodge(const FInputActionValue& Value);
+	void OnBlockStarted(const FInputActionValue& Value);
+	void OnBlockCompleted(const FInputActionValue& Value);
+	void OnParry(const FInputActionValue& Value);
 
 private:
 	UFUNCTION()

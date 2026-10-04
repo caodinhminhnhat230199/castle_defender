@@ -16,6 +16,26 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-04: Antigravity: T-CMB-02 HeroCombatComponent action state machine and cancel windows implemented
+- **Tasks:** T-CMB-02 Todo → Done. Unblocks T-CMB-04.
+- **Changed:**
+  - `Source/CastleDefender/Hero/HeroCombatTypes.h`: `EHeroAction`, `EHeroActionState`, `FHeroInputData` (InputBufferTime 0.2s), `FHeroActionRules::CanStart` pure cancel table validator.
+  - `Source/CastleDefender/Hero/HeroClassDefinition.h/.cpp`: added `Input` (`FHeroInputData`) to class definition with validation (`InputBufferTime >= 0.0f`).
+  - `Source/CastleDefender/Combat/CombatActionTiming.h/.cpp`: `FCombatActionTiming` struct, `UAnimNotifyState_CancelWindow`, `UAnimNotifyState_Invulnerable`, `UAnimNotifyState_ParryWindow` notifying component on Begin/End.
+  - `Source/CastleDefender/Hero/HeroCombatComponent.h/.cpp`: action state machine with commit, input buffer on hero action clock, window management (Cancel, Invulnerable, Parry), tag mapping (`State.Hero.*`), shared Staggered suppression, owner death handling, `StopSprint()` invocation, and `ReportHeroWindows` cheat.
+  - `Source/CastleDefender/Hero/HeroCharacter.h/.cpp`: attached `UHeroCombatComponent` subobject, wired action callbacks, exposed getter.
+  - `Source/CastleDefender/Tests/HeroActionRules.spec.cpp`: 10 Automation Specs covering pure action rules (Idle, attacks, cancel windows, Dead, Staggered, stamina), buffer consumption, window force-close on return to Idle, and tag mapping.
+  - `Tools/create_hero_assets.py`: bound Light, Heavy, Dodge, Block to `BP_Hero_Warlord`.
+  - `ai/game/01-hero-combat/tasks.md`: marked T-CMB-02 Done.
+- **Verified:**
+  - Automated tests: `Tools/run_tests.bat` passes all 32 tests (27 specs including 10 `CastleDefender.Combat.Hero.ActionRules.*` tests + FT_Smoke), 0 failed, editor exit 0.
+  - Scripted PIE: `Saved/run_hero_pie.ps1` runs PIE on `L_CombatSandbox`, verifies `BP_Hero_Warlord` spawns with `UHeroCombatComponent` in Idle, `RequestAction(Light)` transitions to `LIGHT_ATTACK`, early Dodge is rejected and buffered, `OpenCancelWindow([DODGE])` consumes buffer and transitions to `DODGE` (`Saved/combat-hero-pie.json`).
+  - Packaging: `Tools/build.bat` (Editor & Game targets) and `Tools/package.bat` succeed with 0 errors.
+  - Packaged headless smoke: `Saved/test_packaged_smoke.ps1` runs packaged `CastleDefender.exe` for 5 seconds without errors.
+- **Manual steps for the user:** none.
+- **Open questions / blockers:** none.
+- **Next:** T-CMB-03 (`UStaminaComponent` + stamina rules).
+
 ### 2026-10-04: Antigravity: T-CMB-01 Warlord character locomotion sprint camera implemented
 - **Tasks:** T-CMB-01 Todo → Done. Unblocks T-CMB-02 and T-CMB-03.
 - **Changed:**
