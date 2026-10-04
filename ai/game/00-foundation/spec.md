@@ -75,7 +75,9 @@ None. Everything else depends on this.
 - AC-FND-09: Packaged Development build launches `L_Boot` on the reference PC; `stat unit`, a `game.debug.*` CVar and an Insights trace capture work.
 
 ## 12. Open Questions / Assumptions
-- Q-15: project name, module name, UE version, reference PC spec.
+- NEW-FND-2 (resolved workflow, 2026-10-04): on the current i5-14600KF / RTX 5060 PC, enabling the `cpu` trace channel at process startup makes the rendered UE 5.8.3 package exit 777003 after its log closes. Channel isolation identifies `cpu` as the trigger; 777003 is the engine's `CrashReporterCrashed` exit code. Launching the trace with GPU/frame/memory/bookmark/log and enabling CPU after startup produces a clean rendered 30-second capture: game exit 0, Insights exit 0, CPU/GPU/memory analysis complete. Exact engine-internal fault site remains unproven, so the project does not patch the engine or change renderer/driver/crash-reporting configuration. The late-enable order is now the documented default.
+- Q-15: project name, module name, UE version, reference PC spec. **Answered 2026-10-04:** `CastleDefender`, UE 5.8, reference PC in technical-plan §15.
+- NEW-FND-1: `FT_Smoke` (and later functional tests) are Blueprint-only, because a C++ `AFunctionalTest` subclass needs the Developer module `FunctionalTesting`, which a single runtime module cannot link in Shipping (D-01). Default: Blueprint functional tests; revisit if an editor/test module is approved later.
 
 ## 13. System Contract
 

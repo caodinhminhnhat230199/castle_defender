@@ -53,8 +53,8 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 **Implementation Notes**
 - [ ] Create `AHeroCharacter : ACharacter` with `USpringArmComponent` + `UCameraComponent`, `UHealthComponent`, `UCombatStateComponent`; team = Player (FND team interface).
-- [ ] Create `UHeroClassDefinition : UPrimaryDataAsset` with only what this task uses: `MaxHealth`, `FHeroMovementData` (jog, sprint, turn rate), `FHeroCameraData` (arm length, lag). Later tasks add their own structs.
-- [ ] Register Primary Asset Type `HeroClass`; `IsDataValid` rejects `MaxHealth <= 0` and sprint ≤ jog.
+- [ ] Create `UHeroClassDefinition : UGameDefinition` (foundation §9; inherits `DisplayName`, required by validation) with only what this task uses: `MaxHealth`, `FHeroMovementData` (jog, sprint, turn rate), `FHeroCameraData` (arm length, lag). Later tasks add their own structs.
+- [ ] Register Primary Asset Type `HeroClassDefinition` in `DefaultGame.ini` (replace the commented example in `[/Script/Engine.AssetManagerSettings]`); `IsDataValid` calls `Super` and rejects `MaxHealth <= 0` and sprint ≤ jog.
 - [ ] Bind `IA_Move`, `IA_Look`, `IA_Sprint` (hold) in `SetupPlayerInputComponent`; movement camera-relative, orient rotation to movement.
 - [ ] Sprint sets `MaxWalkSpeed` to sprint speed; release restores jog. Public `StopSprint()` for the combat component.
 - [ ] `ApplyTuning()` on BeginPlay copies init-time values (speeds, max HP, camera); cheat `ReloadHeroTuning` calls it again.
@@ -68,6 +68,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 **Acceptance Criteria**
 - [ ] AC-CMB-01 passes.
 - [ ] "Validate Data" on a copy of the DA with `MaxHealth = 0` reports an error.
+- [ ] Asset Manager lists the `HeroClassDefinition` type with `DA_HeroClass_Warlord` (first gameplay definition type; same check as the `TestGameDefinition` spec in Foundation).
 - [ ] No new log warnings in PIE.
 
 **Verification** PIE manual steps above; Data Validation on `DA_HeroClass_Warlord`.

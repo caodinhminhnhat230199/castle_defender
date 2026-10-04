@@ -1,0 +1,23 @@
+# Unreal generated
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+
+# IDE
+.vs/
+.idea/
+*.sln
+*.slnx
+*.xcworkspace
+*.VC.db
+*.opensdf
+*.sdf
+*.suo
+
+# Tools
+.codegraph/
+__pycache__/
+
+# Cook-generated
+Build/*/FileOpenOrder/

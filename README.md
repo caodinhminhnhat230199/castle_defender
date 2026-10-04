@@ -1,5 +1,18 @@
 # Game (UE5)
 
+## Windows build and verification
+
+The project is `CastleDefender.uproject`, pinned to UE 5.8. Install that engine, the Windows C++ toolchain and Git LFS; run `git lfs pull` after cloning.
+
+```powershell
+Tools/build.bat
+Tools/run_tests.bat
+Tools/create_foundation_assets.bat
+Tools/package.bat
+```
+
+The launchers match the existing test launcher and use execution-policy bypass only for their child PowerShell process. They do not change machine or user policy. Set `UE_ROOT` only if launcher discovery cannot locate the pinned engine. Runner regression checks: `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/test_test_report.ps1`.
+
 Dự án game Unreal Engine 5, phát triển cùng Claude Code. Repo đã có sẵn bộ skill trong `.claude/skills/` và cấu hình plugin trong `.claude/settings.json`.
 
 ## Setup sau khi clone

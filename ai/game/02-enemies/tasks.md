@@ -44,7 +44,7 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 - **Dependencies:** T-FND-04 (tags), T-FND-05 (contract), T-FND-07 (settings, Primary Asset Types)
 
 **Implementation Notes**
-- [ ] Create `UEnemyArchetypeDefinition` (`UPrimaryDataAsset`) with P0 fields from spec §13 (tags, name, `EnemyClass`, health, `BaseArmor`, embedded `FCombatStateConfig` from SYN (MaxPoise, poise regen delay/rate, StaggerDuration), walk speed, attack list, decision interval, aggro radius, despawn delay). Leave room for the P3 `CounterTags` field added by T-DIR-04 (NEW-DIR-02). Register as Primary Asset Type. `IsDataValid`: class set, health > 0, at least one attack.
+- [ ] Create `UEnemyArchetypeDefinition` (`: UGameDefinition`, foundation §9) with P0 fields from spec §13 (tags, name, `EnemyClass`, health, `BaseArmor`, embedded `FCombatStateConfig` from SYN (MaxPoise, poise regen delay/rate, StaggerDuration), walk speed, attack list, decision interval, aggro radius, despawn delay). Leave room for the P3 `CounterTags` field added by T-DIR-04 (NEW-DIR-02). Register as Primary Asset Type `EnemyArchetypeDefinition` in `DefaultGame.ini`. `IsDataValid` (call `Super`): class set, health > 0, at least one attack.
 - [ ] Create `FEnemyRuntimeParams`; copy tunables from the DA in `InitFromSpawn` / `BeginPlay`. Never write to the DA.
 - [ ] Create `AEnemyCharacter` with `UHealthComponent`, `UCombatStateComponent`; init both from the DA. Implement `IGenericTeamAgentInterface` (team 1). `AIControllerClass` = stock `AAIController`, auto-possess placed or spawned.
 - [ ] `FEnemySpawnParams` + `InitFromSpawn(Archetype, Params)` for `SpawnActorDeferred` callers. `Archetype` is `EditAnywhere` for level-placed sandbox enemies.
