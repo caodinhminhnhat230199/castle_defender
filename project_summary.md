@@ -2,7 +2,7 @@
 
 Tài liệu tổng hợp cấu trúc dự án: repo có gì, tài liệu nằm ở đâu, làm theo thứ tự nào. Chi tiết kỹ thuật và kế hoạch đầy đủ nằm trong [ai/game/main_implement_plan.md](ai/game/main_implement_plan.md).
 
-Cập nhật: 2026-10-02
+Updated: 2026-10-04
 
 ---
 
@@ -14,7 +14,7 @@ Game Action Strategy Roguelite góc nhìn thứ ba. Người chơi trực tiếp
 
 | | |
 |---|---|
-| Engine | Unreal Engine 5 (version cụ thể chốt ở task `T-FND-01`) |
+| Engine | Unreal Engine 5.8 (5.8.3 at project creation) |
 | Platform | PC, single-player, ưu tiên keyboard + mouse |
 | Team | 1 dev cùng AI coding agent |
 | Hướng code | C++ cho gameplay core, Blueprint cho UI/VFX/tuning |
@@ -30,8 +30,8 @@ Game Action Strategy Roguelite góc nhìn thứ ba. Người chơi trực tiếp
 | Bộ skill Claude Code (`.claude/skills/`) | Đã cài |
 | Kế hoạch tổng, kiến trúc, production plan | Xong |
 | Spec / plan / task cho từng feature | Xong: 19 folder, 59 file, 271 task. Đã kiểm tra tham chiếu chéo: không thiếu ID nào, không trùng ID task. |
-| Project UE5 (`.uproject`, `Source/`) | **Chưa có**. Toàn bộ tên class/file trong tài liệu chỉ là đề xuất. |
-| Git | Chưa init. Làm ở task `T-FND-02`. |
+| Project UE5 (`.uproject`, `Source/`) | Created: `CastleDefender.uproject`, one runtime module, Foundation code and assets. Phase F passed on 2026-10-04; P0 is in progress and later gameplay classes remain proposals until implemented. |
+| Git | Initialized with Git LFS; binary assets use LFS. |
 | Quy tắc cho coding agent | Xong: `AGENTS.md` dùng chung cho mọi agent, `CLAUDE.md` cho Claude Code, nhật ký `ai/game/progress.md` |
 
 ---
@@ -237,12 +237,10 @@ Quy tắc đầy đủ cho agent nằm trong [AGENTS.md](AGENTS.md). Tóm tắt:
 
 ## 10. Việc cần làm tiếp
 
-1. Chốt **Q-15**: tên project, tên module, version UE 5.x, cấu hình PC tham chiếu.
-2. Làm hết [00-foundation/tasks.md](ai/game/00-foundation/tasks.md) (T-FND-01 → 10).
-3. Bắt đầu P0: `01-hero-combat`, phần P0 của `02-enemies`, `04-battlefield-synergy` (T-SYN-01) và `13-hud-feedback`.
-4. Xem lại 11 giả định (A-01…A-11) và 17 câu hỏi mở (Q-01…Q-17) trong main plan, mục 11.
-5. Chốt các câu hỏi cấp feature quan trọng (main plan mục 8a, "Feature-level open questions"):
+1. Bắt đầu P0: `01-hero-combat`, phần P0 của `02-enemies`, `04-battlefield-synergy` (T-SYN-01) và `13-hud-feedback`.
+2. Xem lại 11 giả định (A-01…A-11) và 17 câu hỏi mở (Q-01…Q-17) trong main plan, mục 11.
+3. Chốt các câu hỏi cấp feature quan trọng (main plan mục 8a, "Feature-level open questions"):
    - **Trước P0:** parry thành công thì gây stagger hay mở vulnerability window? Parry có nút riêng không? (NEW-CMB-01)
    - **Trước P1:** GDD đang mâu thuẫn. §10.2 và §19.1 nói Heavy của Warlord gây Armor Broken mặc định, nhưng ví dụ run ở §33 lại cho đó là perk. Bên nào đúng? (NEW-SYN-02)
    - **Trước P2:** enemy có được đi vòng qua khe hở trong lane không (maze), hay luôn phá thẳng? (NEW-DEF-02)
-6. Mỗi `spec.md` có mục 12 liệt kê câu hỏi `NEW-<FEAT>-n` kèm giá trị mặc định. Nếu không trả lời thì dùng mặc định.
+4. Mỗi `spec.md` có mục 12 liệt kê câu hỏi `NEW-<FEAT>-n` kèm giá trị mặc định. Nếu không trả lời thì dùng mặc định.

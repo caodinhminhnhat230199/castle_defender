@@ -2,7 +2,7 @@
 
 Source: GDD v2 header (platform, engine, implementation direction), §29, §31, §34.1, §34.2, §38. Decisions D-01…D-18 are summarized in [main_implement_plan.md §7](../main_implement_plan.md#7-architecture-baseline). This file holds the detail every feature technical plan builds on.
 
-> Nothing here exists yet. Every path, class and asset name is a **proposal** until the task that creates it is done.
+> Foundation code and editor assets exist, and Phase F passed on 2026-10-04. See tasks.md and progress.md for verification evidence. Later-phase classes and assets remain proposals until their tasks are completed; P0 is open.
 
 ## 1. Project Context
 
@@ -175,6 +175,7 @@ All definitions derive from `UGameDefinition` (T-FND-07). Primary Asset Type nam
 | VS: `UConversionRecipeDefinition`, `UMetaUnlockDefinition`, `UBiomeDefinition`, `USiegeSiteDefinition` | same rule (`ConversionRecipeDefinition`, …) | CNV, MET, WLD | see feature plans |
 
 - Register each type with the Asset Manager (Primary Asset Types in Project Settings) so they get stable `FPrimaryAssetId`s for future save data (D-14).
+- Foundation demonstrates registration with the existing concrete `UTestGameDefinition`, type `TestGameDefinition`, and `DA_FoundationSmoke` under `Maps/Test/Definitions`. This type is editor-only, `NeverCook`, and outside gameplay/save contracts. The integration spec discovers its ID/path and validates its content; missing required-field validation uses a transient asset. Gameplay types register when their own classes land.
 - Hard references inside definitions are fine in prototype; switch large meshes/sounds to soft references at VS when load profiles show a need.
 - Data validation: implement `IsDataValid` on definitions with required fields (cheap, catches broken data in editor).
 
@@ -217,14 +218,14 @@ All definitions derive from `UGameDefinition` (T-FND-07). Primary Asset Type nam
 
   | Item | Value |
   |---|---|
-  | CPU | Intel Core i5-14500 (14 cores / 20 threads) |
-  | GPU | NVIDIA GeForce RTX 4070 Ti SUPER |
-  | RAM | 32 GB |
+  | CPU | Intel Core i5-14600KF (14 cores / 20 threads) |
+  | GPU | NVIDIA GeForce RTX 5060 |
+  | RAM | 16 GB |
   | OS | Windows 11 Pro |
   | Resolution | 1920x1080, 144 Hz display |
   | Target frame rate | 60 fps (16.7 ms frame) [TUNABLE] working number |
 
-  This is also the dev PC, so it sits above a typical player's machine. Re-check budgets on a lower-spec PC before VS.
+  The owner confirmed this current dev PC as the reference PC on 2026-10-04. Re-check budgets on a representative lower-spec PC before VS.
 - How to capture: [profiling-checklist.md](profiling-checklist.md).
 - Known hot spots to watch: CharacterMovement per enemy, skeletal animation count, navmesh tile rebuilds, target queries (use spatial queries/overlaps with cached candidate sets, not all-to-all scans), projectile count.
 

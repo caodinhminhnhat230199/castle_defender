@@ -16,6 +16,78 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-04: Codex: Foundation gate passed and pushed for review
+- **Authorization:** user selected the current machine as the reference PC and requested commit + push.
+- **Agent / branch:** Codex, `task/T-FND-foundation`; no concurrent agents or branch switch.
+- **Tasks:** T-FND-08 Review -> Done. T-FND-01…10 are Done; AC-FND-01…09 pass. Phase F passed and P0 is open.
+- **Changed:** corrected the reentrant death contract and regressions; completed BP_FT_Smoke and hardened the CLI report gate; registered and tested the editor-only Foundation definition asset; added Windows `.bat` launchers; updated Foundation specs, plans, tasks, profiling guidance, readiness review and project status. The confirmed reference PC is i5-14600KF / RTX 5060 / 16 GB at 1920x1080 with a 60 fps [TUNABLE] target.
+- **Verified:**
+  - Final default `Tools/run_tests.bat`: 15 succeeded, 0 succeededWithWarnings/failed/NotRun/InProcess; editor and runner exit 0. `Tools/test_test_report.ps1`: 18/18 checks pass.
+  - Editor Development, game Development, Shipping and Win64 Development packaging succeed. Rendered/headless package, real F5 input, debug draw/stat display and the clean 30-second CPU/GPU/frame/memory trace with completed Insights analysis pass on the confirmed reference PC.
+  - Post-correction clean clone at committed `542d2e3`: local clone succeeded, `git lfs pull` materialized BP_FT_Smoke (55,443 bytes) and DA_FoundationSmoke (1,435 bytes), clone status was clean, and `Tools/build.bat` built `CastleDefenderEditor Win64 Development` successfully in 86.8 s. Only the documented MSVC preference and engine-header deprecation warnings appeared; no project-source warning was identified.
+  - Implementation commits: `80cf798`, `975fbd1`, `4c1f1b2`, `542d2e3`. The final documentation/gate commit follows this entry; push was explicitly authorized.
+- **Manual steps for the user:** none for Foundation.
+- **Open questions / blockers:** none for Foundation. NEW-FND-2 remains a documented UE 5.8.3 trace-capture ordering constraint, with a verified clean workflow.
+- **Next:** T-CMB-13, the first eligible task in the documented P0 Hero Combat order.
+
+### 2026-10-04: Codex: remaining Foundation corrections
+- **Authorization:** user renewed the request to fix all remaining review items.
+- **Agent / branch:** Codex, `task/T-FND-foundation`; no concurrent agents or branch switch.
+- **Tasks:** T-FND-06 Review -> Done; T-FND-07 Review -> Done; T-FND-08 remains Review only for the reference-PC decision; T-FND-09 Review -> Done. T-FND-05 and T-FND-10 remain Done after their corrections.
+- **Changed:** added exact Project Settings category/section coverage to GameDefinition.spec; documented and verified the UE 5.8.3 late-CPU profiling workflow; updated Foundation task states, spec, readiness review and this handoff. Existing source/asset/tool corrections are preserved.
+- **Verified:**
+  - Final default `Tools/run_tests.bat`: 15 succeeded, 0 succeededWithWarnings/failed/NotRun/InProcess; editor and runner exit 0. `Tools/test_test_report.ps1`: 18/18 checks pass. Editor build is current and succeeds.
+  - Real F5 input delivered to the rendered packaged game logs `Combat -> Build -> Combat` with `IMC_Build -> IMC_Combat`; Build has no light-attack mapping. Scripted rendered PIE executes `game.debug.Combat 1`, `SpawnTestDummy`, `stat unit`, finds one dummy and exits cleanly. The PIE screenshot is black because L_Boot has no camera; the rendered package screenshot visibly shows the green sphere, `100 / 100` and stat unit.
+  - Game Tuning metadata spec passes for category `Game` and section `Game Tuning`; Asset Manager discovery/load and valid/invalid Data Validation cases pass.
+  - Isolated trace exit 777003 to enabling the `cpu` channel at process startup in rendered UE 5.8.3. Starting GPU/frame/memory/bookmark/log first and enabling CPU after startup yields a rendered capture longer than 30 seconds; game exit 0, Insights exit 0, CPU/GPU/memory providers complete. No engine, renderer, driver or crash-reporting setting changed.
+  - Git diff check passes; changed/new Unreal assets resolve to Git LFS. No commit, push or phase advance.
+- **Manual steps for the user:** confirm which hardware is the reference PC. If the recorded i5-14500 / RTX 4070 Ti SUPER / 32 GB machine remains authoritative, rerun `profiling-checklist.md` there. If this i5-14600KF / RTX 5060 / 16 GB machine is authoritative, update Q-15/technical-plan section 15 and accept the completed local evidence.
+- **Open questions / blockers:** only the reference-PC mismatch for AC-FND-09. The correction set is still uncommitted, so repeat the fresh-clone gate after it is committed.
+- **Next:** resolve the reference-PC choice, record T-FND-08/AC-FND-09 and the Phase F gate, then start P0.
+
+### 2026-10-04: Codex: Foundation corrections and verification
+- **Authorization:** user requested fixes for the complete readiness review. No phase advance, commit or push authorized by this request.
+- **Agent / branch:** Codex, `task/T-FND-foundation`; no concurrent agents.
+- **Tasks:** T-FND-05 corrected and Done; T-FND-10 Review -> Done. T-FND-07 registration fixed, still Review for editor visibility. T-FND-06/08/09 remain Review. Phase F remains in progress; P0 is closed.
+- **Changed:** HealthComponent, CombatTestListener, health/definition specs; Tools report evaluator/regression checks, test runner, graph/asset generator and build/package/asset launchers; DefaultGame.ini; BP_FT_Smoke and editor-only DA_FoundationSmoke; AGENTS, README, project_summary, Foundation technical plan/tasks/profiling checklist/readiness review and this log.
+- **Preserved:** existing readiness review and session log changes. Binary changes will be made through the editor with backups in ignored Saved/.
+- **Verified:**
+  - Two nested-hit Health regressions reproduced red (2 failures, runner exit 1) before the source fix. Final default CLI suite: 14 passed, 0 warnings/failed/NotRun/InProcess; editor/runner exit 0. `Saved/foundation-fix-red-tests.log`, `foundation-fix-full-tests.log`, `Automation/CLI/index.json`.
+  - 18 synthetic report regressions pass, including nonterminal results, native editor failure, malformed counters, missing default groups and filtered runs.
+  - Editor Development, game Development through package, Shipping and Win64 Development package succeed. Build launchers work under the current execution policy. An initial packaging attempt overlapped Shipping's UBT mutex and failed; sequential rerun succeeds. No persistent policy change. Engine MSVC preference warning remains, no project-source compiler warning identified.
+  - Blueprint wired/compiled/saved through editor Python, rerun preserves existing wiring without warnings. Backed up original BP_FT_Smoke to Saved/FoundationFixBackup before editing. Asset Manager integration discovers, loads and validates DA_FoundationSmoke; invalid required-field validation passes.
+  - Clean actual PIE exits 0 with no warnings/errors: one damaged callback, one death, dead_during_lethal_damage=true, HP=0; Modal -> Build -> Combat restoration passes. Evidence: foundation-fix-pie.json / pie-engine.log. First audit-style shutdown probe tried to quit before PIE ended; corrected callback waits for end-play before quitting.
+  - Packaged NullRHI and ordinary GPU-rendered smoke exit 0. Viewed rendered screenshot: green sphere, 100 / 100 and stat unit are visible. Screenshot is under Saved/Packaged/Windows/CastleDefender/Saved/Screenshots/Windows/ScreenShot00000.png.
+  - Full CPU/GPU/memory trace (589,783,802 bytes) opens/analyzes in pinned Insights, exit 0, CPU/GPU/memory providers completed; 94.9 s session including startup/shutdown. This hidden-window run is not a steady-state benchmark. GPU + memory tracing shutdown repeatedly exits 777003, also with memory_light and explicit trace-control stop; ordinary GPU and NullRHI + memory both exit 0. Cause unresolved, no project call stack; recorded NEW-FND-2. Logs and traces: Saved/foundation-fix-rendered*, foundation-fix-memory-isolation*, foundation-fix-memory-light*, foundation-fix-controlled-trace*, foundation-fix-insights.log. No default tracing workaround, renderer, driver or crash-reporting change.
+  - Git diff check passes; normal LFS status shows only intended files/assets. No branch switch, commit or push. Generated verification artifacts remain ignored.
+- **Manual steps for the user:** On L_Boot PIE, test F5 Combat/Build switching and combat-action suppression; inspect tag-picker roots, Project Settings > Game > Game Tuning, Asset Audit type and PIE debug sphere. Existing FT graph manual work is superseded: it is now automated and passes.
+- **Open questions / blockers:** Reference-PC clarification requested (recorded i5-14500 / RTX4070TiSUPER / 32GB versus current i5-14600KF / RTX5060 / ~16GB); no answer recorded. Rendered full-memory-trace shutdown 777003 is a new profiling blocker, not a verified gameplay/source defect. Do not silently change engine, plugins, driver, renderer or crash reporting.
+- **Next:** complete editor acceptance, decide reference PC and diagnose the trace-enabled shutdown; rerun clean profiling, then reassess the Phase F gate. Current resolution/evidence is in readiness-review-2026-10-04.md.
+
+### 2026-10-04: Codex: Foundation readiness review — gate not passed
+- **Branch / reviewed commit:** `task/T-FND-foundation`, `6c593a0`. Normal Git/LFS status was clean before this review. No branch switch, commit or push.
+- **Tasks:** reviewed T-FND-01…10. Existing task-table statuses remain unchanged (01…05 Done; 06…10 Review). Reproduced a death-once defect in T-FND-05; recommend reopening it. Phase F remains in progress; P0 is not unlocked.
+- **Changed:** `ai/game/00-foundation/readiness-review-2026-10-04.md`, this log. No source, configuration or binary asset edits. Temporary audit scripts, reports, build output and traces live under ignored `Saved/`.
+- **Verified:**
+  - Read project rules, handoff, main plan/§8a, production plan, spec audit and Foundation docs; surveyed all 19 features' scope/ownership/contracts/Foundation dependencies; reviewed all 33 source files and Tools/config. Later-phase gameplay was not implemented or fully re-audited.
+  - Installed engine is UE 5.8.3. Editor Development and game Development builds both succeeded. MSVC preference warning and engine-header deprecation warnings remain; no project-source compiler warning identified. Documented PowerShell build launcher is blocked by execution policy; invoked native Build.bat with the script's exact arguments instead. No persistent policy change.
+  - `Tools/run_tests.bat`: **10 passed, 1 failed, 0 NotRun, exit 1**. FT_Smoke timed out in 60.005 seconds. Evidence: `Saved/Automation/CLI/index.json`, `Saved/foundation-review-tests.log`.
+  - Actual scripted PIE: dummy starts at 100 HP; an OnDamaged listener applies one extra hit during a lethal hit; **OnDeath fires twice**. Evidence: `Saved/foundation-review-pie.json` / `foundation-review-pie-engine.log`. Existing Health spec misses reentrancy.
+  - Actual scripted PIE: mode stack restores Modal -> Build -> Combat. Package also verifies out-of-order pop preserves Modal. Actual keyboard F5 delivery and visible debug draw remain unverified.
+  - All 21 binary assets loaded through Unreal; controller modes and combat action/key mappings read from disk. Evidence: `Saved/foundation-review-assets.json`. Python could not reflect the AssetManagerSettings scan array; no successful array inspection claimed.
+  - Replayed the unchanged result-evaluation suffix of run_tests.ps1 against a synthetic report (1 Success + 1 NotRun): **exit 0**, confirming an incomplete run can look green.
+  - Win64 Development package succeeded, cook summary **0 errors / 0 warnings**. Headless package loads L_Boot, runs game.debug.Combat / SpawnTestDummy / mode cheats and writes a **644,211-byte** short smoke trace. Not a rendered performance or 30-second profiling capture. Evidence: `Saved/foundation-review-package.log`, `foundation-review-packaged-engine.log`, `foundation-review-packaged.utrace`.
+  - No fresh clone or Shipping rebuild repeated; earlier evidence remains in the previous handoff. Generated folders are not tracked.
+- **Manual steps for the user:**
+  1. Finish FT_Smoke in the editor: Start Test -> Spawn Actor TestDummy (Always Spawn) -> validate actor -> Apply Debug Hit (1000) -> Branch on **Get Health(spawned dummy) -> Is Dead** -> Finish Test Succeeded/Failed; invalid actor -> Finish Test Failed. **ApplyDebugHit returns void; the previous handoff's Branch on its Return Value is incorrect.** Compile/save; run `Tools/run_tests.bat` after the fixes and require the complete suite to pass.
+  2. On L_Boot PIE, test F5 Combat/Build switching, combat-action suppression, debug sphere/health label, tag-picker roots and Project Settings > Game > Game Tuning.
+  3. Follow `profiling-checklist.md` in a rendered Development package on the recorded reference PC: visible stat unit/debug draw, 30-second CPU/GPU/memory trace, open it in Insights and record the build/map/scenario/results.
+- **Open questions / blockers:**
+  - Critical duplicate OnDeath; incomplete FT_Smoke; runner accepts NotRun; AC-FND-06 registration criterion is deferred to a P0 task that itself depends on T-FND-07. Resolve that gate-order conflict explicitly before marking T-FND-07 Done; options are in the review.
+  - Current audit machine is **i5-14600KF / RTX 5060 / about 16 GB usable RAM**, different from the recorded **i5-14500 / RTX 4070 Ti SUPER / 32 GB** reference PC. Do not treat this run as verification on that reference PC or silently change Q-15.
+  - Graphical acceptance checks and Insights inspection remain open. Stale project_summary/baseline statements also need updating.
+- **Next:** corrective work for T-FND-05, then finish T-FND-10 and resolve T-FND-07; complete remaining editor/reference-PC checks and review the Phase F gate again. See [readiness review](00-foundation/readiness-review-2026-10-04.md) for severity, acceptance matrix and evidence.
+
 ### 2026-10-04: Claude Code: Phase F foundation implemented
 - **Branch:** `task/T-FND-foundation` (from `main`), one commit per task, not pushed. Your uncommitted `.claude/settings.json` change was left untouched.
 - **Decisions (user, this session):** Q-15 answered: project and module `CastleDefender`, UE 5.8 (5.8.3), reference PC = the dev PC (i5-14500, RTX 4070 Ti SUPER, 32 GB, 1080p) at 60 fps [TUNABLE]. Python Editor Script Plugin enabled for asset creation. Branch + commit per task allowed.
@@ -37,7 +109,7 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
   - Fresh clone + `git lfs pull` (21 files) + editor build + `L_Boot` load: no missing assets.
   - Assets read back from disk: key mappings, modifiers and per-mode contexts are as in `input-keymap.md`.
 - **Manual steps for the user:**
-  1. **FT_Smoke graph (finishes T-FND-10).** Open `Content/CastleDefender/Maps/Test/BP_FT_Smoke`. From the existing *Event Start Test*: *Spawn Actor from Class* (Class `TestDummy`, Spawn Transform = *Get Actor Transform* of self, Collision Handling = *Always Spawn*) → *Apply Debug Hit* (Target = Return Value, Damage 1000) → *Branch* on Return Value → *Get Health* → *Is Dead* → True: *Finish Test* (Succeeded, "Dummy died"); False: *Finish Test* (Failed, "Dummy survived"). Compile, save, run `Tools\run_tests.bat` → 11 passed, exit 0.
+  1. **FT_Smoke graph (historical manual step; superseded by the Codex corrections above).** The original recipe incorrectly branched on the void `ApplyDebugHit` return value. Correct flow: Start Test -> Spawn Actor TestDummy (Always Spawn, self transform) -> validate the actor -> Apply Debug Hit (1000) -> Branch on Get Health(spawned dummy) -> Is Dead -> Finish Test Succeeded/Failed; invalid actor -> Finish Test Failed. The editor Python script now completes this graph; run `Tools/run_tests.bat` for the current test count.
   2. **PIE on `L_Boot` (T-FND-06, T-FND-09).** Press F5 → Output Log shows `Player mode Combat -> Build` and `Active mapping contexts for Build: [IMC_Build]`; F5 again → back to Combat. Console: `DebugPushMode Modal Menu`, `DebugPopMode Menu` → back to the previous mode. `game.debug.Combat 1` then `SpawnTestDummy` → green sphere and `100 / 100` above the dummy. `God` and `SetTimeDilation 0.5` respond.
   3. **Editor (T-FND-04, T-FND-07).** Project Settings → Game → *Game Tuning* page exists (empty until features add values). Any Gameplay Tag picker shows the roots `State, Unit, Structure, Command, Zone, Damage, Perk, Stat, Feedback, Modifier, Lane, Resource, Tutorial`.
   4. **Packaged build (T-FND-08).** Follow `ai/game/00-foundation/profiling-checklist.md` once in a window: `stat unit` visible, trace opens in Unreal Insights.

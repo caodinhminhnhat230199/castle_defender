@@ -67,7 +67,7 @@ Features `20-*` to `24-*` are provisional. Re-validate their specs and re-plan t
 | Engine version | Pinned | UE 5.8 (5.8.3 at creation), `EngineAssociation` "5.8" (`T-FND-01`, Q-15). |
 | Project / module name | Decided | `CastleDefender`. Docs write `<Game>` for it (Q-15, 2026-10-04). |
 | Version control | Set up | Git + Git LFS (`T-FND-02`). |
-| Target hardware | Decided | Reference PC (i5-14500, RTX 4070 Ti SUPER, 32 GB, 1080p) at 60 fps [TUNABLE]; foundation technical-plan §15 (`T-FND-08`). |
+| Target hardware | Decided | Current dev/reference PC (i5-14600KF, RTX 5060, 16 GB, 1080p) at 60 fps [TUNABLE]; confirmed 2026-10-04, foundation technical-plan §15 (`T-FND-08`). |
 | Art direction | Open | GDD §37 lists toon vs stylized realism as open. Prototypes use placeholder art only. |
 
 ---
@@ -196,6 +196,8 @@ Grand total: **271** tasks, a few of them provisional VS tasks inside prototype 
 What must exist at the end of each phase. Task IDs live in each feature `tasks.md`.
 
 ### Phase F: Foundation
+Status: **Passed 2026-10-04.** P0 is open.
+
 - UE5 C++ project, one runtime module `<Game>`, domain folder layout (D-01, D-02).
 - Git + LFS + `.gitignore` for UE5 generated folders and `.codegraph/`.
 - Gameplay Tag taxonomy file with the root tags in Section 8.
@@ -561,7 +563,7 @@ If questions 2, 3 and 7 are all close to "no", it stays out of scope. Classify e
 | Q-12 | How many classes/towers/squads for 1.0? | After VS | Not planned |
 | Q-13 | Art direction: toon vs stylized realism? | Before VS art | Placeholder art only |
 | Q-14 | Should Attack/Focus Target apply Marked in prototype? | P1 | A-06 (no) |
-| Q-15 | Project name, module name, pinned UE 5.x version, reference PC spec? | Phase F | **Answered 2026-10-04:** `CastleDefender`, UE 5.8; reference PC in foundation technical-plan §15 |
+| Q-15 | Project name, module name, pinned UE 5.x version, reference PC spec? | Phase F | **Answered 2026-10-04:** `CastleDefender`, UE 5.8; current i5-14600KF / RTX 5060 / 16 GB dev PC is the reference PC; full details in foundation technical-plan §15 |
 | Q-16 | What happens when the player leaves the Siege Site boundary mid-run (§34.4)? | P3 | Soft boundary: warning + push-back volume, no run fail |
 | Q-17 | Which waves get the "mid-run pressure/event" and what is it in the prototype? | P3 | One Director modifier event before wave 4 (split-lane pressure) |
 
@@ -632,7 +634,6 @@ If questions 2, 3 and 7 are all close to "no", it stays out of scope. Classify e
 
 ## 14. Next Actions
 
-1. Answer Q-15 (project name, UE version, reference PC), then run `00-foundation/tasks.md` top to bottom.
-2. Start P0 with `01-hero-combat/tasks.md`, `02-enemies/tasks.md` (P0 tasks only) and `13-hud-feedback/tasks.md` (P0 tasks only).
-3. Optional early de-risk: run the DEF navigation spike (`T-DEF-01`) in a throwaway map once FND is done; its result may change D-09 before P2 starts.
-4. Hold the G0 review with the checklist in Section 3 before touching squads or towers.
+1. Start P0 with `01-hero-combat/tasks.md`, `02-enemies/tasks.md` (P0 tasks only) and `13-hud-feedback/tasks.md` (P0 tasks only).
+2. Optional early de-risk: run the DEF navigation spike (`T-DEF-01`) in a throwaway map now that Foundation is done; its result may change D-09 before P2 starts.
+3. Hold the G0 review with the checklist in Section 3 before touching squads or towers.
