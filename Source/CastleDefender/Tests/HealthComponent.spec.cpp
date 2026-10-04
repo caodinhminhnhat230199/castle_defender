@@ -44,6 +44,33 @@ void FHealthComponentSpec::Define()
 		TestEqual("OnDeath count", Listener->DeathCount, 0);
 	});
 
+	It("commits death before a damage observer can deliver another hit", [this]()
+	{
+		Listener->Health = Health;
+		Listener->NestedDamage = 1.f;
+		Health->OnDamaged.AddDynamic(Listener, &UCombatTestListener::HandleDamage);
+		FCombatHit Hit;
+		Hit.Damage = 100.f;
+		Health->ApplyHit(Hit);
+		TestTrue("Observer sees death committed", Listener->bDeadDuringDamage);
+		TestEqual("Nested hit is rejected", Listener->NestedApplied, 0.f);
+		TestEqual("One death broadcast", Listener->DeathCount, 1);
+	});
+
+	It("does not repeat death when an observer kills a surviving target", [this]()
+	{
+		Listener->Health = Health;
+		Listener->NestedDamage = 60.f;
+		Health->OnDamaged.AddDynamic(Listener, &UCombatTestListener::HandleDamage);
+		FCombatHit Hit;
+		Hit.Damage = 40.f;
+		Health->ApplyHit(Hit);
+		TestFalse("First hit leaves target alive", Listener->bDeadDuringDamage);
+		TestEqual("Nested hit consumes remaining health", Listener->NestedApplied, 60.f);
+		TestTrue("Nested hit kills target", Health->IsDead());
+		TestEqual("One death broadcast", Listener->DeathCount, 1);
+	});
+
 	AfterEach([this]()
 	{
 		Health = nullptr;

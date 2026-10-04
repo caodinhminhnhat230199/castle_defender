@@ -158,6 +158,8 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 
 **Verification** Automation Spec `<Game>.Combat.Health`.
 
+Correction verified 2026-10-04: both reentrant-hit regressions failed before the fix and pass after it. Scripted PIE confirms one damage callback, one death callback and committed death during the lethal observer. Evidence: `Saved/foundation-fix-red-tests.log`, `foundation-fix-full-tests.log`, `foundation-fix-pie.json`.
+
 ---
 
 ### T-FND-06 — Enhanced Input base + `AHeroPlayerController` skeleton + context switching
@@ -181,10 +183,10 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 **Test Case** PIE: debug key pushes `Build` → log shows switch, `IA_LightAttack` no longer fires; push `Modal` then pop it → back to `Build`, not `Combat`; pop `Build` → `Combat`. Automation Spec on the stack: pop of a reason not on top removes only that entry and the top mode is unchanged.
 
 **Acceptance Criteria**
-- [x] Mode stack works (push/pop, out-of-order pop), every change is logged and broadcast. *(spec `CastleDefender.Player.ModeStack` + headless `-game` run with `DebugPushMode`/`DebugPopMode`; F5 Build toggle confirmed in PIE by the user 2026-10-04)*
+- [x] Mode stack works (push/pop, out-of-order pop), every change is logged and broadcast. The stack spec and scripted PIE pass. Two real F5 key events delivered to the rendered packaged window log `Combat -> Build -> Combat` and activate only `IMC_Build` while Build is on top; that context has no `IA_LightAttack` mapping. Also confirmed by hand in PIE on the second dev PC (i5-14500), 2026-10-04.
 - [x] No input bound directly to keys in C++ (all via actions).
 
-**Verification** PIE manual check.
+**Verification** Automation Spec plus PIE mode-stack run and rendered-window F5 input smoke (2026-10-04).
 
 ---
 
@@ -200,7 +202,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 **Implementation Notes**
 - [x] `Core/GameTuningSettings` (`UDeveloperSettings`, `Config=Game, DefaultConfig`): empty categories `Combat`, `Army`, `Focus`, `Respawn`, `Debug`. Features add properties.
 - [x] Base class `UGameDefinition : UPrimaryDataAsset` overriding `GetPrimaryAssetId()`. **Every** definition class derives from it. The Primary Asset Type name is the class name without the `U` prefix (e.g. `HeroClassDefinition`, `StructureDefinition`); the canonical list lives in technical-plan §9 and is frozen before VS save data exists.
-- [x] Register Primary Asset Types for the definitions in technical-plan §9 in `DefaultGame.ini` (Asset Manager settings) as each type lands; register `UGameDefinition` scan paths now. — **no definition class exists yet**; the scan convention is a comment in `DefaultGame.ini`. Each definition task registers its type.
+- [x] Register Primary Asset Types in `DefaultGame.ini` as each type lands. Foundation registers editor-only `TestGameDefinition` with `DA_FoundationSmoke` under `Maps/Test/Definitions`; the integration spec verifies discovery and validation. Each gameplay definition task registers its own type.
 - [x] `IsDataValid` example on `UGameDefinition` (e.g., DisplayName required).
 
 **Expected Files / Assets** `Source/<Game>/Core/GameTuningSettings.h/.cpp`, `Core/GameDefinition.h/.cpp`, `Config/DefaultGame.ini`
@@ -208,10 +210,10 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 **Test Case** Create a test Data Asset with an empty required field → Data Validation reports an error.
 
 **Acceptance Criteria**
-- [x] Settings page visible under Project Settings → Game. *(confirmed by the user 2026-10-04)*
-- [x] Asset Manager lists the registered type. *(moved to T-CMB-01, which creates the first definition type `HeroClassDefinition`; user decision 2026-10-04)*
+- [x] Settings object registers under the `Game` category with section text `Game Tuning`; the editor automation spec verifies the exact values used by Project Settings. Page also seen in the editor on the second dev PC, 2026-10-04.
+- [x] Asset Manager lists the registered type. `CastleDefender.Core.GameDefinition.discovers and validates the registered Foundation asset` verifies real registration/discovery and loading.
 
-**Verification** Editor: Data Validation on the folder; Asset Manager audit window.
+**Verification** Editor automation: Project Settings metadata, Asset Manager discovery/load and Data Validation.
 
 ---
 
@@ -227,17 +229,17 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 **Implementation Notes**
 - [x] Record reference PC (CPU, GPU, RAM, resolution, target frame rate as a working number, marked [TUNABLE]) in `00-foundation/technical-plan.md` §15.
 - [x] Package Win64 Development build of `L_Boot` (needs a Windows machine; UE does not build Win64 on macOS — verify for the pinned version). Fill `AGENTS.md` §7 "Package a Development build".
-- [x] Write `ai/game/00-foundation/profiling-checklist.md`: how to launch with `-trace=cpu,gpu,frame,memory`, open Unreal Insights, which `stat` commands to capture, where to store traces (outside git).
+- [x] Write `ai/game/00-foundation/profiling-checklist.md`: how to capture CPU/GPU/frame/memory channels, open Unreal Insights, which `stat` commands to capture, where to store traces (outside git). On UE 5.8.3, CPU is enabled after startup to avoid the verified shutdown fault.
 
 **Expected Files / Assets** packaged build (not committed), `profiling-checklist.md`
 
 **Test Case** Launch packaged build → `stat unit` visible → `game.debug.Combat 1` works in the Development build → capture 30 s trace → open in Insights.
 
 **Acceptance Criteria**
-- [x] Packaged build runs on the reference PC. *(headless `-nullrhi` run of `Saved/Packaged/Windows/CastleDefender.exe`: `BP_BootGameMode` loads, `game.debug.Combat 1`, `SpawnTestDummy`, `DebugPushMode` work; windowed `stat unit` look is the user's check)*
-- [x] Checklist reproduces a trace capture. *(a 670 KB `.utrace` was captured from the packaged build with `-trace=cpu,frame,log,bookmark`; windowed `stat unit` confirmed by the user 2026-10-04; viewing in Insights not checked)*
+- [x] Packaged build runs on the recorded reference PC. The owner confirmed the current i5-14600KF / RTX 5060 / 16 GB machine as the reference PC on 2026-10-04; rendered and headless package runs pass on it.
+- [x] Checklist reproduces a clean trace capture. A rendered 30-second CPU/GPU/frame/memory capture exits 0 when CPU tracing is enabled after startup; Unreal Insights exits 0 and completes all three providers. Evidence: `Saved/foundation-late-cpu-trace-30s.*`.
 
-**Verification** Manual run following the checklist.
+**Verification** Manual run following the checklist: rendered package, visible `stat unit` and debug draw, clean 30-second CPU/GPU/frame/memory trace, and completed Insights analysis all pass on the confirmed reference PC.
 
 ---
 
@@ -261,7 +263,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 
 **Acceptance Criteria**
 - [x] CVars listed by `help game.debug`.
-- [x] Cheats work in PIE and are compiled out of Shipping. *(SpawnTestDummy and mode cheats verified in headless `-game` and packaged runs; `CastleDefender` Shipping builds with zero project warnings; debug sphere seen in PIE by the user 2026-10-04)*
+- [x] Cheats work in PIE and are compiled out of Shipping. Scripted rendered PIE executes `game.debug.Combat 1`, `SpawnTestDummy` and finds one dummy; the rendered package screenshot shows the green sphere and health label. Shipping builds successfully with the cheat body excluded by its compile guard. Debug sphere also seen by hand in PIE and in the packaged build on the second dev PC, 2026-10-04.
 
 **Verification** PIE console.
 
@@ -278,7 +280,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 
 **Implementation Notes**
 - [x] `Source/<Game>/Tests/` with the Health Spec from `T-FND-05` named `<Game>.Combat.Health`.
-- [x] Enable Functional Testing Editor plugin; create `Content/<Game>/Maps/Test/FT_Smoke` with one `AFunctionalTest` that spawns a dummy, damages it and asserts death. — map, `BP_FT_Smoke` and the placed actor are created by `Tools/create_foundation_assets.ps1`; the Start Test graph was wired by the user in the editor (2026-10-04). A C++ `AFunctionalTest` would need the Developer module `FunctionalTesting`, which breaks Shipping for the single runtime module (D-01).
+- [x] Enable Functional Testing Editor plugin; create `FT_Smoke` with a Blueprint functional test that spawns a dummy, validates its reference, damages it and branches on `GetHealth()->IsDead()` before finishing Succeeded/Failed. `Tools/create_foundation_assets.bat` wires the empty graph through UE 5.8 editor APIs, preserving existing wiring. No C++ FunctionalTesting dependency is introduced (D-01).
 - [x] Script `Tools/run_tests.sh` / `.bat` invoking `UnrealEditor-Cmd <Game>.uproject -ExecCmds="Automation RunTests <Game>.;Quit" -unattended -nullrhi -log` (verify flags for the pinned UE version; Functional Tests may need RHI).
 - [x] Document test naming: `<Game>.<Feature>.<Case>`; Functional Test maps `FT_<Feature>_<Case>`.
 - [x] Fill `AGENTS.md` §7 "Run automation tests" with the script command.
@@ -288,7 +290,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 **Test Case** Run the script → both tests reported as passed; exit code 0.
 
 **Acceptance Criteria**
-- [x] CLI run passes both tests. *(`Tools/run_tests.ps1`: 11/11 passed, exit 0, 2026-10-04)*
+- [x] CLI run passes both spec and functional groups. 15 passed, 0 warnings, 0 failed/NotRun/InProcess; editor and runner exit 0 (2026-10-04).
 - [x] A deliberately failing assert makes the script exit non-zero.
 
 **Verification** CLI run.
@@ -310,12 +312,10 @@ flowchart LR
 
 ## 5. Integration / Regression Checklist
 - [x] Fresh clone builds.
-- [x] Test script passes.
+- [x] Test script passes. Complete gate: 15/15; report evaluator: 18 regression checks.
 - [x] Packaged Development build launches.
 - [x] No gameplay logic added in Foundation tasks.
-- [ ] State ownership in code matches the D-07 table (R-FND-05); review at every gate.
+- [x] State ownership in code matches the D-07 table (R-FND-05); player mode has one controller owner and UI/gameplay callers use its stack contract.
 
 ## 6. Final Definition of Done
-
-**Phase F gate passed 2026-10-04:** editor and game targets build; `Tools/run_tests.ps1` 11/11; debug draw (`game.debug.Combat` + `SpawnTestDummy`) confirmed in the packaged Development build. AC-FND-06's Asset Manager check moved to T-CMB-01.
-All AC-FND-01…09 pass; master plan §2 updated with project name, UE version and reference PC.
+Passed 2026-10-04. All AC-FND-01…09 pass; master plan §2 records the project name, UE version and confirmed reference PC.

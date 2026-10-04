@@ -68,7 +68,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 **Acceptance Criteria**
 - [ ] AC-CMB-01 passes.
 - [ ] "Validate Data" on a copy of the DA with `MaxHealth = 0` reports an error.
-- [ ] Asset Manager lists the `HeroClassDefinition` type with `DA_HeroClass_Warlord` (moved here from T-FND-07 / AC-FND-06: the first definition type lands in this task).
+- [ ] Asset Manager lists the `HeroClassDefinition` type with `DA_HeroClass_Warlord` (first gameplay definition type; same check as the `TestGameDefinition` spec in Foundation).
 - [ ] No new log warnings in PIE.
 
 **Verification** PIE manual steps above; Data Validation on `DA_HeroClass_Warlord`.

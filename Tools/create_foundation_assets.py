@@ -1,7 +1,7 @@
 """Creates the Phase F editor assets that cannot be written as text.
 
-Idempotent: an existing asset is loaded and left unchanged.
-Run headless: powershell -File Tools/create_foundation_assets.ps1
+Idempotent: existing content is preserved; the empty Foundation smoke graph is completed once.
+Run headless: Tools/create_foundation_assets.bat
 Or in the editor: Tools > Execute Python Script.
 """
 import unreal
@@ -141,14 +141,86 @@ controller = blueprint("BP_HeroPlayerController", CORE, unreal.HeroPlayerControl
 blueprint("BP_BootGameMode", CORE, unreal.GameModeBase,
           lambda cdo: cdo.set_editor_property("player_controller_class", controller.generated_class()))
 
-# T-FND-10: smoke functional test. Python cannot wire graph nodes, so the Start Test graph is a
-# manual step (ai/game/progress.md); until then the test fails by timeout, never passes silently.
+# T-FND-07: editor-only discovery/validation example; future gameplay types register separately.
 TEST_MAPS = f"{ROOT}/Maps/Test"
+definition_class = unreal.load_class(None, "/Script/CastleDefender.TestGameDefinition")
+definition_factory = unreal.DataAssetFactory()
+definition_factory.set_editor_property("data_asset_class", definition_class)
+get_or_create("DA_FoundationSmoke", f"{TEST_MAPS}/Definitions", definition_class,
+              definition_factory, lambda asset: asset.set_editor_property(
+                  "display_name", unreal.Text("Foundation validation example")))
+
+# T-FND-10: use the pinned engine's graph editing API, without editor dependencies in the module.
 ft_factory = unreal.BlueprintFactory()
 ft_factory.set_editor_property("parent_class", unreal.FunctionalTest)
 ft_bp = get_or_create("BP_FT_Smoke", TEST_MAPS, None, ft_factory,
                       lambda bp: (unreal.BlueprintEditorLibrary.add_event_override(bp, "ReceiveStartTest", unreal.IntPoint(0, 0)),
                                   unreal.BlueprintEditorLibrary.compile_blueprint(bp)))
+
+
+def wire_smoke_test(bp):
+    editor = unreal.BlueprintGraphEditor.get_graph_editor(
+        unreal.BlueprintEditorLibrary.find_event_graph(bp))
+    start = editor.find_event_node("ReceiveStartTest")
+    if start.find_then_pin().list_connected_pins():
+        return  # Preserve an already wired graph, including user edits.
+    if any(p.list_connected_pins() for n in editor.list_all_nodes() for p in n.list_all_pins()):
+        raise RuntimeError("Smoke graph has custom wiring; refusing to overwrite it")
+
+    def call(path, x, y=0):
+        node = editor.add_call_function_node(path)
+        if node is None:
+            raise RuntimeError(f"Cannot create {path}")
+        node.set_node_pos(unreal.IntPoint(x, y))
+        return node
+
+    def link(output, input_pin):
+        if not output.try_create_connection(input_pin):
+            raise RuntimeError("Smoke graph pin connection failed")
+
+    def value(pin, literal):
+        if not pin.set_pin_value(literal):
+            raise RuntimeError(f"Invalid smoke pin value: {literal}")
+
+    spawn = editor.create_node_from_name("Game|SpawnActorfromClass", unreal.Vector2D(240, 0), [])
+    value(spawn.find_input_pin("Class"), "/Script/CastleDefender.TestDummy")
+    value(spawn.find_input_pin("CollisionHandlingOverride"), "AlwaysSpawn")
+    transform = call("/Script/Engine.Actor.GetTransform", 0, 240)
+    link(transform.find_result_pin(), spawn.find_input_pin("SpawnTransform"))
+    link(start.find_then_pin(), spawn.find_execute_pin())
+    valid = call("/Script/Engine.KismetSystemLibrary.IsValid", 460, 240)
+    link(spawn.find_result_pin(), valid.find_input_pin("Object"))
+    guard = editor.add_branch_node()
+    guard.set_node_pos(unreal.IntPoint(500, 0))
+    link(valid.find_result_pin(), guard.find_condition_pin())
+    link(spawn.find_then_pin(), guard.find_execute_pin())
+    hit = call("/Script/CastleDefender.TestDummy.ApplyDebugHit", 720)
+    value(hit.find_input_pin("Damage"), "1000")
+    link(spawn.find_result_pin(), hit.find_self_pin())
+    link(guard.find_then_pin(), hit.find_execute_pin())
+    health = call("/Script/CastleDefender.TestDummy.GetHealth", 720, 240)
+    link(spawn.find_result_pin(), health.find_self_pin())
+    dead = call("/Script/CastleDefender.HealthComponent.IsDead", 950, 240)
+    link(health.find_result_pin(), dead.find_self_pin())
+    check = editor.add_branch_node()
+    check.set_node_pos(unreal.IntPoint(1000, 0))
+    link(hit.find_then_pin(), check.find_execute_pin())
+    link(dead.find_result_pin(), check.find_condition_pin())
+    for source, result, message, y in (
+            (check.find_then_pin(), "Succeeded", "Dummy died", 0),
+            (check.find_else_pin(), "Failed", "Dummy survived", 200),
+            (guard.find_else_pin(), "Failed", "Dummy spawn failed", 400)):
+        finish = call("/Script/FunctionalTesting.FunctionalTest.FinishTest", 1250, y)
+        value(finish.find_input_pin("TestResult"), result)
+        value(finish.find_input_pin("Message"), message)
+        link(source, finish.find_execute_pin())
+    if not unreal.BlueprintEditorLibrary.compile_blueprint(bp) or editor.list_nodes_with_errors() or editor.list_nodes_with_warnings():
+        raise RuntimeError("Smoke Blueprint did not compile without warnings")
+    assets.save_loaded_asset(bp, only_if_is_dirty=False)
+    unreal.log("Wired and saved Foundation smoke test")
+
+
+wire_smoke_test(ft_bp)
 
 if not assets.does_asset_exist(f"{TEST_MAPS}/FT_Smoke"):
     get_or_create("FT_Smoke", TEST_MAPS, unreal.World, unreal.WorldFactory())

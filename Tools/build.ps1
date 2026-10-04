@@ -1,5 +1,5 @@
 # Builds a CastleDefender target from the command line.
-# Usage: powershell -File Tools/build.ps1 [-Target CastleDefenderEditor|CastleDefender] [-Configuration Development]
+# Usage: Tools/build.bat [-Target CastleDefenderEditor|CastleDefender] [-Configuration Development]
 param(
     [string]$Target = 'CastleDefenderEditor',
     [string]$Configuration = 'Development'

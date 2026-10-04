@@ -34,11 +34,16 @@ float UHealthComponent::ApplyHit(const FCombatHit& Hit)
 
 	const float Applied = FMath::Min(Hit.Damage, CurrentHealth);
 	CurrentHealth -= Applied;
-	OnDamaged.Broadcast(Hit, CurrentHealth);
-
-	if (CurrentHealth <= 0.f)
+	// Commit this hit's transition before observers can deliver reentrant hits.
+	const bool bKilledByThisHit = CurrentHealth <= 0.f;
+	if (bKilledByThisHit)
 	{
 		bDead = true;
+	}
+	OnDamaged.Broadcast(Hit, CurrentHealth);
+
+	if (bKilledByThisHit)
+	{
 		OnDeath.Broadcast(Hit);
 	}
 	return Applied;

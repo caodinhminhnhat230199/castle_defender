@@ -20,7 +20,7 @@ Action Strategy Roguelite: a third-person Hero fights alongside squads while tow
 
 | Item | Value |
 |---|---|
-| Current phase | **P0 (Combat Sandbox).** Phase F gate passed 2026-10-04. Update this line when a gate passes. |
+| Current phase | **P0 (Combat Sandbox), in progress.** Phase F passed on 2026-10-04. Update this line when a gate passes. |
 | Engine / module | UE 5.8, runtime module `CastleDefender` (docs write `<Game>`). Project file `CastleDefender.uproject`. |
 | Dev OS | Windows 11 (Visual Studio 2026, MSVC 14.51). Win64 builds and profiling run on the dev PC. |
 | Language | Code, comments, docs and commit messages in English. Reply to the user in the language they write (often Vietnamese). |
@@ -107,10 +107,10 @@ Rows still marked TBD are filled by their task. **Do not guess them.**
 
 | Action | Command |
 |---|---|
-| Build editor target | `powershell -File Tools/build.ps1` (game target: `-Target CastleDefender`). Finds the engine from `EngineAssociation`; override with `UE_ROOT`. |
-| Run automation tests | `Tools/run_tests.bat` (or `powershell -File Tools/run_tests.ps1 [-Filter "CastleDefender.Combat"]`). Runs `CastleDefender.*` specs and `Project.Functional Tests.*` headless; exit 0 only if all pass. |
-| Create Foundation editor assets | `powershell -File Tools/create_foundation_assets.ps1` (idempotent Python script) |
-| Package a Development build | `powershell -File Tools/package.ps1` (output in `Saved/Packaged/Windows/`, not committed). Profiling: `ai/game/00-foundation/profiling-checklist.md`. |
+| Build editor target | `Tools/build.bat` (game target: `-Target CastleDefender`). Finds the engine from `EngineAssociation`; override with `UE_ROOT`. |
+| Run automation tests | `Tools/run_tests.bat` (focused run: `-Filter "CastleDefender.Combat"`). Default gate runs both `CastleDefender.*` specs and `Project.Functional Tests.*` headless; exit 0 requires a complete successful report and editor exit 0. |
+| Create Foundation editor assets | `Tools/create_foundation_assets.bat` (idempotent Python script; preserves existing content and completes an empty smoke graph) |
+| Package a Development build | `Tools/package.bat` (output in `Saved/Packaged/Windows/`, not committed). Profiling: `ai/game/00-foundation/profiling-checklist.md`. |
 
 Test naming:
 - Automation Spec tests are named `<Game>.<Feature>.<Case>` and live in `Source/<Game>/Tests/`.
