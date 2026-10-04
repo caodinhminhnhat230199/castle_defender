@@ -9,6 +9,7 @@
 #include "Hero/StaminaComponent.h"
 #include "Combat/MeleeTraceComponent.h"
 #include "Core/GameLog.h"
+#include "Core/GameTags.h"
 #include "Core/GameDebug.h"
 #include "DrawDebugHelpers.h"
 
@@ -58,9 +59,10 @@ void AHeroCharacter::BeginPlay()
 
 void AHeroCharacter::Tick(float DeltaSeconds)
 {
+	// Tick: retain ACharacter's root-motion processing; build a development readout only while its CVar is enabled.
 	Super::Tick(DeltaSeconds);
 
-#if ENABLE_DRAW_DEBUG
+#if ENABLE_DRAW_DEBUG && !UE_BUILD_SHIPPING
 	if (GameDebug::CVarCombat.GetValueOnGameThread() > 0)
 	{
 		const FVector Top = GetActorLocation() + FVector(0.f, 0.f, 110.f);
@@ -70,8 +72,8 @@ void AHeroCharacter::Tick(float DeltaSeconds)
 		const float MaxStam = StaminaComponent ? StaminaComponent->GetMaxStamina() : 0.f;
 		const bool bTickOn = StaminaComponent ? StaminaComponent->IsComponentTickEnabled() : false;
 		DrawDebugString(GetWorld(), Top,
-			FString::Printf(TEXT("HP: %.0f/%.0f | Stamina: %.0f/%.0f (Tick:%s)"),
-				CurHP, MaxHP, CurStam, MaxStam, bTickOn ? TEXT("ON") : TEXT("OFF")),
+			FString::Printf(TEXT("HP: %.0f/%.0f | Stamina: %.0f/%.0f (Tick:%s)\n%s"),
+				CurHP, MaxHP, CurStam, MaxStam, bTickOn ? TEXT("ON") : TEXT("OFF"), *CombatComponent->GetCombatDebugString()),
 			nullptr, FColor::Yellow, 0.f);
 	}
 #endif
@@ -86,6 +88,8 @@ void AHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		if (MoveAction)
 		{
 			EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AHeroCharacter::Move);
+			EnhancedInput->BindAction(MoveAction, ETriggerEvent::Completed, this, &AHeroCharacter::StopMove);
+			EnhancedInput->BindAction(MoveAction, ETriggerEvent::Canceled, this, &AHeroCharacter::StopMove);
 		}
 		if (LookAction)
 		{
@@ -152,6 +156,7 @@ void AHeroCharacter::ApplyTuning()
 
 void AHeroCharacter::StartSprint()
 {
+	if (Health && Health->IsDead()) { return; }
 	bIsSprinting = true;
 	if (StaminaComponent && HeroClassDefinition && HeroClassDefinition->Stamina.SprintDrainPerSecond > 0.f)
 	{
@@ -179,7 +184,9 @@ void AHeroCharacter::UpdateMaxWalkSpeed()
 
 void AHeroCharacter::Move(const FInputActionValue& Value)
 {
+	if (Health && Health->IsDead()) { MovementInputAxes = FVector2D::ZeroVector; return; }
 	const FVector2D MovementVector = Value.Get<FVector2D>();
+	MovementInputAxes = MovementVector;
 
 	if (Controller != nullptr)
 	{
@@ -194,8 +201,21 @@ void AHeroCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
+void AHeroCharacter::StopMove(const FInputActionValue& Value)
+{
+	MovementInputAxes = FVector2D::ZeroVector;
+}
+
+FVector AHeroCharacter::GetMovementInputWorldDirection() const
+{
+	const FRotator CameraYaw(0.f, Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw, 0.f);
+	return (FRotationMatrix(CameraYaw).GetUnitAxis(EAxis::X) * MovementInputAxes.Y
+		+ FRotationMatrix(CameraYaw).GetUnitAxis(EAxis::Y) * MovementInputAxes.X).GetSafeNormal2D();
+}
+
 void AHeroCharacter::Look(const FInputActionValue& Value)
 {
+	if (Health && Health->IsDead()) { return; }
 	const FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
@@ -265,7 +285,14 @@ void AHeroCharacter::OnParry(const FInputActionValue& Value)
 
 void AHeroCharacter::HandleDeath(const FCombatHit& KillingHit)
 {
+	if (bDeathHandled) { return; }
+	bDeathHandled = true;
 	StopSprint();
+	MovementInputAxes = FVector2D::ZeroVector;
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
+	CombatComponent->HandleOwnerDeath(KillingHit);
 	OnHeroDeath.Broadcast(KillingHit);
+	OnFeedbackRequested.Broadcast(GameTags::Feedback_Hero_Death, KillingHit);
+	OnDeathPresentation(KillingHit);
 }
-

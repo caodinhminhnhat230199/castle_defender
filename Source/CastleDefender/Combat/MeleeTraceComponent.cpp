@@ -143,7 +143,9 @@ void UMeleeTraceComponent::ProcessSweepStep(const TArray<FVector>& PreviousPosit
 		return;
 	}
 
+	#if ENABLE_DRAW_DEBUG && !UE_BUILD_SHIPPING
 	const bool bDebugTrace = (GameDebug::CVarCombatTrace.GetValueOnGameThread() > 0);
+	#endif
 
 	FCollisionQueryParams QueryParams(TEXT("MeleeTraceSweep"), false, GetOwner());
 	QueryParams.AddIgnoredActor(GetOwner());
@@ -170,7 +172,7 @@ void UMeleeTraceComponent::ProcessSweepStep(const TArray<FVector>& PreviousPosit
 			QueryParams
 		);
 
-#if ENABLE_DRAW_DEBUG
+#if ENABLE_DRAW_DEBUG && !UE_BUILD_SHIPPING
 		if (bDebugTrace)
 		{
 			DrawDebugSphere(World, CurrPos, TraceRadius, 8, FColor::Yellow, false, 0.15f);
@@ -213,16 +215,25 @@ bool UMeleeTraceComponent::TryHitTarget(AActor* HitActor, const FVector& ImpactP
 	const ECombatHitResult Result = UCombatLibrary::DeliverHit(HitActor, HitToSend);
 	OnHitResolved.Broadcast(HitActor, Result);
 
-#if ENABLE_DRAW_DEBUG
+#if ENABLE_DRAW_DEBUG && !UE_BUILD_SHIPPING
 	UWorld* World = GetWorld();
 	if (World && GameDebug::CVarCombatTrace.GetValueOnGameThread() > 0)
 	{
+		FString HitSet;
+		for (const TWeakObjectPtr<AActor>& Actor : AlreadyHitActors)
+		{
+			if (Actor.IsValid())
+			{
+				HitSet += Actor->GetName() + TEXT(" ");
+				DrawDebugSphere(World, Actor->GetActorLocation(), 20.f, 8, FColor::Red, false, 0.15f);
+			}
+		}
 		DrawDebugPoint(World, HitToSend.HitLocation, 12.f, FColor::Red, false, 1.0f);
 		DrawDebugString(World, HitToSend.HitLocation,
-			FString::Printf(TEXT("Hit: %s [%s] (Total: %d)"),
+			FString::Printf(TEXT("Hit: %s [%s] (Total: %d)\nAlready hit: %s"),
 				*HitActor->GetName(),
 				*UEnum::GetValueAsString(Result),
-				AlreadyHitActors.Num()),
+				AlreadyHitActors.Num(), *HitSet),
 			nullptr, FColor::White, 1.0f);
 	}
 #endif

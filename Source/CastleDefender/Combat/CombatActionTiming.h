@@ -30,12 +30,36 @@ struct CASTLEDEFENDER_API FCombatActionTiming
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
 	bool bHasInvulnerableWindow = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	int32 InvulnerableWindowCount = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	float InvulnerableWindowStart = 0.f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	float InvulnerableWindowEnd = 0.f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
 	bool bHasParryWindow = false;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	bool bHasHitWindow = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	int32 HitWindowCount = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	float HitWindowStart = 0.f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	float HitWindowEnd = 0.f;
+
 	/** Inspects a montage's authored notify states and builds a timing summary. */
 	static bool InspectMontage(const UAnimMontage* Montage, FCombatActionTiming& OutTiming, FString* OutError = nullptr);
+
+	/** Adds a CombatHitWindow notify state to a montage. */
+	static bool AddHitWindow(UAnimMontage* Montage, float StartTime, float Duration);
+
+	/** Adds a CancelWindow notify state to a montage. */
+	static bool AddCancelWindow(UAnimMontage* Montage, float StartTime, float Duration, const TArray<EHeroAction>& AllowedActions);
 };
 
 /**
@@ -82,4 +106,14 @@ public:
 	virtual void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override;
 	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
 	virtual FString GetNotifyName_Implementation() const override;
+};
+
+/** Authored resistance availability only; strength/enablement come from the current attack definition. */
+UCLASS(meta = (DisplayName = "Hero Interrupt Resistance"))
+class CASTLEDEFENDER_API UAnimNotifyState_InterruptResistance : public UAnimNotifyState
+{
+	GENERATED_BODY()
+public:
+	virtual void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override;
+	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
 };

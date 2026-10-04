@@ -1,4 +1,5 @@
 #include "Hero/HeroClassDefinition.h"
+#include "Combat/CombatActionTiming.h"
 
 #if WITH_EDITOR
 #include "Misc/DataValidation.h"
@@ -16,6 +17,108 @@ UHeroClassDefinition::UHeroClassDefinition()
 	Stamina = FStaminaConfig();
 	DodgeStaminaCost = 20.f;
 	HeavyStaminaCost = 25.f;
+
+	LightChain.SetNum(3);
+	LightChain[0].Damage = 10.f;
+	LightChain[0].PoiseDamage = 5.f;
+	LightChain[0].StaminaCost = 0.f;
+	LightChain[0].TraceRadius = 25.f;
+
+	LightChain[1].Damage = 10.f;
+	LightChain[1].PoiseDamage = 5.f;
+	LightChain[1].StaminaCost = 0.f;
+	LightChain[1].TraceRadius = 25.f;
+
+	LightChain[2].Damage = 14.f;
+	LightChain[2].PoiseDamage = 10.f;
+	LightChain[2].StaminaCost = 0.f;
+	LightChain[2].TraceRadius = 25.f;
+
+	Heavy.Damage = 30.f;
+	Heavy.PoiseDamage = 40.f;
+	Heavy.StaminaCost = 25.f;
+	Heavy.TraceRadius = 30.f;
+}
+
+bool UHeroClassDefinition::ValidateLightAttack(int32 ChainIndex, FString& OutError) const
+{
+	OutError.Reset();
+	if (LightChain.Num() != 3 || !LightChain.IsValidIndex(ChainIndex))
+	{
+		OutError = TEXT("LightChain must have exactly three entries and a valid index.");
+		return false;
+	}
+	const FHeroAttackData& Attack = LightChain[ChainIndex];
+	FCombatActionTiming Timing;
+	if (!FCombatActionTiming::InspectMontage(Attack.Montage, Timing, &OutError))
+	{
+		OutError = FString::Printf(TEXT("LightChain[%d] montage: %s"), ChainIndex, *OutError);
+		return false;
+	}
+	if (!FMath::IsFinite(Attack.Damage) || Attack.Damage <= 0.f
+		|| !FMath::IsFinite(Attack.PoiseDamage) || Attack.PoiseDamage < 0.f
+		|| !FMath::IsFinite(Attack.TraceRadius) || Attack.TraceRadius <= 0.f
+		|| !FMath::IsFinite(Attack.StaminaCost) || Attack.StaminaCost < 0.f
+		|| !FMath::IsFinite(Attack.StateDuration) || Attack.StateDuration < 0.f
+		|| !FMath::IsFinite(Attack.InterruptResistance) || Attack.InterruptResistance < 0.f
+		|| Heavy.Damage <= Attack.Damage || Heavy.PoiseDamage <= Attack.PoiseDamage
+		|| Attack.StaminaCost >= HeavyStaminaCost)
+	{
+		OutError = FString::Printf(TEXT("LightChain[%d]: invalid attack values or Light/Heavy ordering."), ChainIndex);
+		return false;
+	}
+	const TArray<EHeroAction>& Allowed = Timing.AllowedCancelActions;
+	const bool bChainStep = ChainIndex < 2;
+	if (Timing.HitWindowCount != 1 || !Timing.bHasCancelWindow
+		|| !Allowed.Contains(EHeroAction::Dodge) || !Allowed.Contains(EHeroAction::BlockStart)
+		|| Allowed.Contains(EHeroAction::Light) != bChainStep
+		|| Allowed.Contains(EHeroAction::Heavy) != bChainStep
+		|| Allowed.Contains(EHeroAction::Parry) || Allowed.Contains(EHeroAction::Interact)
+		|| Allowed.Contains(EHeroAction::BlockEnd))
+	{
+		OutError = FString::Printf(TEXT("LightChain[%d]: requires one hit window and the authored Light/Heavy/Dodge/Block cancel set (Dodge/Block only for hit 3)."), ChainIndex);
+		return false;
+	}
+	return true;
+}
+
+bool UHeroClassDefinition::ValidateDodge(EHeroDodgeDirection Direction, FString& OutError) const
+{
+	FCombatActionTiming Timing;
+	UAnimMontage* Montage = Dodge.GetMontage(Direction);
+	if (!FMath::IsFinite(Dodge.StaminaCost) || Dodge.StaminaCost < 0.f
+		|| !FMath::IsFinite(Dodge.RootMotionScale) || Dodge.RootMotionScale <= 0.f)
+	{
+		OutError = TEXT("Dodge cost must be nonnegative and root-motion scale must be positive.");
+		return false;
+	}
+	if (!FCombatActionTiming::InspectMontage(Montage, Timing, &OutError)) { return false; }
+	if (Timing.InvulnerableWindowCount != 1 || Timing.bHasHitWindow || Timing.bHasParryWindow
+		|| Timing.InvulnerableWindowStart <= 0.f || Timing.InvulnerableWindowEnd >= Timing.TotalDuration
+		|| !Timing.bHasCancelWindow || Timing.CancelWindowStart + KINDA_SMALL_NUMBER < Timing.InvulnerableWindowEnd
+		|| Timing.AllowedCancelActions.Num() != 3
+		|| !Timing.AllowedCancelActions.Contains(EHeroAction::Light)
+		|| !Timing.AllowedCancelActions.Contains(EHeroAction::Heavy)
+		|| !Timing.AllowedCancelActions.Contains(EHeroAction::BlockStart))
+	{
+		OutError = TEXT("Dodge requires one bounded i-frame window followed by Light/Heavy/Block recovery cancels, and no attack/parry window.");
+		return false;
+	}
+	return true;
+}
+
+bool UHeroClassDefinition::ValidateHitReaction(bool bFromFront, FString& OutError) const
+{
+	FCombatActionTiming Timing;
+	if (!FCombatActionTiming::InspectMontage(bFromFront ? HitReact.FrontMontage : HitReact.BackMontage, Timing, &OutError)) { return false; }
+	if (Timing.bHasHitWindow || Timing.bHasInvulnerableWindow || Timing.bHasParryWindow
+		|| !Timing.bHasCancelWindow || Timing.CancelWindowStart <= 0.f
+		|| Timing.AllowedCancelActions.Num() != 1 || !Timing.AllowedCancelActions.Contains(EHeroAction::Dodge))
+	{
+		OutError = TEXT("Hit reaction requires a late Dodge-only cancel window and no offensive/defensive window.");
+		return false;
+	}
+	return true;
 }
 
 #if WITH_EDITOR
@@ -83,9 +186,9 @@ EDataValidationResult UHeroClassDefinition::IsDataValid(FDataValidationContext& 
 		Result = EDataValidationResult::Invalid;
 	}
 
-	if (DodgeStaminaCost < 0.f)
+	if (!FMath::IsFinite(Heavy.InterruptResistance) || Heavy.InterruptResistance < 0.f)
 	{
-		Context.AddError(LOCTEXT("InvalidDodgeStaminaCost", "DodgeStaminaCost must be non-negative."));
+		Context.AddError(LOCTEXT("InvalidHeavyResistance", "Heavy.InterruptResistance must be finite and non-negative."));
 		Result = EDataValidationResult::Invalid;
 	}
 
@@ -95,6 +198,43 @@ EDataValidationResult UHeroClassDefinition::IsDataValid(FDataValidationContext& 
 		Result = EDataValidationResult::Invalid;
 	}
 
+	for (int32 Index = 0; Index < 3; ++Index)
+	{
+		FString Error;
+		if (!ValidateLightAttack(Index, Error))
+		{
+			Context.AddError(FText::FromString(Error));
+			Result = EDataValidationResult::Invalid;
+		}
+	}
+
+	for (EHeroDodgeDirection Direction : { EHeroDodgeDirection::Forward, EHeroDodgeDirection::Backward,
+		EHeroDodgeDirection::Left, EHeroDodgeDirection::Right })
+	{
+		FString Error;
+		if (!ValidateDodge(Direction, Error))
+		{
+			Context.AddError(FText::FromString(FString::Printf(TEXT("Dodge[%d]: %s"), static_cast<int32>(Direction), *Error)));
+			Result = EDataValidationResult::Invalid;
+		}
+	}
+	for (bool bFront : { false, true })
+	{
+		FString Error;
+		if (!ValidateHitReaction(bFront, Error))
+		{
+			Context.AddError(FText::FromString(Error));
+			Result = EDataValidationResult::Invalid;
+		}
+	}
+	FCombatActionTiming DeathTiming;
+	FString DeathError;
+	if (!FCombatActionTiming::InspectMontage(HitReact.DeathMontage, DeathTiming, &DeathError)
+		|| DeathTiming.bHasHitWindow || DeathTiming.bHasInvulnerableWindow || DeathTiming.bHasParryWindow || DeathTiming.bHasCancelWindow)
+	{
+		Context.AddError(LOCTEXT("InvalidDeathMontage", "Death requires a valid montage with no combat windows."));
+		Result = EDataValidationResult::Invalid;
+	}
 	return CombineDataValidationResults(Result, EDataValidationResult::Valid);
 }
 #endif

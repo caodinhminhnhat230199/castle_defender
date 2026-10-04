@@ -18,6 +18,7 @@ class UMeleeTraceComponent;
 class UInputAction;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHeroDeathSignature, const FCombatHit&, KillingHit);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHeroFeedbackRequestedSignature, FGameplayTag, FeedbackTag, const FCombatHit&, Hit);
 
 /**
  * Playable Warlord hero character (spec §4.4, D-19, D-20).
@@ -55,7 +56,13 @@ public:
 	bool IsSprinting() const { return bIsSprinting; }
 
 	UFUNCTION(BlueprintPure, Category = "Hero")
+	FVector GetMovementInputWorldDirection() const;
+
+	UFUNCTION(BlueprintPure, Category = "Hero")
 	UHeroClassDefinition* GetHeroClassDefinition() const { return HeroClassDefinition; }
+
+	UFUNCTION(BlueprintCallable, Category = "Hero")
+	void SetHeroClassDefinition(UHeroClassDefinition* InDef) { HeroClassDefinition = InDef; }
 
 	UFUNCTION(BlueprintPure, Category = "Hero")
 	UHealthComponent* GetHealthComponent() const { return Health; }
@@ -80,6 +87,12 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Hero")
 	FHeroDeathSignature OnHeroDeath;
+	UPROPERTY(BlueprintAssignable, Category = "Hero")
+	FHeroFeedbackRequestedSignature OnFeedbackRequested;
+	UFUNCTION(BlueprintImplementableEvent, Category = "Hero|Presentation")
+	void OnHitReactPresentation(const FCombatHit& Hit, bool bFromFront);
+	UFUNCTION(BlueprintImplementableEvent, Category = "Hero|Presentation")
+	void OnDeathPresentation(const FCombatHit& Hit);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
@@ -134,6 +147,7 @@ protected:
 	TObjectPtr<UInputAction> ParryAction;
 
 	void Move(const FInputActionValue& Value);
+	void StopMove(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void OnSprintStarted(const FInputActionValue& Value);
 	void OnSprintCompleted(const FInputActionValue& Value);
@@ -151,4 +165,6 @@ private:
 	void UpdateMaxWalkSpeed();
 
 	bool bIsSprinting = false;
+	bool bDeathHandled = false;
+	FVector2D MovementInputAxes = FVector2D::ZeroVector;
 };

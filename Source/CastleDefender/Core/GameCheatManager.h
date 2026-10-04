@@ -37,6 +37,10 @@ public:
 	/** Toggles infinite stamina cheat on the controlled hero. */
 	UFUNCTION(Exec)
 	void InfiniteStamina();
+	UFUNCTION(Exec)
+	void KillHero();
+	UFUNCTION(Exec)
+	void ReportHeroWindows();
 
 	/** Dispatches a synthetic FCombatHit against the controlled hero via DeliverHit. */
 	UFUNCTION(Exec)

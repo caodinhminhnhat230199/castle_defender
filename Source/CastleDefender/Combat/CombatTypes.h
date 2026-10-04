@@ -86,6 +86,10 @@ struct FCombatHit
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	bool bIsParryCounter = false;
 
+	/** DeliverHit sets this on the health payload after interception; attackers cannot assert it. */
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	bool bWasBlocked = false;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	FCombatInterruptData InterruptData;
 };

@@ -38,6 +38,7 @@ ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hi
 	Resolution.Instigator = Hit.Instigator;
 	Resolution.Target = Target;
 	Resolution.Hit = Hit;
+	Resolution.Hit.bWasBlocked = false; // Outcome metadata is owned by this resolver, including terminated hits.
 	Resolution.HitLocation = Hit.HitLocation.IsNearlyZero() ? Target->GetActorLocation() : Hit.HitLocation;
 	Resolution.HitDirection = Hit.HitDirection;
 	Resolution.bIsHeavy = Hit.bIsHeavy;
@@ -67,6 +68,8 @@ ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hi
 	}
 
 	// Apply damage via HealthComponent
+	WorkingHit.bWasBlocked = InterceptorResult == ECombatHitResult::Blocked || InterceptorResult == ECombatHitResult::BlockBroken;
+	Resolution.Hit.bWasBlocked = WorkingHit.bWasBlocked;
 	const float DamageDealt = Health->ApplyHit(WorkingHit);
 	Resolution.DamageApplied = DamageDealt;
 

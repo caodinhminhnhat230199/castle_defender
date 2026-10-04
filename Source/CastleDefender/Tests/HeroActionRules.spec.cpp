@@ -1,11 +1,12 @@
 #include "Misc/AutomationTest.h"
 
-#if WITH_DEV_AUTOMATION_TESTS
+#if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 
 #include "Hero/HeroCombatTypes.h"
 #include "Hero/HeroCombatComponent.h"
 #include "Hero/HeroCharacter.h"
 #include "Core/GameTags.h"
+#include "Tests/HeroCombatFixture.h"
 
 BEGIN_DEFINE_SPEC(FHeroActionRulesSpec, "CastleDefender.Combat.Hero.ActionRules", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
 END_DEFINE_SPEC(FHeroActionRulesSpec)
@@ -92,7 +93,8 @@ void FHeroActionRulesSpec::Define()
 	{
 		It("maps states to corresponding GameplayTags", [this]()
 		{
-			UHeroCombatComponent* Comp = NewObject<UHeroCombatComponent>();
+			FHeroCombatFixture Fixture;
+			UHeroCombatComponent* Comp = Fixture.Hero->GetCombatComponent();
 			TestEqual(TEXT("Idle tag"), Comp->GetActionTag(), FGameplayTag());
 
 			Comp->RequestAction(EHeroAction::Light);
@@ -115,7 +117,8 @@ void FHeroActionRulesSpec::Define()
 
 		It("buffers rejected actions and consumes when cancel window opens", [this]()
 		{
-			UHeroCombatComponent* Comp = NewObject<UHeroCombatComponent>();
+			FHeroCombatFixture Fixture;
+			UHeroCombatComponent* Comp = Fixture.Hero->GetCombatComponent();
 			Comp->RequestAction(EHeroAction::Light);
 			TestEqual(TEXT("State is LightAttack"), Comp->GetActionState(), EHeroActionState::LightAttack);
 

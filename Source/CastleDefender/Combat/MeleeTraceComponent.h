@@ -42,6 +42,7 @@ public:
 	void SetTraceMesh(USceneComponent* InMesh) { TraceMeshComponent = InMesh; }
 
 	const TSet<TWeakObjectPtr<AActor>>& GetAlreadyHitActors() const { return AlreadyHitActors; }
+	const FCombatHit& GetPendingAttackTemplate() const { return PendingHitTemplate; }
 
 	/** Broadcast when a hit attempt on a target completes through DeliverHit. */
 	UPROPERTY(BlueprintAssignable, Category = "Combat")

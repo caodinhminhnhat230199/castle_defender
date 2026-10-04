@@ -15,6 +15,10 @@ class CASTLEDEFENDER_API UHeroClassDefinition : public UGameDefinition
 	GENERATED_BODY()
 
 public:
+	/** Same action/data validation in editor and packaged runtime, before spending stamina. */
+	bool ValidateLightAttack(int32 ChainIndex, FString& OutError) const;
+	bool ValidateDodge(EHeroDodgeDirection Direction, FString& OutError) const;
+	bool ValidateHitReaction(bool bFromFront, FString& OutError) const;
 	UHeroClassDefinition();
 
 #if WITH_EDITOR
@@ -36,7 +40,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stamina")
 	FStaminaConfig Stamina;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	TArray<FHeroAttackData> LightChain;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	FHeroAttackData Heavy;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	FHeroDodgeData Dodge;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	FHeroHitReactData HitReact;
+
+	UPROPERTY(meta = (DeprecatedProperty, DeprecationMessage = "Use Dodge.StaminaCost."))
 	float DodgeStaminaCost = 20.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (ClampMin = "0.0"))

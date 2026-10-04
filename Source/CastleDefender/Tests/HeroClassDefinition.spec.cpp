@@ -17,6 +17,13 @@ void FHeroClassDefinitionSpec::Define()
 	BeforeEach([this]()
 	{
 		Definition = NewObject<UHeroClassDefinition>(GetTransientPackage(), TEXT("DA_TestHeroClassDefinition"));
+		if (const UHeroClassDefinition* Authored = LoadObject<UHeroClassDefinition>(nullptr,
+			TEXT("/Game/CastleDefender/Hero/DA_HeroClass_Warlord")))
+		{
+			Definition->LightChain = Authored->LightChain;
+			Definition->Dodge = Authored->Dodge;
+			Definition->HitReact = Authored->HitReact;
+		}
 	});
 
 	It("uses HeroClassDefinition as Primary Asset Type", [this]()

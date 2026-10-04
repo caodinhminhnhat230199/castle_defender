@@ -28,7 +28,7 @@ void ATestDummy::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-#if ENABLE_DRAW_DEBUG
+#if ENABLE_DRAW_DEBUG && !UE_BUILD_SHIPPING
 	if (GameDebug::CVarCombat.GetValueOnGameThread() > 0)
 	{
 		const FVector Top = GetActorLocation() + FVector(0.f, 0.f, 130.f);

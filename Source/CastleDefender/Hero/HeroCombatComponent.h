@@ -29,6 +29,7 @@ public:
 	UHeroCombatComponent();
 
 	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	/** Attempts to start a requested action. Buffers if currently committed but cancel window may open soon. */
 	UFUNCTION(BlueprintCallable, Category = "Combat")
@@ -56,7 +57,27 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Combat")
 	bool IsInParryWindow() const { return bParryWindowOpen; }
 
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	int32 GetCurrentChainIndex() const { return CurrentChainIndex; }
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void ResetChain();
+
+	const FHeroAttackData* GetAttackDataForAction(EHeroAction Action, int32 ChainIndex = 0) const;
+
 	const TArray<EHeroAction>& GetAllowedCancelActions() const { return OpenCancelActions; }
+
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	AHeroCharacter* GetHeroOwner() const;
+
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	EHeroDodgeDirection GetLastDodgeDirection() const { return LastDodgeDirection; }
+	bool HasBufferedInput() const { return BufferedInput.bValid; }
+	float GetBufferedInputAge() const { return BufferedInput.Age; }
+#if !UE_BUILD_SHIPPING
+	/** Read-only view of owner state and actual montage position; never maintains display timers. */
+	FString GetCombatDebugString() const;
+#endif
 
 	// Window management called by AnimNotifyStates
 	UFUNCTION(BlueprintCallable, Category = "Combat")
@@ -76,9 +97,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void CloseParryWindow();
+	void OpenInterruptResistanceWindow() { bInterruptResistanceWindowOpen = true; }
+	void CloseInterruptResistanceWindow() { bInterruptResistanceWindowOpen = false; }
 
 	/** Plays a montage owning a given action state, wiring blend-out and completion to return to Idle. */
-	void PlayActionMontage(UAnimMontage* Montage, EHeroActionState NewState);
+	bool PlayActionMontage(UAnimMontage* Montage, EHeroActionState NewState);
 
 	/** Force-closes all active windows. */
 	UFUNCTION(BlueprintCallable, Category = "Combat")
@@ -87,6 +110,8 @@ public:
 	/** Clears any buffered input. */
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void ClearBuffer();
+	/** Called by the owning hero before publishing its death event to observers. */
+	void HandleOwnerDeath(const FCombatHit& KillingHit);
 
 	// ICombatHitInterceptor
 	virtual ECombatHitResult InterceptHit(FCombatHit& Hit) override;
@@ -109,6 +134,9 @@ protected:
 	EHeroActionState CurrentState = EHeroActionState::Idle;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Combat")
+	int32 CurrentChainIndex = 0;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Combat")
 	bool bCancelWindowOpen = false;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Combat")
@@ -124,7 +152,7 @@ private:
 	struct FBufferedAction
 	{
 		EHeroAction Action = EHeroAction::Light;
-		double Timestamp = 0.0;
+		float Age = 0.f;
 		bool bValid = false;
 	};
 
@@ -143,9 +171,16 @@ private:
 	void HandleStateRemoved(FGameplayTag StateTag);
 
 	UFUNCTION()
-	void HandleOwnerDeath(const FCombatHit& KillingHit);
+	void HandleOwnerDamaged(const FCombatHit& Hit, float NewHealth);
 
 	FBufferedAction BufferedInput;
+	FString LastLightValidationError;
+	FString LastDodgeValidationError;
+	FString LastReactionValidationError;
+	EHeroDodgeDirection LastDodgeDirection = EHeroDodgeDirection::Backward;
+	float PreviousRootMotionScale = 1.f;
+	bool bDodgeRootMotionScaleApplied = false;
+	bool bInterruptResistanceWindowOpen = false;
 
 	UPROPERTY()
 	TObjectPtr<UAnimMontage> ActiveMontage;

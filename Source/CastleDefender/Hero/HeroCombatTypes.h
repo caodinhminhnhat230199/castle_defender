@@ -1,7 +1,44 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
+#include "Animation/AnimMontage.h"
 #include "HeroCombatTypes.generated.h"
+
+/**
+ * Data definition for an individual hero attack (spec §4.4, technical-plan §3.3).
+ * Configures montage, damage, poise damage, stamina cost, trace radius, and applied states.
+ */
+USTRUCT(BlueprintType)
+struct CASTLEDEFENDER_API FHeroAttackData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
+	TObjectPtr<UAnimMontage> Montage = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (ClampMin = "0.0"))
+	float Damage = 10.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (ClampMin = "0.0"))
+	float PoiseDamage = 5.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (ClampMin = "0.0"))
+	float StaminaCost = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (ClampMin = "0.0"))
+	float TraceRadius = 25.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
+	FGameplayTagContainer AppliedStates;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (ClampMin = "0.0"))
+	float StateDuration = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|Interruption")
+	bool bInterruptResistanceEnabled = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|Interruption", meta = (ClampMin = "0"))
+	float InterruptResistance = 0.f;
+};
 
 /** Hero combat actions requested by input or AI (technical-plan §5.1). */
 UENUM(BlueprintType)
@@ -31,6 +68,63 @@ enum class EHeroActionState : uint8
 	Parry,
 	HitReact,
 	Dead
+};
+
+UENUM(BlueprintType)
+enum class EHeroDodgeDirection : uint8 { Forward, Backward, Left, Right };
+
+USTRUCT(BlueprintType)
+struct FHeroHitReactData
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hit Reaction")
+	TObjectPtr<UAnimMontage> FrontMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hit Reaction")
+	TObjectPtr<UAnimMontage> BackMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hit Reaction")
+	TObjectPtr<UAnimMontage> DeathMontage;
+};
+
+/** Directional montages own movement/timing; the definition owns cost and distance scale. */
+USTRUCT(BlueprintType)
+struct CASTLEDEFENDER_API FHeroDodgeData
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge")
+	TObjectPtr<UAnimMontage> ForwardMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge")
+	TObjectPtr<UAnimMontage> BackwardMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge")
+	TObjectPtr<UAnimMontage> LeftMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge")
+	TObjectPtr<UAnimMontage> RightMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge", meta = (ClampMin = "0"))
+	float StaminaCost = 20.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge", meta = (ClampMin = "0.001"))
+	float RootMotionScale = 1.f;
+
+	UAnimMontage* GetMontage(EHeroDodgeDirection Direction) const
+	{
+		switch (Direction)
+		{
+		case EHeroDodgeDirection::Backward: return BackwardMontage;
+		case EHeroDodgeDirection::Left: return LeftMontage;
+		case EHeroDodgeDirection::Right: return RightMontage;
+		default: return ForwardMontage;
+		}
+	}
+	static EHeroDodgeDirection SelectDirection(const FVector& WorldInput, const FVector& Facing, bool bLockedOn)
+	{
+		if (WorldInput.IsNearlyZero()) { return EHeroDodgeDirection::Backward; }
+		if (!bLockedOn) { return EHeroDodgeDirection::Forward; }
+		const FVector Forward = Facing.GetSafeNormal2D();
+		const FVector Right = FVector::CrossProduct(FVector::UpVector, Forward);
+		const float F = FVector::DotProduct(WorldInput, Forward);
+		const float R = FVector::DotProduct(WorldInput, Right);
+		return FMath::Abs(F) >= FMath::Abs(R)
+			? (F >= 0.f ? EHeroDodgeDirection::Forward : EHeroDodgeDirection::Backward)
+			: (R >= 0.f ? EHeroDodgeDirection::Right : EHeroDodgeDirection::Left);
+	}
 };
 
 /** Locomotion and sprint tunables for hero classes (spec §4.4). */

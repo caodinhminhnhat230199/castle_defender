@@ -1,6 +1,9 @@
 #include "Core/GameCheatManager.h"
 
 #include "Combat/CombatLibrary.h"
+#include "Combat/HealthComponent.h"
+#include "Combat/CombatActionTiming.h"
+#include "Hero/HeroCombatComponent.h"
 #include "Combat/TestDummy.h"
 #include "Core/GameLog.h"
 #include "Core/GameTags.h"
@@ -105,6 +108,55 @@ void UGameCheatManager::InfiniteStamina()
 	{
 		UE_LOG(LogGamePlayer, Warning, TEXT("InfiniteStamina: controlled pawn is not an AHeroCharacter"));
 	}
+#endif
+}
+
+void UGameCheatManager::KillHero()
+{
+#if UE_WITH_CHEAT_MANAGER
+	APlayerController* PC = GetOuterAPlayerController();
+	if (AHeroCharacter* Hero = PC ? Cast<AHeroCharacter>(PC->GetPawn()) : nullptr)
+	{
+		FCombatHit Hit;
+		Hit.Damage = Hero->GetHealthComponent()->GetCurrentHealth();
+		Hit.SourceLayer = ECombatLayer::Environment;
+		UCombatLibrary::DeliverHit(Hero, Hit);
+	}
+#endif
+}
+
+void UGameCheatManager::ReportHeroWindows()
+{
+#if UE_WITH_CHEAT_MANAGER && !UE_BUILD_SHIPPING
+	const APlayerController* PC = GetOuterAPlayerController();
+	const AHeroCharacter* Hero = PC ? Cast<AHeroCharacter>(PC->GetPawn()) : nullptr;
+	const UHeroClassDefinition* Def = Hero ? Hero->GetHeroClassDefinition() : nullptr;
+	if (!Def) { UE_LOG(LogGameCombat, Warning, TEXT("ReportHeroWindows: controlled hero definition missing.")); return; }
+	auto Report = [](const FString& Action, const UAnimMontage* Montage)
+	{
+		FCombatActionTiming Timing;
+		FString Error;
+		const bool bValid = FCombatActionTiming::InspectMontage(Montage, Timing, &Error);
+		UE_LOG(LogGameCombat, Log, TEXT("ReportHeroWindows: %s / %s duration %.3f %s %s"),
+			*Action, *GetNameSafe(Montage), Timing.TotalDuration, bValid ? TEXT("VALID") : TEXT("INVALID"), *Error);
+		if (!Montage) { return; }
+		for (const FAnimNotifyEvent& Event : Montage->Notifies)
+		{
+			if (!Event.NotifyStateClass) { continue; }
+			UE_LOG(LogGameCombat, Log, TEXT("  %s window %s [%.3f, %.3f]"), *Action,
+				*GetNameSafe(Event.NotifyStateClass), Event.GetTime(), Event.GetTime() + Event.GetDuration());
+		}
+	};
+	for (int32 Index = 0; Index < Def->LightChain.Num(); ++Index) { Report(FString::Printf(TEXT("Light[%d]"), Index), Def->LightChain[Index].Montage); }
+	Report(TEXT("Heavy"), Def->Heavy.Montage);
+	for (EHeroDodgeDirection Direction : {EHeroDodgeDirection::Forward, EHeroDodgeDirection::Backward, EHeroDodgeDirection::Left, EHeroDodgeDirection::Right})
+	{
+		Report(UEnum::GetValueAsString(Direction), Def->Dodge.GetMontage(Direction));
+	}
+	Report(TEXT("HitReact Front"), Def->HitReact.FrontMontage);
+	Report(TEXT("HitReact Back"), Def->HitReact.BackMontage);
+	Report(TEXT("Death"), Def->HitReact.DeathMontage);
+	UE_LOG(LogGameCombat, Log, TEXT("%s"), *Hero->GetCombatComponent()->GetCombatDebugString());
 #endif
 }
 

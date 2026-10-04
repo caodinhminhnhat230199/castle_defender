@@ -7,8 +7,10 @@
 //   UE_VLOG(this, LogGameAI, Log, TEXT("State %s -> %s"), *Old, *New);
 namespace GameDebug
 {
+#if !UE_BUILD_SHIPPING
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarCombat;
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarCombatTrace;
+#endif
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarAI;
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarArmy;
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarLanes;
