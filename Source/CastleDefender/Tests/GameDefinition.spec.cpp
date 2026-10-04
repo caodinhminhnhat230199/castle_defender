@@ -26,7 +26,9 @@ void FGameDefinitionSpec::Define()
 		if (TestNotNull("Settings default object", Settings))
 		{
 			TestEqual("Category", Settings->GetCategoryName(), FName(TEXT("Game")));
+#if WITH_EDITOR
 			TestEqual("Section label", Settings->GetSectionText().ToString(), FString(TEXT("Game Tuning")));
+#endif
 		}
 	});
 

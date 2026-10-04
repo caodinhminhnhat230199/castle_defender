@@ -16,6 +16,28 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-04: Antigravity: T-CMB-13 Combat Sandbox map and game mode implemented
+- **Tasks:** T-CMB-13 Todo → Done. Unblocks T-CMB-01.
+- **Changed:** `Tools/create_combat_sandbox.py`, `Tools/create_combat_sandbox.ps1`, `Tools/create_combat_sandbox.bat`, `Content/CastleDefender/Maps/L_CombatSandbox.umap`, `Content/CastleDefender/Core/BP_SandboxGameMode.uasset`, `Config/DefaultEngine.ini` (GameDefaultMap and EditorStartupMap set to `L_CombatSandbox`), `Source/CastleDefender/Tests/GameDefinition.spec.cpp` (wrapped `GetSectionText` in `#if WITH_EDITOR` to fix non-editor Game build target), `ai/game/01-hero-combat/tasks.md`, this log.
+- **Verified:**
+  - Automated tooling: `Tools/create_combat_sandbox.bat` successfully generates and populates `L_CombatSandbox` and `BP_SandboxGameMode` (GameModeBase child, `BP_HeroPlayerController_C`, placeholder pawn) with 60×60m flat floor, LOS pillars, ramp, camera collision wall, PlayerStart, lighting, NavMeshBoundsVolume, 3 test dummies (2 hostile, 1 ally), and tuning kiosk TextRenderActor.
+  - Test suite: `Tools/run_tests.bat` passes all 15 tests (10 specs + FT_Smoke), editor exit 0.
+  - Scripted PIE: `Saved/run_sandbox_pie.ps1` runs PIE on `L_CombatSandbox`, verifies `BP_HeroPlayerController_C` possessing default pawn at PlayerStart (0, -1500, 100), detects 3 initial dummies with correct teams (2 hostile team 1, 1 ally team 0), runs `SpawnTestDummy`, confirms dummy count increments to 4, exits 0 (`Saved/combat-sandbox-pie.json`).
+  - Packaging: `Tools/build.bat` (Editor & Game targets) and `Tools/package.bat` succeed, cook summary 0 errors / 0 warnings.
+  - Packaged headless smoke: packaged `CastleDefender.exe` boots cleanly and loads `L_CombatSandbox` with `BP_SandboxGameMode_C` (`Saved/combat-sandbox-packaged.log`).
+- **Manual steps for the user:** none.
+- **Open questions / blockers:** none.
+- **Next:** T-CMB-01 (`AHeroCharacter` + `UHeroClassDefinition` + locomotion/sprint + third-person camera), now unblocked.
+
+### 2026-10-04: Codex: Hero Combat plans aligned to spec Draft v2
+- **Tasks:** documentation update for T-CMB-01…19; added T-CMB-20 (rotation assist) and T-CMB-21 (combat debugger). All CMB implementation tasks remain Todo; no gameplay implementation or phase advance.
+- **Changed:** `01-hero-combat/tasks.md`, `01-hero-combat/technical-plan.md`; two minimal proposed contract rows in `main_implement_plan.md` §8a; this log. Preserved the user's existing `01-hero-combat/spec.md` edits.
+- **Scope:** P0A/P0B sequencing with one G0 at the end of P0B; montage timing validation/derived views, bounded facing-only assist, optional interrupt resistance off by default, SYN-owned Staggered, first-success Parry consumption, 140° guard/0.6 s blocking-regen suppression defaults, resolution/feedback separation and development debug coverage. Existing Foundation code was inspected and reused in the plan; D-19/D-20 and Blueprint-only Functional Tests are reflected.
+- **Verified:** documentation checks pass: 21 unique tasks, matching overview/detail dependencies and Mermaid edges, all dependency IDs resolve, no CMB dependency cycle, valid rule/AC IDs and coverage through R-CMB-54 / AC-CMB-26, existing relative links and balanced fences. `git diff --check` passes for the documentation edited by Codex. Full diff check reports the pre-existing two-space Markdown hard break at spec.md:274, left intact. Unreal build/tests/PIE not run because this change edits planning documents only; no runtime verification is claimed.
+- **Manual steps for the user:** none for this documentation update. Task-specific editor/PIE/build requirements remain in tasks.md and must be completed when implementing each task.
+- **Open questions / blockers:** NEW-CMB-01…05 and 08…09 retain spec defaults pending G0 decisions. Resolution and interrupt metadata contracts are proposed, not implemented; providers must land before consumers. No documentation-update blocker.
+- **Next:** T-CMB-13 is the first eligible Hero Combat task; follow the P0A order and record its playable checkpoint before P0B. T-UXF-01 and T-SYN-01 remain external prerequisites where listed.
+
 ### 2026-10-04: Claude Code: merged Codex's Foundation commits with ours
 - **Branch:** `task/T-FND-foundation`. Merged `origin/task/T-FND-foundation` (Codex: 80cf798…1b3e72b) into the local branch (Claude Code: aceaedf, 24f32fd, 4713275). Merge commit, no history rewritten.
 - **Decisions (user, this session):** reference PC = i5-14600KF / RTX 5060 / 16 GB (Codex side; closer to a typical player PC than the i5-14500 / RTX 4070 Ti SUPER dev PC). `BP_FT_Smoke` = the scripted Codex version (spawn-validity guard, rebuildable by `Tools/create_foundation_assets.py`); the hand-wired one is backed up outside the repo.

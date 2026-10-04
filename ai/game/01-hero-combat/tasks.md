@@ -4,46 +4,50 @@
 |---|---|
 | Feature | CMB (`01-hero-combat`) |
 | Spec / plan | [spec.md](spec.md), [technical-plan.md](technical-plan.md) |
-| Phases | P0 (T-CMB-01…11, 13…16) · P2 (T-CMB-12) · VS provisional (T-CMB-17…19) |
+| Phases | P0A/P0B (internal slices of P0; T-CMB-01…11, 13…16, 20…21) · P2 (T-CMB-12) · VS provisional (T-CMB-17…19) |
 | Gate | G0 Combat Sandbox ([master plan §3](../main_implement_plan.md#gate-checklists)) |
 
 ## 1. Summary
 
-P0 builds the Warlord, the sandbox map and the combat Functional Tests, then runs the G0 gate. Recommended order: T-CMB-13 → 01 → 02 → 03 → 04 → 05/06/07/10/11 (parallel) → 08 → 09 → 14 → 15 → 16. Interact (T-CMB-12) waits for P2. VS tasks are provisional and must be re-planned after G3.
+P0A builds the playable combat feel slice; P0B completes defense, lock-on, stamina/feedback tuning and the G0 evidence. Recommended order: T-CMB-13 → 01 → 02/03 → 04 → 05/06/07/11 → 20/21 → P0A checkpoint → 08/10 → 09/14 → 15 → 16. External providers T-UXF-01 and T-SYN-01 must be ready when their dependent tasks start. G0 remains the single production gate, at the end of P0B; P0A does not open P1. Interact (T-CMB-12) waits for P2. VS tasks are provisional and must be re-planned after G3.
 
-All paths are proposals (no UE project exists yet). Every task also follows the master plan Definition of Done (§8).
+Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender`; reuse its combat, input, data, debug and test infrastructure. New CMB types/assets below remain proposals; `<Game>` means `CastleDefender`. Every task also follows the master plan Definition of Done (§8).
 
 ## 2. Task Overview
 
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
-| T-CMB-01 | `AHeroCharacter` + `UHeroClassDefinition` + locomotion/sprint + third-person camera | GAMEPLAY | P0 | Must | T-FND-05, T-FND-06, T-FND-07, T-CMB-13 | Todo |
-| T-CMB-02 | `UHeroCombatComponent` action state machine, commitment and cancel windows via anim notify states | GAMEPLAY | P0 | Must | T-CMB-01 | Todo |
-| T-CMB-03 | `UStaminaComponent` + stamina rules | GAMEPLAY | P0 | Must | T-CMB-01, T-FND-10 | Todo |
-| T-CMB-04 | Melee hit detection → `FCombatHit` dispatch (`DeliverHit`, interceptor, one hit per target per swing) | GAMEPLAY | P0 | Must | T-CMB-02, T-FND-05, T-UXF-01 | Todo |
-| T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0 | Must | T-CMB-03, T-CMB-04 | Todo |
-| T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0 | Must | T-CMB-03, T-CMB-04, T-SYN-01 | Todo |
-| T-CMB-07 | Dodge with i-frames | GAMEPLAY | P0 | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Todo |
-| T-CMB-08 | Block + block break | GAMEPLAY | P0 | Must | T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01 | Todo |
-| T-CMB-09 | Parry + counter / vulnerability window | GAMEPLAY | P0 | Must | T-CMB-08, T-SYN-01 | Todo |
-| T-CMB-10 | Lock-on | GAMEPLAY | P0 | Must | T-CMB-01, T-FND-09 | Todo |
-| T-CMB-11 | Hero hit reactions, damage taken, death event | GAMEPLAY | P0 | Must | T-CMB-02, T-CMB-04, T-CMB-13 | Todo |
+| T-CMB-01 | `AHeroCharacter` + `UHeroClassDefinition` + locomotion/sprint + third-person camera | GAMEPLAY | P0A | Must | T-FND-05, T-FND-06, T-FND-07, T-CMB-13 | Todo |
+| T-CMB-02 | `UHeroCombatComponent` action state machine, commitment and cancel windows via anim notify states | GAMEPLAY | P0A | Must | T-CMB-01 | Todo |
+| T-CMB-03 | `UStaminaComponent` + stamina rules | GAMEPLAY | P0A | Must | T-CMB-01, T-FND-10 | Todo |
+| T-CMB-04 | Melee hit detection → `FCombatHit` dispatch (`DeliverHit`, interceptor, one hit per target per swing) | GAMEPLAY | P0A | Must | T-CMB-02, T-FND-05, T-UXF-01 | Todo |
+| T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Todo |
+| T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04, T-SYN-01 | Todo |
+| T-CMB-07 | Dodge with i-frames | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Todo |
+| T-CMB-08 | Block + block break | GAMEPLAY | P0B | Must | T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Todo |
+| T-CMB-09 | Parry + counter / vulnerability window | GAMEPLAY | P0B | Must | T-CMB-08, T-SYN-01 | Todo |
+| T-CMB-10 | Lock-on | GAMEPLAY | P0B | Must | T-CMB-01, T-FND-09, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Todo |
+| T-CMB-11 | Hero hit reactions, damage taken, death event | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-13 | Todo |
 | T-CMB-12 | Interact verb (`IInteractable`) | GAMEPLAY | P2 | Must | T-CMB-02, T-FND-06 | Todo |
-| T-CMB-13 | `L_CombatSandbox` map + `BP_SandboxGameMode` | TOOLS | P0 | Must | T-FND-06, T-FND-09 | Todo |
-| T-CMB-14 | Sandbox enemy respawner + scenario presets | TOOLS | P0 | Must | T-CMB-13, T-ENM-01, T-ENM-03 | Todo |
-| T-CMB-15 | Combat Functional Test suite (`L_Test_HeroCombat`) | QA | P0 | Must | T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-FND-10 | Todo |
-| T-CMB-16 | G0 gate playtest: Combat Sandbox | QA | P0 | Must | T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08, T-ENM-11, T-ENM-12, T-FND-02, T-FND-08, T-UXF-09, T-UXF-10, T-UXF-11 | Todo |
+| T-CMB-13 | `L_CombatSandbox` map + `BP_SandboxGameMode` | TOOLS | P0A | Must | T-FND-06, T-FND-09 | Done |
+| T-CMB-14 | Sandbox enemy respawner + scenario presets | TOOLS | P0B | Must | T-CMB-13, T-ENM-01, T-ENM-03 | Todo |
+| T-CMB-15 | Combat Automation/Functional Test suite (`L_Test_HeroCombat`) | QA | P0B | Must | T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-CMB-20, T-CMB-21, T-FND-10 | Todo |
+| T-CMB-16 | G0 gate playtest: Combat Sandbox | QA | P0B | Must | T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08, T-ENM-11, T-ENM-12, T-FND-02, T-FND-08, T-UXF-09, T-UXF-10, T-UXF-11 | Todo |
 | T-CMB-17 | Warlord proximity buff (provisional) | GAMEPLAY | VS | Should | T-PRK-02, T-SQD-01 | Todo |
 | T-CMB-18 | Rally / charge / hold-line design spike (provisional) | DESIGN | VS | Could | T-CMB-17 | Todo |
 | T-CMB-19 | Combat animation polish with production animation (provisional) | ANIM | VS | Should | T-CMB-15, T-CMB-16 | Todo |
+| T-CMB-20 | Bounded attack rotation assist | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-05, T-CMB-06 | Todo |
+| T-CMB-21 | Combat timing/state debugger + trace visualization | TOOLS | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Todo |
+
+P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression and final stamina tuning land in T-CMB-08/15/16. T-CMB-04 establishes resolution/feedback separation early; P0B completes outcome coverage as defenses land. T-CMB-15 owns final suite acceptance, but each P0A task runs its own focused tests before the checkpoint. Keep every task `Todo` until implementation starts.
 
 ## 3. Detailed Tasks
 
-## P0
+## P0 (P0A / P0B internal delivery slices)
 
 ### T-CMB-01 — `AHeroCharacter` + `UHeroClassDefinition` + locomotion/sprint + third-person camera
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0A (master phase P0)
 
 **Objective** A controllable Warlord pawn with camera-relative movement, sprint and an orbit camera, all tuned from `DA_HeroClass_Warlord`.
 
@@ -77,43 +81,46 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ### T-CMB-02 — `UHeroCombatComponent` action state machine, commitment and cancel windows via anim notify states
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0A (master phase P0)
 
 **Objective** One state machine that starts actions only when rules allow, keeps animation commitment, opens cancel windows from montage notifies and buffers early presses.
 
-**Related Requirements** R-CMB-07, R-CMB-08, R-CMB-37; AC-CMB-03 (completed with T-CMB-07)
+**Related Requirements** R-CMB-07, R-CMB-08, R-CMB-37, R-CMB-43, R-CMB-44, R-CMB-45, R-CMB-52; AC-CMB-20, AC-CMB-22, AC-CMB-03 (completed with T-CMB-07)
 
 **Dependencies** T-CMB-01
 
 **Implementation Notes**
-- [ ] Enums `EHeroAction` (Light, Heavy, Dodge, BlockStart, BlockEnd, Parry, Interact) and `EHeroActionState` (Idle, LightAttack, HeavyAttack, Dodge, Block, Parry, HitReact, Staggered, Dead) in `HeroCombatTypes.h`.
+- [ ] Enums `EHeroAction` (Light, Heavy, Dodge, BlockStart, BlockEnd, Parry, Interact) and `EHeroActionState` (Idle, LightAttack, HeavyAttack, Dodge, Block, Parry, HitReact, Dead); Staggered is a derived label from `UCombatStateComponent::HasState`, never an owned action enum/timer in `HeroCombatTypes.h`.
 - [ ] `RequestAction(EHeroAction)`, `GetActionState()`, `GetActionTag()` (maps to `State.Hero.*`), `OnActionStateChanged`.
-- [ ] Pure function `FHeroActionRules::CanStart(State, AllowedByOpenWindow, bStaminaOk)`; Automation Spec covers every state × action pair in the cancel table (technical-plan §5.1).
-- [ ] Notify states `UAnimNotifyState_CancelWindow` (`TArray<EHeroAction> AllowedActions`), `_Invulnerable`, `_ParryWindow`: Begin/End call the owner's combat component (lookup cached per mesh).
+- [ ] Pure function `FHeroActionRules::CanStart(State, AllowedByOpenWindow, bStaminaOk, bSharedStaggered)` behind `CanStartAction()`; Automation Spec covers every state × action pair in the cancel table (technical-plan §5.1).
+- [ ] Add `FCombatActionTiming` derived from montage windows, plus notify authoring for Startup/Active/Recovery, Chain, RotationAssist and optional InterruptResistance. Phase boundaries are authored once; the hit window supplies Active/Hit. Validate required phases/windows, ordering, bounds, duplicates and incompatible overlaps per action; optional windows may overlap when allowed. No duplicate timing constants.
+- [ ] Notify states `UAnimNotifyState_CancelWindow` (`TArray<EHeroAction> AllowedActions`), `_Invulnerable`, `_ParryWindow`: Begin/End call the owner's combat component (resolve the owner per callback; per-action window state belongs to the component, never a shared notify UObject).
 - [ ] `PlayActionMontage(Montage, State)` binds montage end/blend-out; on end or interrupt it force-closes open windows and returns to Idle if the montage still owns the state.
-- [ ] Input buffer: keep the latest rejected press with timestamp; consume it when a window allows it or on Idle, if age ≤ `InputBufferTime` (new `FHeroInputData` in the DA). Clear on Staggered/Dead.
+- [ ] Input buffer: keep the latest rejected press with timestamp in the hero's dilated action clock (D-20); consume it when a window allows it or on Idle, if age ≤ `InputBufferTime` (new `FHeroInputData` in the DA). Clear on shared Staggered/Dead. Query shared Staggered on every start/interrupt decision, and bind its add/remove events to close windows/clear buffer; removal cannot revive a Dead hero.
 - [ ] Starting any action calls `StopSprint()`.
-- [ ] `game.debug.Combat 1`: on-screen action state, open windows, buffered action. Cheat `ReportHeroWindows` prints every DA montage's window start/end times (used by production-plan "notify windows match data" check).
+- [ ] Refuse invalid actions before stamina spend or state changes; log the action/montage/window once using `LogGameCombat`. T-CMB-21 expands the debugger. Cheat `ReportHeroWindows` prints every DA montage's window start/end times (used by production-plan "notify windows match data" check).
 - [ ] For this task only, a temporary debug montage on Light proves the flow; T-CMB-05 replaces it.
 
-**Expected Files / Assets** `Source/<Game>/Hero/HeroCombatComponent.h/.cpp`; `Source/<Game>/Combat/AnimNotifyState_CancelWindow.*`, `AnimNotifyState_Invulnerable.*`, `AnimNotifyState_ParryWindow.*`; `Source/<Game>/Tests/HeroActionRules.spec.cpp`
+**Expected Files / Assets** `Source/<Game>/Hero/HeroCombatComponent.h/.cpp`, `HeroCombatTypes.h`; `Source/<Game>/Combat/CombatActionTiming.h/.cpp`, timing/chain/rotation-assist/interrupt-resistance notify types; `Source/<Game>/Combat/AnimNotifyState_CancelWindow.*`, `AnimNotifyState_Invulnerable.*`, `AnimNotifyState_ParryWindow.*`; `Source/<Game>/Tests/HeroActionRules.spec.cpp`
 
 **Test Case** Debug montage 1.0 s with cancel window 0.6–0.9 s allowing Light. Press Light at 0.45 s → buffered, runs at 0.6 s. Press at 0.30 s with buffer 0.2 s → dropped. `Montage_Stop` via cheat mid-montage → state Idle, no window left open.
 
 **Acceptance Criteria**
-- [ ] State always returns to Idle after normal end and after interruption.
+- [ ] Normal montage end returns to Idle; interruption closes owned windows without overwriting a newer HitReact/Dead state or bypassing the shared Staggered gate.
 - [ ] `HeroActionRules` Spec passes.
-- [ ] Buffer behaves as in the test case.
+- [ ] Buffer behaves as in the test case, including actor hit stop (D-20).
+- [ ] AC-CMB-20 timing validation passes for available actions; Dodge/Parry coverage completes in T-CMB-07/09.
+- [ ] AC-CMB-22: shared Staggered rejects actions until the owning component removes it; test add/remove against the existing skeleton here, then timed expiry with T-SYN-01 in T-CMB-08/15. CMB has no independent expiry timer.
 
-**Verification** Automation Spec `<Game>.Hero.ActionRules`; PIE with `game.debug.Combat 1`.
+**Verification** Automation Spec `CastleDefender.Combat.Hero.ActionRules`; PIE with `game.debug.Combat 1`.
 
 ---
 
 ### T-CMB-03 — `UStaminaComponent` + stamina rules
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0A (master phase P0)
 
-**Objective** Stamina that gates Dodge, Block and Heavy, regenerates after a delay and tells the HUD when it changes or when a spend fails.
+**Objective** P0A basic stamina plumbing that gates Dodge, Block and Heavy, regenerates after a delay and tells the HUD when it changes or when a spend fails.
 
 **Related Requirements** R-CMB-05, R-CMB-10, R-CMB-11, R-CMB-12; AC-CMB-15
 
@@ -123,7 +130,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 - [ ] `FStaminaConfig` in the DA: `Max`, `RegenDelay`, `RegenRate`, `BlockingRegenMultiplier`, `SprintDrainPerSecond`.
 - [ ] Pure struct `FStaminaState` with `TrySpend`, `ApplyDamage`, `Advance` (technical-plan §5.2).
 - [ ] Component inits from DA; Tick enabled only while below max or sprint-draining; delegates `OnStaminaChanged(Current, Max)`, `OnStaminaSpendFailed(Cost)`, `OnStaminaDepleted`.
-- [ ] `SetBlocking(bool)` for the regen multiplier (used by T-CMB-08).
+- [ ] `SetBlocking(bool)` for the regen multiplier (used by T-CMB-08); post-block suppression is implemented/tested with T-CMB-08. Stamina uses the hero clock (D-20); shared state expiry uses world game time.
 - [ ] If `SprintDrainPerSecond > 0` and stamina hits 0, stop sprint (default drain 0).
 - [ ] Combat component calls `TrySpend` before costed actions; on failure plays `Feedback.Hero.StaminaInsufficient` and does not buffer.
 - [ ] Wire FND cheat `InfiniteStamina`. Add stamina value to `game.debug.Combat`.
@@ -137,58 +144,59 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 - [ ] Component tick is disabled when stamina is full (check with debug output).
 - [ ] `InfiniteStamina` keeps stamina at max.
 
-**Verification** Automation Spec `<Game>.Hero.Stamina`; PIE check of tick state and cheat.
+**Verification** Automation Spec `CastleDefender.Combat.Hero.Stamina`; PIE check of tick state and cheat.
 
 ---
 
 ### T-CMB-04 — Melee hit detection → `FCombatHit` dispatch
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0A (master phase P0)
 
 **Objective** Montage hit windows produce traces; each hostile target is hit once per swing; every hit in the game goes through `UCombatLibrary::DeliverHit`, which lets the target intercept first.
 
-**Related Requirements** R-CMB-17, R-CMB-18, R-CMB-34; AC-CMB-04, AC-CMB-13
+**Related Requirements** R-CMB-17, R-CMB-18, R-CMB-34, R-CMB-53; AC-CMB-04, AC-CMB-13, AC-CMB-23
 
 **Dependencies** T-CMB-02, T-FND-05, T-UXF-01
 
 **Implementation Notes**
 - [ ] `ECombatHitResult` {Ignored, Evaded, Parried, Blocked, BlockBroken, Hit, Killed} and `ICombatHitInterceptor::InterceptHit(FCombatHit&)` in `Combat/`.
-- [ ] `UCombatLibrary::DeliverHit(Target, Hit)` as in technical-plan §4.2: hostile + alive check (team attitude via FND team interface), interceptors, `UHealthComponent::ApplyHit`, `UCombatStateComponent::ApplyPoiseDamage`, `ApplyState` for `AppliedStates`, one `UFeedbackSubsystem::Play` with context (instigator, target, location, direction, `bIsHeavy`, `bTargetArmored`).
+- [ ] Reuse/extend existing `CombatTypes.h` with `FCombatResolutionEvent` and data-defined interrupt metadata for R-CMB-51 (default resistance off, no implicit Heavy immunity); record shared contracts in master plan §8a.
+- [ ] `UCombatLibrary::DeliverHit(Target, Hit)` as in technical-plan §4.2: hostile + alive check (team attitude via FND team interface), interceptors, `UHealthComponent::ApplyHit`, `UCombatStateComponent::ApplyPoiseDamage`, `ApplyState` for `AppliedStates`, exactly one resolution event per attempt and, only when presentation is required, one matching `UFeedbackSubsystem::Play` with context (instigator, target, location, direction, `bIsHeavy`, `bTargetArmored`).
 - [ ] `UCombatLibrary::IsInFrontArc(Defender, AttackerLocation, ArcDegrees)` + Automation Spec.
-- [ ] `UMeleeTraceComponent`: `SetPendingAttack(Template, Radius)` (called by whoever starts the attack), `BeginHitWindow()` / `EndHitWindow()`; per tick in window, sphere sweeps at 3 points along the blade from previous to current socket positions (object type Pawn; `ponytail:` fixed 3 points, raise if fast swings miss); hit set reset per window; ignore owner; `OnHitResolved(Target, Result)`.
+- [ ] `UMeleeTraceComponent`: `SetPendingAttack(Template, Radius)` (called by whoever starts the attack), `BeginHitWindow()` / `EndHitWindow()`; per tick in window, sphere sweeps at data-authored sample points along the blade from previous to current socket positions (configurable object types, Pawn in P0; ENM adds Structure in P2 without a second trace system); hit set reset per swing/action token, never per frame; ignore owner; `OnHitResolved(Target, Result)`.
 - [ ] `UAnimNotifyState_CombatHitWindow` calls the owner's `UMeleeTraceComponent` Begin/End.
-- [ ] `UHeroCombatComponent` forwards results as `OnHitLanded(Target, Result)`.
+- [ ] DeliverHit publishes `OnCombatResolved(FCombatResolutionEvent)` on the participating combat components (outgoing/incoming roles); a unique resolution ID lets telemetry deduplicate self/both-role subscriptions. No global event bus. `OnHitLanded(Target, Result)` remains a landed-hit observer, not a second resolution/feedback producer.
 - [ ] Cheat `DebugHitHero <Damage> <Delay> <bFromFront>`: a hidden test instigator (hostile team, has `UCombatStateComponent`) delivers a hit to the hero after the delay. Used by T-CMB-07…11 and T-CMB-15.
-- [ ] `game.debug.Combat 1` draws sweep spheres (green no hit, red hit) and logs each `DeliverHit` result.
+- [ ] `game.debug.CombatTrace 1` draws sweeps, hit points and the per-swing already-hit set (T-CMB-21); resolution logging includes Evaded/Ignored with zero feedback when appropriate.
 - [ ] Document in the header comment: ENM, SQD and DEF must deliver hits through `DeliverHit`.
 
-**Expected Files / Assets** `Source/<Game>/Combat/CombatLibrary.h/.cpp`, `CombatHitInterceptor.h`, `MeleeTraceComponent.h/.cpp`, `AnimNotifyState_CombatHitWindow.h/.cpp`; `Source/<Game>/Tests/CombatArc.spec.cpp`
+**Expected Files / Assets** `Source/<Game>/Combat/CombatLibrary.h/.cpp`, `CombatHitInterceptor.h`, `MeleeTraceComponent.h/.cpp`, `AnimNotifyState_CombatHitWindow.h/.cpp`, existing `CombatTypes.h`; `Source/<Game>/Tests/CombatArc.spec.cpp`, `CombatResolution.spec.cpp`
 
 **Test Case** FND hostile dummy in front; debug swing whose blade overlaps it for 5 frames → dummy HP −Damage once, one feedback log line. Two hostile dummies in the arc → each once. Ally-team dummy → HP unchanged, result Ignored.
 
 **Acceptance Criteria**
 - [ ] AC-CMB-04 passes.
-- [ ] Exactly one feedback event per resolved hit (log).
-- [ ] `CombatArc` Spec passes (0°, 89°, 91°, 180° cases for a 180° arc).
+- [ ] AC-CMB-13/23 dispatcher contract verified with test interceptors here; actual Dodge/Block/Parry/HeroDamaged integration completes in T-CMB-07/08/09/11/15: one resolution record per attempt; one feedback for a presentation outcome, zero allowed for Evaded/Ignored; no duplicate HeroDamaged feedback from OnDamaged.
+- [ ] `CombatArc` Spec passes (0°, 89°, 91°, 180° for a generic 180° arc, plus inside/on/outside ±70° for the Warlord 140° default).
 
-**Verification** Automation Spec `<Game>.Combat.Arc`; PIE with debug draw; covered again by T-CMB-15 `FT_OneHitPerSwing`.
+**Verification** Automation Spec `CastleDefender.Combat.Arc`; PIE with debug draw; covered again by T-CMB-15 `FT_OneHitPerSwing`.
 
 ---
 
 ### T-CMB-05 — Light attack 3-hit chain
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0A (master phase P0)
 
 **Objective** Fast 3-hit chain driven by data and montage windows.
 
-**Related Requirements** R-CMB-09, R-CMB-13, R-CMB-14; AC-CMB-02
+**Related Requirements** R-CMB-09, R-CMB-13, R-CMB-14, R-CMB-43, R-CMB-45; AC-CMB-02, AC-CMB-20
 
 **Dependencies** T-CMB-03, T-CMB-04
 
 **Implementation Notes**
 - [ ] `FHeroAttackData` (montage, damage, poise damage, stamina cost, trace radius, `AppliedStates`, `StateDuration`); `LightChain` array of 3 in the DA with spec values.
-- [ ] `AM_Warlord_Light_01..03`: one hit window each; cancel windows per technical-plan §5.1 (hits 1–2 allow Light, Heavy, Dodge, Block; hit 3 allows Dodge, Block).
-- [ ] Chain logic: Light from Idle → index 0; Light inside a window allowing Light while in LightAttack → index + 1 (max 2); any other action, Idle or index 2 finished → reset to 0.
+- [ ] `AM_Warlord_Light_01..03`: Startup/Active/Recovery, one hit window each, Chain windows for hits 1–2 and optional RotationAssist windows; cancel windows per technical-plan §5.1 (hits 1–2 allow Light, Heavy, Dodge, Block; hit 3 allows Dodge, Block).
+- [ ] Chain logic: Light from Idle → index 0; Light inside an authored Chain window allowing Light while in LightAttack → index + 1 (max 2); any other action, Idle or index 2 finished → reset to 0.
 - [ ] Build `FCombatHit` from data (SourceLayer Hero, `Damage.Physical`, `bIsHeavy = false`) and pass it to `SetPendingAttack`.
 - [ ] `TrySpend(LightChain[i].StaminaCost)` (default 0).
 - [ ] `IsDataValid`: exactly 3 entries, montages set, each has one hit window.
@@ -208,19 +216,20 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ### T-CMB-06 — Heavy attack with high poise damage + Armor Broken hook
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0A (master phase P0)
 
 **Objective** Slow, readable heavy hit with high damage and poise damage that carries a data list of states to apply (empty in P0; Armor Broken from P1 via T-SYN-02).
 
-**Related Requirements** R-CMB-15, R-CMB-16, R-CMB-38; AC-CMB-05
+**Related Requirements** R-CMB-15, R-CMB-16, R-CMB-38, R-CMB-43, R-CMB-45, R-CMB-51; AC-CMB-05, AC-CMB-20, AC-CMB-25
 
 **Dependencies** T-CMB-03, T-CMB-04, T-SYN-01
 
 **Implementation Notes**
 - [ ] `Heavy` `FHeroAttackData` in the DA: damage 30, poise 40, stamina 25, `AppliedStates` empty.
-- [ ] `AM_Warlord_Heavy`: startup ≥ 0.3 s before the hit window (check with `ReportHeroWindows`), one hit window, late cancel window allowing Dodge.
+- [ ] `AM_Warlord_Heavy`: authored readable Startup/Active/Recovery (provisional wind-up ~0.3 s, tune in the montage; no hard-coded minimum) (check with `ReportHeroWindows`), one hit window, late cancel window allowing Dodge.
 - [ ] `RequestAction(Heavy)`: `TrySpend` → play; `bIsHeavy = true`; copy `AppliedStates` and `StateDuration` into `FCombatHit`.
 - [ ] `IsDataValid`: Heavy damage and poise damage greater than every Light entry; every Light stamina cost < Heavy stamina cost.
+- [ ] Per-action interrupt-resistance config defaults disabled. An authored committed window may enable it in a test-only DA; compare incoming hit strength/category without suppressing damage or overriding shared Staggered/Dead. G0 decides whether production Heavy enables it.
 - [ ] Hook check: in a test copy of the DA set `AppliedStates = {State.Combat.ArmorBroken}`; after a Heavy hit the target's `UCombatStateComponent::HasState` returns true (state effect itself is T-SYN-02).
 
 **Expected Files / Assets** `HeroCombatComponent.cpp`; `Content/<Game>/Hero/AM_Warlord_Heavy`; `DA_HeroClass_Warlord` (Heavy entry)
@@ -230,6 +239,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 **Acceptance Criteria**
 - [ ] AC-CMB-05 passes.
 - [ ] Hook check passes.
+- [ ] AC-CMB-25 integrated with T-CMB-11/15: default Heavy interrupts; test-only resistance lets a below-threshold hit damage without HitReact and an above-threshold hit interrupt.
 - [ ] Data validation catches a Heavy weaker than a Light.
 
 **Verification** PIE with `game.debug.CombatStates 1`; T-CMB-15.
@@ -238,18 +248,18 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ### T-CMB-07 — Dodge with i-frames
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0A (master phase P0)
 
 **Objective** Directional dodge that costs stamina, ignores hits during its i-frame window and cannot be chained into another dodge.
 
-**Related Requirements** R-CMB-19, R-CMB-20, R-CMB-21; AC-CMB-03, AC-CMB-06, AC-CMB-07
+**Related Requirements** R-CMB-19, R-CMB-20, R-CMB-21, R-CMB-43, R-CMB-45, R-CMB-53; AC-CMB-03, AC-CMB-06, AC-CMB-07, AC-CMB-20, AC-CMB-23
 
 **Dependencies** T-CMB-02, T-CMB-03, T-CMB-04
 
 **Implementation Notes**
 - [ ] `FHeroDodgeData`: montages F/B/L/R, stamina cost, root motion scale.
 - [ ] Direction: camera-relative input. Not locked: rotate the hero to input direction and play F. Locked: pick the closest of F/B/L/R relative to facing. No input: B.
-- [ ] `_Invulnerable` window sets `bInvulnerable`; `InterceptHit` returns Evaded while set (no feedback).
+- [ ] `_Invulnerable` window sets `bInvulnerable`; `InterceptHit` returns Evaded while set (one combat-resolution event; no feedback required).
 - [ ] Recovery cancel window allows Light, Heavy, Block, not Dodge (no dodge chaining).
 - [ ] Distance via root motion; scale with `SetAnimRootMotionTranslationScale` (verify API in UE docs for the pinned version).
 - [ ] Cost check through `TrySpend`; failure → cue, no start.
@@ -268,19 +278,20 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ### T-CMB-08 — Block + block break
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0B (master phase P0)
 
 **Objective** Held block that reduces frontal damage, turns force into stamina damage and breaks into Staggered at 0 stamina.
 
-**Related Requirements** R-CMB-12, R-CMB-22, R-CMB-23, R-CMB-24; AC-CMB-08, AC-CMB-09
+**Related Requirements** R-CMB-12, R-CMB-22, R-CMB-23, R-CMB-24, R-CMB-49, R-CMB-52; AC-CMB-08, AC-CMB-09, AC-CMB-22
 
-**Dependencies** T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01
+**Dependencies** T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21
 
 **Implementation Notes**
-- [ ] `FHeroBlockData`: `DamageReduction`, `StaminaPerDamage`, `ArcDegrees`, `BlockBreakStaggerDuration`, `MoveSpeedMultiplier`, block-hit and block-break montages.
+- [ ] `FHeroBlockData`: `DamageReduction`, `StaminaPerDamage`, `ArcDegrees` (140° default), `BlockRegenSuppressAfterHit` (0.6 s default), `BlockBreakStaggerDuration`, `MoveSpeedMultiplier`, block-hit and block-break montages.
 - [ ] `IA_Block` hold: Started → Block (if allowed), Completed → Idle. ABP upper-body guard pose from a component bool; move speed × multiplier; `Stamina.SetBlocking(true/false)`.
 - [ ] `InterceptHit` while Block and `IsInFrontArc`: `Hit.Damage *= (1 − DamageReduction)`; `ApplyDamage(original × StaminaPerDamage)`; if depleted → `ApplyState(State.Combat.Staggered, BlockBreakStaggerDuration, self)`, play break montage, return BlockBroken; else play block-hit montage, return Blocked.
-- [ ] Hero listens to its own `UCombatStateComponent` `OnStateAdded/Removed(Staggered)` → state Staggered / Idle (works for any future Staggered source).
+- [ ] Reuse T-CMB-02 shared-state hooks: block break drops guard and applies shared Staggered via SYN; never start a CMB stagger timer. Its debug/presentation label derives from `HasState`.
+- [ ] Every absorbed hit restarts blocking-regen suppression using `.Block.BlockRegenSuppressAfterHit`; normal regen delay and suppression must both permit blocking regen. Test repeated hits restarting the delay and post-suppression regen at ×0.5.
 - [ ] Hits outside the arc fall through to normal damage.
 
 **Expected Files / Assets** `HeroCombatComponent.cpp`, `ABP_Warlord` guard layer; `Content/<Game>/Hero/AM_Warlord_BlockHit`, `AM_Warlord_BlockBreak`
@@ -297,19 +308,19 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ### T-CMB-09 — Parry + counter / vulnerability window
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0B (master phase P0)
 
 **Objective** Narrow parry with a punishable whiff; success negates the hit, deals parry poise damage to the attacker, opens a Counter Window and raises `OnParrySucceeded`.
 
-**Related Requirements** R-CMB-25, R-CMB-26, R-CMB-27, R-CMB-28; AC-CMB-10
+**Related Requirements** R-CMB-25, R-CMB-26, R-CMB-27, R-CMB-28, R-CMB-43, R-CMB-45, R-CMB-50; AC-CMB-10, AC-CMB-20, AC-CMB-24
 
 **Dependencies** T-CMB-08, T-SYN-01
 
 **Implementation Notes**
 - [ ] `FHeroParryData`: montage, stamina cost (0), `ParryPoiseDamage`, `CounterWindow`, `CounterDamageMultiplier`, optional `CounterMontage`.
 - [ ] `IA_Parry` → state Parry → `AM_Warlord_Parry` with an early `_ParryWindow` and no cancel window before the end of recovery (whiff = no block, no dodge).
-- [ ] `InterceptHit` while parry window open and `IsInFrontArc` (block arc): instigator's `UCombatStateComponent::ApplyPoiseDamage(ParryPoiseDamage, Hero)`; return Parried; on the first success stop the parry montage, go Idle, start the Counter Window timer, broadcast `OnParrySucceeded(Attacker)`.
-- [ ] Every hit landing in the same window is parried (multi-attacker case).
+- [ ] `InterceptHit` while parry window open, not yet consumed, and `IsInFrontArc` (block arc): atomically mark this action consumed before any callbacks or poise damage; instigator's `UCombatStateComponent::ApplyPoiseDamage(ParryPoiseDamage, Hero)`; return Parried; on the first success stop the parry montage, go Idle, start the Counter Window on the hero's dilated clock (D-20), broadcast `OnParrySucceeded(Attacker)`.
+- [ ] Reset consumed-parry only when a new Parry action starts. Further same-frame/reentrant/later hits resolve normally; no automatic Block takeover, and no baseline multi-parry.
 - [ ] Counter: the first Light/Heavy started inside the Counter Window plays `CounterMontage` if set; its hit has `bIsParryCounter = true` and damage × `CounterDamageMultiplier`; the window ends after that hit or on timeout.
 - [ ] Note the NEW-CMB-01 reading in the header comment; G0 decides.
 
@@ -319,7 +330,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 **Acceptance Criteria**
 - [ ] AC-CMB-10 passes.
-- [ ] Two simultaneous attackers inside the window are both parried.
+- [ ] AC-CMB-24: first of two same-frame or successive hostile hits is parried, OnParrySucceeded fires once, second resolves normally; repeat with reentrant callbacks. Counter/buffer windows survive actor hit stop.
 
 **Verification** PIE with `DebugHitHero` and with the ENM enemy (after T-ENM-03); `FT_Parry` in T-CMB-15.
 
@@ -327,13 +338,13 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ### T-CMB-10 — Lock-on
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0B (master phase P0)
 
 **Objective** Lock onto the best hostile target, switch left/right, keep it framed, and release or retarget by rule.
 
 **Related Requirements** R-CMB-29, R-CMB-30, R-CMB-31; AC-CMB-11
 
-**Dependencies** T-CMB-01, T-FND-09
+**Dependencies** T-CMB-01, T-FND-09, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21
 
 **Implementation Notes**
 - [ ] `FHeroLockOnData` in the DA: `Range`, `BreakDistance`, `LOSGraceTime`.
@@ -344,7 +355,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 - [ ] While locked: control rotation interpolates to the target (yaw, clamped pitch); `bUseControllerDesiredRotation` on, orient-to-movement off; strafe blendspace in `ABP_Warlord`. Sprint and Dodge use input direction. Restore on release.
 - [ ] `IA_LockOn` (toggle), `IA_LockOnSwitch` (mouse wheel axis); mouse look does not rotate the camera while locked.
 - [ ] `WBP_LockOnMarker` projects the marker on the target; ticks only while locked; added to `WBP_GameHUD` if T-UXF-02 is done, else added to the viewport directly.
-- [ ] `OnLockOnTargetChanged` delegate.
+- [ ] `OnLockOnTargetChanged` delegate. Integrate T-CMB-20 assist: locked target preferred only if valid and inside assist limits; locked facing cannot bypass the attack-window rotation cap. Verify AC-CMB-21 locked preference.
 
 **Expected Files / Assets** `Source/<Game>/Hero/LockOnComponent.h/.cpp`; `Content/<Game>/Hero/BS_Warlord_Strafe`; `Content/<Game>/UI/WBP_LockOnMarker`; `IA_LockOn`, `IA_LockOnSwitch`
 
@@ -360,17 +371,17 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ### T-CMB-11 — Hero hit reactions, damage taken, death event
 
-**Type** GAMEPLAY · **Phase** P0
+**Type** GAMEPLAY · **Phase** P0A (master phase P0)
 
 **Objective** Unblocked hits interrupt the hero with a directional reaction; death raises one event and the sandbox respawns the hero.
 
-**Related Requirements** R-CMB-32, R-CMB-33; AC-CMB-12
+**Related Requirements** R-CMB-32, R-CMB-33, R-CMB-51, R-CMB-52; AC-CMB-12, AC-CMB-22, AC-CMB-25
 
 **Dependencies** T-CMB-02, T-CMB-04, T-CMB-13
 
 **Implementation Notes**
 - [ ] `FHeroHitReactData`: front and back montages; death montage.
-- [ ] Bind own `UHealthComponent::OnDamaged`: if alive and the hit was not blocked → stop the current montage (windows close), play front/back by hit direction, state HitReact, play `Feedback.Hero.Damaged`. HitReact late cancel window allows Dodge.
+- [ ] Bind own `UHealthComponent::OnDamaged`: if alive and the hit was not blocked and active authored resistance does not resist this hit → stop the current montage (windows close), play front/back by hit direction, state HitReact. DeliverHit owns the hit feedback decision; OnDamaged does not replay HeroDamaged. Resistance never blocks HP loss or death. HitReact late cancel window allows Dodge.
 - [ ] Bind `OnDeath`: state Dead, clear buffer, release lock-on, ignore input, death montage, `Feedback.Hero.Death`, broadcast `AHeroCharacter::OnHeroDeath` once.
 - [ ] `BP_SandboxGameMode` binds `OnHeroDeath` → after `RespawnDelay` (3 s) destroy pawn and `RestartPlayer`. Comment: sandbox only, CSM T-CSM-01 replaces it in P3.
 - [ ] FND cheat `KillHero` exercises the path.
@@ -389,7 +400,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ### T-CMB-13 — `L_CombatSandbox` map + `BP_SandboxGameMode`
 
-**Type** TOOLS · **Phase** P0
+**Type** TOOLS · **Phase** P0A (master phase P0)
 
 **Objective** The P0 test map with game mode, test dummies and a readable layout for camera, lock-on and LOS checks.
 
@@ -398,27 +409,27 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 **Dependencies** T-FND-06, T-FND-09
 
 **Implementation Notes**
-- [ ] `BP_SandboxGameMode`: Blueprint child of `ASandboxGameMode` if FND created it, else of `AGameModeBase`; PlayerController = `AHeroPlayerController`; placeholder pawn until T-CMB-01.
-- [ ] `L_CombatSandbox`: flat ~60 × 60 m arena, a few pillars/cover blocks (LOS), one ramp, one wall (camera collision), PlayerStart, simple lighting, NavMesh bounds (needed by ENM).
-- [ ] Place 3 FND test dummies: two hostile, one ally team (friendly-fire checks).
-- [ ] "Tuning kiosk" (production-plan): a text render actor listing combat cheats and the active DA name. Plain text, no UI.
-- [ ] World Settings GameMode override; set as editor and game default map for P0.
+- [x] `BP_SandboxGameMode`: Blueprint child of `ASandboxGameMode` if FND created it, else of `AGameModeBase`; PlayerController = `AHeroPlayerController`; placeholder pawn until T-CMB-01.
+- [x] `L_CombatSandbox`: flat ~60 × 60 m arena, a few pillars/cover blocks (LOS), one ramp, one wall (camera collision), PlayerStart, simple lighting, NavMesh bounds (needed by ENM).
+- [x] Place 3 FND test dummies: two hostile, one ally team (friendly-fire checks).
+- [x] "Tuning kiosk" (production-plan): a text render actor listing combat cheats and the active DA name. Plain text, no UI.
+- [x] World Settings GameMode override; set as editor and game default map for P0.
 
 **Expected Files / Assets** `Content/<Game>/Maps/L_CombatSandbox`; `Content/<Game>/Core/BP_SandboxGameMode`
 
 **Test Case** Open map, PIE → pawn spawns at PlayerStart, 3 dummies present, `SpawnTestDummy` adds a fourth.
 
 **Acceptance Criteria**
-- [ ] Map loads with no errors or warnings.
-- [ ] Packaged Development build opens the map (T-FND-08 pipeline).
+- [x] Map loads with no errors or warnings.
+- [x] Packaged Development build opens the map (T-FND-08 pipeline).
 
-**Verification** PIE; packaged smoke run.
+**Verification** Scripted PIE verified in `Saved/combat-sandbox-pie.json`: pawn at PlayerStart (0, -1500, 100), 3 initial dummies (2 hostile team 1, 1 ally team 0), `SpawnTestDummy` adds 4th dummy; packaged Development build clean boot and load in `Saved/combat-sandbox-packaged.log`. Tooling: `Tools/create_combat_sandbox.bat`.
 
 ---
 
 ### T-CMB-14 — Sandbox enemy respawner + scenario presets
 
-**Type** TOOLS · **Phase** P0
+**Type** TOOLS · **Phase** P0B (master phase P0)
 
 **Objective** Keep the P0 melee enemy coming back so one enemy can carry a 3–5 minute session (§36).
 
@@ -442,29 +453,30 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ---
 
-### T-CMB-15 — Combat Functional Test suite (`L_Test_HeroCombat`)
+### T-CMB-15 — Combat Automation/Functional Test suite (`L_Test_HeroCombat`)
 
-**Type** QA · **Phase** P0
+**Type** QA · **Phase** P0B (master phase P0)
 
 **Objective** Automated regression for every P0 combat rule, runnable from the command line.
 
-**Related Requirements** AC-CMB-02…AC-CMB-12, AC-CMB-14 (no key overlap, R-CMB-36), AC-CMB-16
+**Related Requirements** AC-CMB-02…AC-CMB-12, AC-CMB-14 (no key overlap, R-CMB-36), AC-CMB-16, AC-CMB-20…26; R-CMB-43…54
 
-**Dependencies** T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-FND-10
+**Dependencies** T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-CMB-20, T-CMB-21, T-FND-10
 
 **Implementation Notes**
-- [ ] `L_Test_HeroCombat` with one `AFunctionalTest` per scenario: `FT_LightChain`, `FT_OneHitPerSwing`, `FT_HeavyPoise`, `FT_DodgeIFrames`, `FT_BlockReduce`, `FT_BlockBreak`, `FT_Parry`, `FT_LockOnBreak`, `FT_HeroDeath`.
+- [ ] `L_Test_HeroCombat` with one `AFunctionalTest` per scenario: `FT_LightChain`, `FT_OneHitPerSwing`, `FT_HeavyPoise`, `FT_DodgeIFrames`, `FT_BlockReduce`, `FT_BlockBreak`, `FT_Parry`, `FT_LockOnBreak`, `FT_HeroDeath`, `FT_TimingValidation`, `FT_RotationAssist`, `FT_SharedStaggered`, `FT_ResolutionFeedback`, `FT_ParryConsumed`, `FT_InterruptResistance`, `FT_TraceLowFPS`. Functional Tests are Blueprint actors (foundation §16), not runtime C++ AFunctionalTest subclasses.
 - [ ] Tests call `RequestAction` and the `DebugHitHero` helper; they wait on window begin/end events, not fixed seconds, so retimed montages do not break them.
-- [ ] Each test asserts the numbers from its spec AC and logs the AC ID.
-- [ ] Group under `<Game>.Combat` in the command-line runner (T-FND-10).
+- [ ] Each test asserts the active data/rule and logs the AC ID; separate fixed fixtures from live tuning. Check AC-CMB-14 against the Foundation key map and mode restoration; verify every combat verb has an Input Action without Command Wheel/Tactical Focus overlap.
+- [ ] Automation Specs cover timing validation, assist bounds, shared-state rejection, single-use parry, interrupt thresholds, block suppression and resolution/feedback counts. Specs use `CastleDefender.Combat.*`; Functional Tests use `Project.Functional Tests.*` and run via the default `Tools/run_tests.bat` gate. The focused `-Filter "CastleDefender.Combat"` is not a complete Functional Test gate.
+- [ ] Add actor-hit-stop and global Tactical Focus clock-domain regressions (D-20), including buffered input/counter windows and shared-state expiry.
 - [ ] Add a line to the integration checklist: run this suite before merging CMB, SYN or ENM changes.
 
-**Expected Files / Assets** `Content/<Game>/Maps/Test/L_Test_HeroCombat`; functional test BPs or C++ in `Source/<Game>/Tests/`
+**Expected Files / Assets** `Content/<Game>/Maps/Test/L_Test_HeroCombat`; Functional Test BPs; Automation Specs/helpers in `Source/<Game>/Tests/`
 
-**Test Case** `-ExecCmds="Automation RunTests <Game>.Combat"` → all pass. Move the dodge i-frame notify by 0.05 s → `FT_DodgeIFrames` still passes.
+**Test Case** `Tools/run_tests.bat` → complete successful Spec and Functional Test report, editor/runner exit 0. Move the dodge i-frame notify by 0.05 s → `FT_DodgeIFrames` still passes.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-16 passes.
+- [ ] AC-CMB-16 and AC-CMB-20…26 pass; blocking suppression behavior is verified against R-CMB-49. Visual debugger/trace checks require rendered PIE evidence.
 - [ ] A deliberately broken rule (e.g., block reduction set to 0) makes the matching test fail.
 
 **Verification** Command-line run output attached to the task.
@@ -473,7 +485,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ### T-CMB-16 — G0 gate playtest: Combat Sandbox
 
-**Type** QA · **Phase** P0
+**Type** QA · **Phase** P0B (master phase P0)
 
 **Objective** Answer the G0 question with evidence: is combat responsive, readable and satisfying with no RTS/TD on screen?
 
@@ -483,11 +495,11 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 **Implementation Notes**
 - [ ] Build: packaged Development build on the reference PC (T-FND-08), `L_CombatSandbox`, "Duel" preset.
-- [ ] Hypotheses = the G0 checklist: H1 Light/Heavy/Dodge/Block/Parry responsive; H2 stamina loop clear; H3 hit feedback strong enough; H4 one melee enemy holds 3–5 minutes.
+- [ ] Hypotheses = the G0 checklist: H1 Light/Heavy/Dodge/Block/Parry responsive; H2 stamina loop clear; H3 hit feedback strong enough; H4 one melee enemy holds 3–5 minutes; verify all hardening criteria AC-CMB-20…26 and retain the P0A checkpoint record.
 - [ ] Sessions: 3 × 5 minutes per tester; at least one tester besides the developer if possible.
 - [ ] Record per `game-development-workflow` playtesting: Build/Version, Scenario, Tester, Expected, Observed, Issue Type (design vs bug), Severity, Decision.
 - [ ] Evidence from telemetry (T-UXF-08): actions per type, parry attempts vs successes, block breaks, dodges, damage taken, deaths, time to kill.
-- [ ] Decide NEW-CMB-01…05 and record the decision.
+- [ ] Decide NEW-CMB-01…05 and NEW-CMB-08…09 and record the decision; interrupt resistance remains off unless explicitly enabled by the G0 decision.
 - [ ] Per hypothesis: KEEP / CHANGE / DELETE. CHANGE → tune one variable at a time, re-run the affected session.
 - [ ] If any G0 check fails: no P1 task starts; log the iteration plan.
 - [ ] Save `ai/game/playtests/G0_<YYYY-MM-DD>.md`; copy tuned values into spec §4.4.
@@ -502,6 +514,68 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 - [ ] Combat Functional Tests pass on the gate build.
 
 **Verification** Lead reviews the record against the master plan G0 checklist.
+
+## P0A Additional Tasks
+
+### T-CMB-20 — Bounded attack rotation assist
+
+**Type** GAMEPLAY · **Phase** P0A (master phase P0)
+
+**Objective** Correct small aiming errors during authored attack windows using facing changes only.
+
+**Related Requirements** R-CMB-46, R-CMB-47, R-CMB-48; AC-CMB-21 (locked preference completed by T-CMB-10)
+
+**Dependencies** T-CMB-02, T-CMB-04, T-CMB-05, T-CMB-06
+
+**Implementation Notes**
+- [ ] `FHeroAttackAssistData` in `.AttackAssist`: MaxAngle 35°, Distance 400 cm, RotationRate 720°/s (spec defaults; no constants).
+- [ ] During authored RotationAssist only, select an alive hostile near intended attack direction/camera aim; T-CMB-10 supplies locked-target preference later.
+- [ ] Reject targets outside angle/range or invalid/dead/friendly; revalidate before applying rotation, bound total turn by MaxAngle and angular speed by RotationRate. With no target preserve player intent.
+- [ ] Turn facing only; never move/pull the pawn. Existing authored root motion remains independent of assistance.
+- [ ] Close assist on montage interruption, shared Staggered or death; per-frame work only while the window is open, with its reason in a code comment.
+
+**Expected Files / Assets** `HeroCombatTypes.h`, `HeroClassDefinition.*`, `HeroCombatComponent.*`, `AM_Warlord_Light_*`, `AM_Warlord_Heavy`; `Source/<Game>/Tests/AttackAssist.spec.cpp`
+
+**Test Case** Target inside 35°/400 cm → bounded turn in window; outside either limit, ally or dead target → no assist. Compare pawn displacement with assistance enabled/disabled to exclude added translation.
+
+**Acceptance Criteria**
+- [ ] AC-CMB-21 free-camera portion passes; T-CMB-10/15 verify locked preference.
+- [ ] Assist bounds Spec passes; debugger exposes the selected assist target.
+
+**Verification** Automation Spec and rendered PIE in `L_CombatSandbox`.
+
+---
+
+### T-CMB-21 — Combat timing/state debugger + trace visualization
+
+**Type** TOOLS · **Phase** P0A (master phase P0)
+
+**Objective** Make timing, defense and trace failures diagnosable without adding gameplay state owners.
+
+**Related Requirements** R-CMB-44, R-CMB-54; AC-CMB-20, AC-CMB-26
+
+**Dependencies** T-CMB-02, T-CMB-03, T-CMB-04
+
+**Implementation Notes**
+- [ ] Reuse `Core/GameDebug.*` CVarCombat; add `game.debug.CombatTrace` there. Draw/readout code and cheats compile out of Shipping.
+- [ ] `game.debug.Combat 1`: action, derived timing phase/windows, latest buffer/age, stamina, lock-on/assist targets, SYN shared states, active defensive window and consumed-parry flag. Unimplemented P0B fields show inactive until integrated.
+- [ ] `game.debug.CombatTrace 1`: sweeps, hit points and per-swing already-hit actors; show resolution result independently of UXF feedback.
+- [ ] `ReportHeroWindows` reads derived montage timing; reports action/montage/window on invalid data. Debug drawing never changes combat state.
+- [ ] Add debugger fields with each subsequent action task; no alternate timers for display.
+
+**Expected Files / Assets** `Core/GameDebug.*`, `Core/GameCheatManager.*`, `HeroCombatComponent.*`, `MeleeTraceComponent.*`
+
+**Test Case** Rendered PIE: enable both CVars, attack overlapping dummies over several frames and under a low-FPS/hitch scenario; compare drawn hit set to one HP change per target. Interrupt montage → no stale window display.
+
+**Acceptance Criteria**
+- [ ] AC-CMB-20 debug portion and AC-CMB-26 pass for P0A actions; T-CMB-09/15 finish Parry display/coverage.
+- [ ] Debugger disabled → no debug draw work; Shipping has no debugger.
+
+**Verification** Rendered PIE captures, Development/Shipping build checks when implemented; final P0B display checked by T-CMB-15.
+
+### P0A checkpoint (sequencing only, not a production gate)
+
+After T-CMB-01…07, 11, 13, 20 and 21 have their task verification, record a short `L_CombatSandbox` session with a hostile dummy/scripted test attacker or the available ENM melee enemy. Exercise Light/Heavy/Dodge, timing/trace/assist, stamina, hit reaction and death/reset. Confirm responsiveness/readability and no action-pipeline redesign blocker; record defects and the next iteration in `progress.md` before starting P0B. This checkpoint does not mark T-CMB-15/16 Done or permit P1. Full timed poise/Staggered behavior requires T-SYN-01, not the Foundation skeleton.
 
 ## P2
 
@@ -613,7 +687,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 **Test Case** Window diff shows every window within 0.03 s of the reference.
 
 **Acceptance Criteria**
-- [ ] All `<Game>.Combat` tests pass.
+- [ ] Default `Tools/run_tests.bat` gate passes (Specs + Functional Tests).
 - [ ] Short G0 re-check shows no regression in responsiveness notes.
 
 **Verification** Command-line test run; window diff attached; playtest note.
@@ -622,60 +696,113 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 ```mermaid
 flowchart TD
-  FND5[T-FND-05] --> C01
-  FND6[T-FND-06] --> C13
-  FND7[T-FND-07] --> C01
-  FND9[T-FND-09] --> C13
-  C13[T-CMB-13 Sandbox map] --> C01[T-CMB-01 Hero pawn]
-  C01 --> C02[T-CMB-02 Action FSM]
-  C01 --> C03[T-CMB-03 Stamina]
-  C01 --> C10[T-CMB-10 Lock-on]
-  C02 --> C04[T-CMB-04 Hit dispatch]
-  UXF1[T-UXF-01] --> C04
-  C03 --> C05[T-CMB-05 Light chain]
-  C04 --> C05
-  C04 --> C06[T-CMB-06 Heavy]
-  SYN1[T-SYN-01] --> C06
-  C04 --> C07[T-CMB-07 Dodge]
-  C04 --> C08[T-CMB-08 Block]
-  SYN1 --> C08
-  C08 --> C09[T-CMB-09 Parry]
-  C04 --> C11[T-CMB-11 Hit react / death]
-  C13 --> C14[T-CMB-14 Respawner]
-  ENM1[T-ENM-01/03] --> C14
-  C05 & C06 & C07 & C09 & C10 & C11 --> C15[T-CMB-15 Functional Tests]
-  C15 --> C16[T-CMB-16 G0 gate]
-  C14 --> C16
-  ENM4[T-ENM-04] --> C16
-  SYN8[T-SYN-08] --> C16
-  UXF[T-UXF-02/03/08] --> C16
-  C16 -->|G0 pass| P1[P1 work]
-  C02 --> C12[T-CMB-12 Interact P2]
-  C16 -.->|G3 pass| C17[T-CMB-17 VS] --> C18[T-CMB-18 VS]
-  C16 -.-> C19[T-CMB-19 VS]
+  TFND05[T-FND-05] --> TCMB01[T-CMB-01]
+  TFND06[T-FND-06] --> TCMB01[T-CMB-01]
+  TFND07[T-FND-07] --> TCMB01[T-CMB-01]
+  TCMB13[T-CMB-13] --> TCMB01[T-CMB-01]
+  TCMB01[T-CMB-01] --> TCMB02[T-CMB-02]
+  TCMB01[T-CMB-01] --> TCMB03[T-CMB-03]
+  TFND10[T-FND-10] --> TCMB03[T-CMB-03]
+  TCMB02[T-CMB-02] --> TCMB04[T-CMB-04]
+  TFND05[T-FND-05] --> TCMB04[T-CMB-04]
+  TUXF01[T-UXF-01] --> TCMB04[T-CMB-04]
+  TCMB03[T-CMB-03] --> TCMB05[T-CMB-05]
+  TCMB04[T-CMB-04] --> TCMB05[T-CMB-05]
+  TCMB03[T-CMB-03] --> TCMB06[T-CMB-06]
+  TCMB04[T-CMB-04] --> TCMB06[T-CMB-06]
+  TSYN01[T-SYN-01] --> TCMB06[T-CMB-06]
+  TCMB02[T-CMB-02] --> TCMB07[T-CMB-07]
+  TCMB03[T-CMB-03] --> TCMB07[T-CMB-07]
+  TCMB04[T-CMB-04] --> TCMB07[T-CMB-07]
+  TCMB02[T-CMB-02] --> TCMB08[T-CMB-08]
+  TCMB03[T-CMB-03] --> TCMB08[T-CMB-08]
+  TCMB04[T-CMB-04] --> TCMB08[T-CMB-08]
+  TSYN01[T-SYN-01] --> TCMB08[T-CMB-08]
+  TCMB07[T-CMB-07] --> TCMB08[T-CMB-08]
+  TCMB11[T-CMB-11] --> TCMB08[T-CMB-08]
+  TCMB20[T-CMB-20] --> TCMB08[T-CMB-08]
+  TCMB21[T-CMB-21] --> TCMB08[T-CMB-08]
+  TCMB08[T-CMB-08] --> TCMB09[T-CMB-09]
+  TSYN01[T-SYN-01] --> TCMB09[T-CMB-09]
+  TCMB01[T-CMB-01] --> TCMB10[T-CMB-10]
+  TFND09[T-FND-09] --> TCMB10[T-CMB-10]
+  TCMB07[T-CMB-07] --> TCMB10[T-CMB-10]
+  TCMB11[T-CMB-11] --> TCMB10[T-CMB-10]
+  TCMB20[T-CMB-20] --> TCMB10[T-CMB-10]
+  TCMB21[T-CMB-21] --> TCMB10[T-CMB-10]
+  TCMB02[T-CMB-02] --> TCMB11[T-CMB-11]
+  TCMB04[T-CMB-04] --> TCMB11[T-CMB-11]
+  TCMB13[T-CMB-13] --> TCMB11[T-CMB-11]
+  TCMB02[T-CMB-02] --> TCMB12[T-CMB-12]
+  TFND06[T-FND-06] --> TCMB12[T-CMB-12]
+  TFND06[T-FND-06] --> TCMB13[T-CMB-13]
+  TFND09[T-FND-09] --> TCMB13[T-CMB-13]
+  TCMB13[T-CMB-13] --> TCMB14[T-CMB-14]
+  TENM01[T-ENM-01] --> TCMB14[T-CMB-14]
+  TENM03[T-ENM-03] --> TCMB14[T-CMB-14]
+  TCMB05[T-CMB-05] --> TCMB15[T-CMB-15]
+  TCMB06[T-CMB-06] --> TCMB15[T-CMB-15]
+  TCMB07[T-CMB-07] --> TCMB15[T-CMB-15]
+  TCMB08[T-CMB-08] --> TCMB15[T-CMB-15]
+  TCMB09[T-CMB-09] --> TCMB15[T-CMB-15]
+  TCMB10[T-CMB-10] --> TCMB15[T-CMB-15]
+  TCMB11[T-CMB-11] --> TCMB15[T-CMB-15]
+  TCMB20[T-CMB-20] --> TCMB15[T-CMB-15]
+  TCMB21[T-CMB-21] --> TCMB15[T-CMB-15]
+  TFND10[T-FND-10] --> TCMB15[T-CMB-15]
+  TCMB14[T-CMB-14] --> TCMB16[T-CMB-16]
+  TCMB15[T-CMB-15] --> TCMB16[T-CMB-16]
+  TENM04[T-ENM-04] --> TCMB16[T-CMB-16]
+  TSYN08[T-SYN-08] --> TCMB16[T-CMB-16]
+  TUXF02[T-UXF-02] --> TCMB16[T-CMB-16]
+  TUXF03[T-UXF-03] --> TCMB16[T-CMB-16]
+  TUXF08[T-UXF-08] --> TCMB16[T-CMB-16]
+  TENM11[T-ENM-11] --> TCMB16[T-CMB-16]
+  TENM12[T-ENM-12] --> TCMB16[T-CMB-16]
+  TFND02[T-FND-02] --> TCMB16[T-CMB-16]
+  TFND08[T-FND-08] --> TCMB16[T-CMB-16]
+  TUXF09[T-UXF-09] --> TCMB16[T-CMB-16]
+  TUXF10[T-UXF-10] --> TCMB16[T-CMB-16]
+  TUXF11[T-UXF-11] --> TCMB16[T-CMB-16]
+  TPRK02[T-PRK-02] --> TCMB17[T-CMB-17]
+  TSQD01[T-SQD-01] --> TCMB17[T-CMB-17]
+  TCMB17[T-CMB-17] --> TCMB18[T-CMB-18]
+  TCMB15[T-CMB-15] --> TCMB19[T-CMB-19]
+  TCMB16[T-CMB-16] --> TCMB19[T-CMB-19]
+  TCMB02[T-CMB-02] --> TCMB20[T-CMB-20]
+  TCMB04[T-CMB-04] --> TCMB20[T-CMB-20]
+  TCMB05[T-CMB-05] --> TCMB20[T-CMB-20]
+  TCMB06[T-CMB-06] --> TCMB20[T-CMB-20]
+  TCMB02[T-CMB-02] --> TCMB21[T-CMB-21]
+  TCMB03[T-CMB-03] --> TCMB21[T-CMB-21]
+  TCMB04[T-CMB-04] --> TCMB21[T-CMB-21]
+  TCMB16 -->|G0 passes at end of P0B| P1[P1 opens]
+  G3[G3 passed] -.-> TCMB17
+  G3 -.-> TCMB18
+  G3 -.-> TCMB19
 ```
 
 ## 5. Integration / Regression Checklist
 
 | Area | Expected | When |
 |---|---|---|
-| `<Game>.Combat` Functional Tests | All pass | Before every CMB, SYN, ENM merge |
+| Specs + `Project.Functional Tests.*` | All pass through default `Tools/run_tests.bat` | Before every CMB, SYN, ENM merge |
 | Stamina / action rules / arc Specs | All pass | Every build |
 | Enemy hits on hero | Go through `DeliverHit` (block/parry/i-frames apply) | After T-ENM-03 and any new enemy attack |
-| Feedback | One event per hit outcome, rows exist in `DT_Feedback` | After T-UXF-03 and any new hit type |
+| Resolution / feedback | One resolution per attempt; one matching feedback only when presentation is needed; Evaded may be silent; rows exist in `DT_Feedback` | After T-UXF-03 and any new hit type |
 | Input contexts | Combat keys still work after `IMC_CommandWheel` / `IMC_TacticalFocus` are added; movement works with the wheel open | P1 (SQD), P3 (TFM) |
 | Hero death | Sandbox respawn in P0–P2; CSM flow in P3 with sandbox binding removed | P3 |
-| Time dilation | Actions, windows and stamina scale with game time; no stuck states | P3 (TFM) |
+| Time dilation | Hero actions/buffer/counter/stamina use hero dilated time; shared states/respawn use world game time; UI real time (D-20); no stuck states | P3 (TFM) |
 | Data validation | `DA_HeroClass_Warlord` validates clean | Every DA edit |
 | Performance | Hero cost not visible in `stat game` in the sandbox | G0 build |
 
 ## 6. Final Definition of Done
 
-- [ ] All P0 tasks done, each with its verification recorded.
-- [ ] `<Game>.Combat` Functional Tests and Hero/Combat Specs pass from the command line.
+- [ ] P0A checkpoint recorded; all P0A/P0B tasks done, each with its verification recorded.
+- [ ] Default `Tools/run_tests.bat` passes all Specs and `Project.Functional Tests.*`; AC-CMB-01…17 and 20…26 have evidence.
 - [ ] `DA_HeroClass_Warlord` holds every non-timing tunable; montage windows hold every timing tunable; no hard-coded combat numbers.
 - [ ] Packaged Development build runs `L_CombatSandbox` on the reference PC with no new warnings.
 - [ ] G0 record saved with KEEP / CHANGE / DELETE decisions and G0 checklist answered (master plan §3).
-- [ ] NEW-CMB-01…05 decided or explicitly carried to P1 with a default.
+- [ ] NEW-CMB-01…05, 08…09 decided or explicitly carried to P1 with a default.
 - [ ] P2: Interact works with the first DEF consumer and `FT_Interact` passes.
 - [ ] VS tasks re-validated after G3 before any work starts.
