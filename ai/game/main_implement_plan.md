@@ -452,6 +452,8 @@ Agreements between features that one feature defines and another consumes. When 
 |---|---|---|
 | `AHeroPlayerController::PushMode(EPlayerMode, Reason)` / `PopMode(Reason)`, `OnPlayerModeChanged(Old, New)`; per-mode contexts in `BP_HeroPlayerController.ModeInput`; key map `00-foundation/input-keymap.md` (D-19) | T-FND-06 | T-SQD (Wheel), T-DEF-07 (Build), T-TFM-01 (Focus), T-CSM (Spirit), UXF/PRK modals, HUD listeners |
 | `UCombatLibrary::DeliverHit` is the only way to apply a hit | T-CMB-04 | T-ENM-03, T-SQD-07/10, T-DEF-09, BOS attacks, T-SYN-07 (multipliers) |
+| `FCombatResolutionEvent` / `OnCombatResolved` (spec v2, proposed): one resolution ID/context/result per hit attempt, participant roles; separate from conditional UXF feedback, no global bus | T-CMB-04 | CMB debugger T-CMB-21, T-UXF-08 telemetry, ENM/SQD/DEF/BOS hit producers; T-CMB-15 verifies counts |
+| `FCombatHit` interrupt strength/category + per-action authored resistance (spec v2, proposed); resistance defaults off, damage still applies, SYN Staggered remains authoritative | T-CMB-04 (hit data), T-CMB-06/11 (hero consumer) | ENM/SQD/DEF/BOS attack data, T-CMB-15 threshold tests |
 | `UMeleeTraceComponent`, `ICombatHitInterceptor` | T-CMB-04 | T-ENM-03, soldier melee (T-SQD-10), boss |
 | `ACombatProjectile` base | T-SQD-10 | T-DEF-09 tower projectiles; pierce extension for T-PRK-11 / T-CNV-* |
 | `FCombatStateConfig` + `BaseArmor` in every combatant definition | T-SYN-01 | T-ENM-01, T-SQD-01, T-BOS-01, hero class data |
