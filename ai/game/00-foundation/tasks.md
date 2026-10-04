@@ -65,7 +65,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 - [x] `.gitattributes`: LFS for `*.uasset *.umap *.fbx *.png *.tga *.exr *.wav *.ogg *.psd *.blend`.
 - [x] `.gitignore`: `Binaries/ Intermediate/ Saved/ DerivedDataCache/ .vs/ .idea/ *.sln *.xcworkspace .codegraph/`.
 - [x] Commit GDD, `ai/`, `.claude/`, `AGENTS.md`, `CLAUDE.md` with the project. Commit and branch format: `AGENTS.md` §8.
-- [x] Create branch `main`; work on feature branches per task group.
+- [x] Create branch `main`; use one shared `feat/<NN-feature>` branch per feature with small task-scoped commits. Create its PR into `main` only after all feature tasks are Done and verified (AGENTS.md section 8).
 
 **Expected Files / Assets** `.gitignore`, `.gitattributes`
 

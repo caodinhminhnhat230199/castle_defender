@@ -242,7 +242,7 @@ All definitions derive from `UGameDefinition` (T-FND-07). Primary Asset Type nam
 
 - Git + Git LFS. Track `*.uasset`, `*.umap`, source art formats (`*.fbx`, `*.png`, `*.wav`, …) with LFS.
 - `.gitignore`: `Binaries/`, `Intermediate/`, `Saved/`, `DerivedDataCache/`, `.vs/`, `*.sln`, `.codegraph/`.
-- One feature branch per task group; small commits per task.
+- Use one shared `feat/<NN-feature>` branch per feature, for example `feat/01-hero-combat`; keep commits small and scoped to one task, with multiple commits per task when needed. Do not create per-task branches or commit feature work directly on `main`. Create the PR into `main` only after all feature tasks are Done and verified (AGENTS.md section 8).
 
 ## 18. Risks / Decisions Log
 

@@ -21,13 +21,13 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-02 | `UHeroCombatComponent` action state machine, commitment and cancel windows via anim notify states | GAMEPLAY | P0A | Must | T-CMB-01 | Done |
 | T-CMB-03 | `UStaminaComponent` + stamina rules | GAMEPLAY | P0A | Must | T-CMB-01, T-FND-10 | Done |
 | T-CMB-04 | Melee hit detection → `FCombatHit` dispatch (`DeliverHit`, interceptor, one hit per target per swing) | GAMEPLAY | P0A | Must | T-CMB-02, T-FND-05, T-UXF-01 | Done |
-| T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Todo |
+| T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Review |
 | T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04, T-SYN-01 | Todo |
-| T-CMB-07 | Dodge with i-frames | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Todo |
+| T-CMB-07 | Dodge with i-frames | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Review |
 | T-CMB-08 | Block + block break | GAMEPLAY | P0B | Must | T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Todo |
 | T-CMB-09 | Parry + counter / vulnerability window | GAMEPLAY | P0B | Must | T-CMB-08, T-SYN-01 | Todo |
 | T-CMB-10 | Lock-on | GAMEPLAY | P0B | Must | T-CMB-01, T-FND-09, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Todo |
-| T-CMB-11 | Hero hit reactions, damage taken, death event | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-13 | Todo |
+| T-CMB-11 | Hero hit reactions, damage taken, death event | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-13 | Review |
 | T-CMB-12 | Interact verb (`IInteractable`) | GAMEPLAY | P2 | Must | T-CMB-02, T-FND-06 | Todo |
 | T-CMB-13 | `L_CombatSandbox` map + `BP_SandboxGameMode` | TOOLS | P0A | Must | T-FND-06, T-FND-09 | Done |
 | T-CMB-14 | Sandbox enemy respawner + scenario presets | TOOLS | P0B | Must | T-CMB-13, T-ENM-01, T-ENM-03 | Todo |
@@ -37,7 +37,7 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-18 | Rally / charge / hold-line design spike (provisional) | DESIGN | VS | Could | T-CMB-17 | Todo |
 | T-CMB-19 | Combat animation polish with production animation (provisional) | ANIM | VS | Should | T-CMB-15, T-CMB-16 | Todo |
 | T-CMB-20 | Bounded attack rotation assist | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-05, T-CMB-06 | Todo |
-| T-CMB-21 | Combat timing/state debugger + trace visualization | TOOLS | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Todo |
+| T-CMB-21 | Combat timing/state debugger + trace visualization | TOOLS | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Review |
 
 P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression and final stamina tuning land in T-CMB-08/15/16. T-CMB-04 establishes resolution/feedback separation early; P0B completes outcome coverage as defenses land. T-CMB-15 owns final suite acceptance, but each P0A task runs its own focused tests before the checkpoint. Keep every task `Todo` until implementation starts.
 
@@ -194,13 +194,13 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-03, T-CMB-04
 
 **Implementation Notes**
-- [ ] `FHeroAttackData` (montage, damage, poise damage, stamina cost, trace radius, `AppliedStates`, `StateDuration`); `LightChain` array of 3 in the DA with spec values.
+- [x] `FHeroAttackData` (montage, damage, poise damage, stamina cost, trace radius, `AppliedStates`, `StateDuration`); `LightChain` array of 3 in the DA with spec values.
 - [ ] `AM_Warlord_Light_01..03`: Startup/Active/Recovery, one hit window each, Chain windows for hits 1–2 and optional RotationAssist windows; cancel windows per technical-plan §5.1 (hits 1–2 allow Light, Heavy, Dodge, Block; hit 3 allows Dodge, Block).
-- [ ] Chain logic: Light from Idle → index 0; Light inside an authored Chain window allowing Light while in LightAttack → index + 1 (max 2); any other action, Idle or index 2 finished → reset to 0.
-- [ ] Build `FCombatHit` from data (SourceLayer Hero, `Damage.Physical`, `bIsHeavy = false`) and pass it to `SetPendingAttack`.
-- [ ] `TrySpend(LightChain[i].StaminaCost)` (default 0).
-- [ ] `IsDataValid`: exactly 3 entries, montages set, each has one hit window.
-- [ ] Remove the T-CMB-02 debug montage.
+- [x] Chain logic: Light from Idle → index 0; Light inside an authored Chain window allowing Light while in LightAttack → index + 1 (max 2); any other action, Idle or index 2 finished → reset to 0.
+- [x] Build `FCombatHit` from data (SourceLayer Hero, `Damage.Physical`, `bIsHeavy = false`) and pass it to `SetPendingAttack`.
+- [x] `TrySpend(LightChain[i].StaminaCost)` (default 0).
+- [x] `IsDataValid`: exactly 3 entries, montages set, each has one hit window.
+- [x] Remove the T-CMB-02 debug montage. No separate debug montage was present in the checkout; Light now requires its definition montage.
 
 **Expected Files / Assets** `HeroCombatTypes.h` (`FHeroAttackData`), `HeroCombatComponent.cpp`; `Content/<Game>/Hero/AM_Warlord_Light_01`, `_02`, `_03`
 
@@ -208,9 +208,13 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 
 **Acceptance Criteria**
 - [ ] AC-CMB-02 passes.
-- [ ] Data validation catches a missing third entry.
+- [x] Data validation catches a missing third entry.
 
 **Verification** PIE; `FT_LightChain` in T-CMB-15.
+
+**Review evidence (2026-10-04, Codex):** Editor and game Development builds pass; default automation gate passes 62/62 with editor/runner exit 0. Scripted PIE on `L_CombatSandbox` uses a transient TutorialTPP mesh/animation instance and the actual montage notifies: indices 0 -> 1 -> 2, dummy health 100 -> 90 -> 80 -> 66, reset/restart at index 0. Tests cover real montage completion, Dodge stopping the previous montage, chain-window expiry, invalid timing refusal before stamina spend and Light data validation. Final command evidence is in `progress.md`.
+
+**Still required for Done:** the saved `BP_Hero_Warlord` has no skeletal mesh/ABP/weapon assembly; the three montages use `Tutorial_Idle`, not attack animations. Replace their sequence segments with compatible placeholder swings, wire a montage Slot in `ABP_Warlord`, attach the weapon and its `Trace_Start`/`Trace_End` sockets, then verify rendered PIE with actual input, sweeps and no new warnings. AC-CMB-02 is not signed off for the playable asset assembly. `FT_LightChain` remains owned by T-CMB-15.
 
 ---
 
@@ -257,12 +261,12 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-02, T-CMB-03, T-CMB-04
 
 **Implementation Notes**
-- [ ] `FHeroDodgeData`: montages F/B/L/R, stamina cost, root motion scale.
+- [x] `FHeroDodgeData`: montages F/B/L/R, stamina cost, root motion scale.
 - [ ] Direction: camera-relative input. Not locked: rotate the hero to input direction and play F. Locked: pick the closest of F/B/L/R relative to facing. No input: B.
-- [ ] `_Invulnerable` window sets `bInvulnerable`; `InterceptHit` returns Evaded while set (one combat-resolution event; no feedback required).
-- [ ] Recovery cancel window allows Light, Heavy, Block, not Dodge (no dodge chaining).
+- [x] `_Invulnerable` window sets `bInvulnerable`; `InterceptHit` returns Evaded while set (one combat-resolution event; no feedback required).
+- [x] Recovery cancel window allows Light, Heavy, Block, not Dodge (no dodge chaining).
 - [ ] Distance via root motion; scale with `SetAnimRootMotionTranslationScale` (verify API in UE docs for the pinned version).
-- [ ] Cost check through `TrySpend`; failure → cue, no start.
+- [x] Cost check through `TrySpend`; failure → cue, no start.
 
 **Expected Files / Assets** `HeroCombatComponent.cpp`; `Content/<Game>/Hero/AM_Warlord_Dodge_F`, `_B`, `_L`, `_R`
 
@@ -273,6 +277,10 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 - [ ] Two Dodge presses in a row produce one dodge, then the second only after recovery ends.
 
 **Verification** PIE; `FT_DodgeIFrames` in T-CMB-15.
+
+**Review evidence (2026-10-04, Codex):** six Dodge specs plus the existing gate pass (68 total). Scripted headless PIE verifies real i-frame notifies evade a 20-damage hit, a hit after the window applies 20 damage, stamina is 80 after one Dodge and 15-stamina Dodge is refused. Recovery cannot cancel into Dodge; completion restores Idle and the previous root-motion scale. Input-buffer age uses owner-dilated component time and ticks only while buffered. `Dodge.StaminaCost` is authoritative; the earlier scalar remains only for legacy asset compatibility.
+
+**Pending integration:** the four 0.6-second montages are Tutorial_Idle timing fixtures. Replace their sequence segments with directional root-motion clips and wire the hero mesh/ABP before verifying actual movement and rendered AC-CMB-07. Free-camera input selection/turning is implemented; locked F/B/L/R selection is pure-tested and its runtime integration belongs to T-CMB-10. Do not mark Done from timing-only tests.
 
 ---
 
@@ -380,11 +388,11 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-02, T-CMB-04, T-CMB-13
 
 **Implementation Notes**
-- [ ] `FHeroHitReactData`: front and back montages; death montage.
-- [ ] Bind own `UHealthComponent::OnDamaged`: if alive and the hit was not blocked and active authored resistance does not resist this hit → stop the current montage (windows close), play front/back by hit direction, state HitReact. DeliverHit owns the hit feedback decision; OnDamaged does not replay HeroDamaged. Resistance never blocks HP loss or death. HitReact late cancel window allows Dodge.
+- [x] `FHeroHitReactData`: front and back montages; death montage.
+- [x] Bind own `UHealthComponent::OnDamaged`: if alive and the hit was not blocked and active authored resistance does not resist this hit → stop the current montage (windows close), play front/back by hit direction, state HitReact. DeliverHit owns the hit feedback decision; OnDamaged does not replay HeroDamaged. Resistance never blocks HP loss or death. HitReact late cancel window allows Dodge.
 - [ ] Bind `OnDeath`: state Dead, clear buffer, release lock-on, ignore input, death montage, `Feedback.Hero.Death`, broadcast `AHeroCharacter::OnHeroDeath` once.
-- [ ] `BP_SandboxGameMode` binds `OnHeroDeath` → after `RespawnDelay` (3 s) destroy pawn and `RestartPlayer`. Comment: sandbox only, CSM T-CSM-01 replaces it in P3.
-- [ ] FND cheat `KillHero` exercises the path.
+- [x] `BP_SandboxGameMode` binds `OnHeroDeath` → after `RespawnDelay` (3 s) destroy pawn and `RestartPlayer`. Comment: sandbox only, CSM T-CSM-01 replaces it in P3.
+- [x] FND cheat `KillHero` exercises the path.
 
 **Expected Files / Assets** `HeroCombatComponent.cpp`, `HeroCharacter.cpp`; `Content/<Game>/Hero/AM_Warlord_HitReact_F`, `_B`, `AM_Warlord_Death`; `BP_SandboxGameMode` (respawn graph)
 
@@ -395,6 +403,11 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 - [ ] Blocked hits never play the hit reaction.
 
 **Verification** PIE; `FT_HeroDeath` in T-CMB-15.
+
+
+**Review evidence (2026-10-04, Codex):** five registered-pawn/lifecycle specs pass for front/back selection, completion/restart, blocked-hit suppression, late Dodge gating, resistance thresholds, damage preservation, shared Staggered gating, once-only death/feedback, committed Dead state during observer callbacks and missing-animation Dead-state preservation. Default gate passes 74/74. Scripted PIE verifies back HitReact, actual late-cancel notifies, KillHero and two successive three-second respawns (3.004/3.003 world seconds) with HP 200, stamina 100 and Idle. The saved sandbox Blueprint binds each newly possessed pawn from OnRestartPlayer and owns RespawnDelay; the authoring tool preserves custom graphs/tuning. OnDamaged does not replay hit feedback. FCombatHit.bWasBlocked is set by DeliverHit before damage delegates.
+
+**Pending integration:** replace Idle-based HitReact/death timing fixtures with readable clips and assemble the saved hero mesh/ABP. The death feedback request producer exists; UXF T-UXF-01/03 owns playback/rows. Lock-on release waits for T-CMB-10. Verify rendered death presentation and real input, then record AC-CMB-12; FT_HeroDeath stays with T-CMB-15. The timer/reset behavior is implemented and verified, so no manual respawn graph authoring remains.
 
 ---
 
@@ -557,11 +570,11 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-02, T-CMB-03, T-CMB-04
 
 **Implementation Notes**
-- [ ] Reuse `Core/GameDebug.*` CVarCombat; add `game.debug.CombatTrace` there. Draw/readout code and cheats compile out of Shipping.
-- [ ] `game.debug.Combat 1`: action, derived timing phase/windows, latest buffer/age, stamina, lock-on/assist targets, SYN shared states, active defensive window and consumed-parry flag. Unimplemented P0B fields show inactive until integrated.
-- [ ] `game.debug.CombatTrace 1`: sweeps, hit points and per-swing already-hit actors; show resolution result independently of UXF feedback.
-- [ ] `ReportHeroWindows` reads derived montage timing; reports action/montage/window on invalid data. Debug drawing never changes combat state.
-- [ ] Add debugger fields with each subsequent action task; no alternate timers for display.
+- [x] Reuse `Core/GameDebug.*` CVarCombat; add `game.debug.CombatTrace` there. Draw/readout code and cheats compile out of Shipping.
+- [x] `game.debug.Combat 1`: action, derived timing phase/windows, latest buffer/age, stamina, lock-on/assist targets, SYN shared states, active defensive window and consumed-parry flag. Unimplemented P0B fields show inactive until integrated.
+- [x] `game.debug.CombatTrace 1`: sweeps, hit points and per-swing already-hit actors; show resolution result independently of UXF feedback.
+- [x] `ReportHeroWindows` reads derived montage timing; reports action/montage/window on invalid data. Debug drawing never changes combat state.
+- [x] Add debugger fields with each subsequent action task; no alternate timers for display.
 
 **Expected Files / Assets** `Core/GameDebug.*`, `Core/GameCheatManager.*`, `HeroCombatComponent.*`, `MeleeTraceComponent.*`
 
@@ -569,9 +582,11 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 
 **Acceptance Criteria**
 - [ ] AC-CMB-20 debug portion and AC-CMB-26 pass for P0A actions; T-CMB-09/15 finish Parry display/coverage.
-- [ ] Debugger disabled → no debug draw work; Shipping has no debugger.
+- [x] Debugger disabled → no debug draw work; Shipping has no debugger.
 
 **Verification** Rendered PIE captures, Development/Shipping build checks when implemented; final P0B display checked by T-CMB-15.
+
+**Review evidence (2026-10-04, Codex):** readout derives phase/time from the actual active montage and displays windows, cancels, buffer/hero-clock age, stamina and shared tags. Lock-on/assist/consumed-parry fields explicitly show inactive until their owning tasks land. A spec checks that observation preserves windows/buffer/age and shows no stale phase after interruption. ReportHeroWindows reports authored notify bounds and invalid montage context (the unimplemented Heavy correctly reports null). Editor/Development/Shipping targets build; Combat/CombatTrace registration and drawing plus cheat bodies are excluded from Shipping. Rendered D3D11 PIE at 10 FPS plus a deliberate 0.12-second hitch verifies real fallback sweeps hit two overlapping dummies once each (100 -> 90), with no repeated damage after interruption. The saved hero still lacks weapon/animation assembly; a readable rendered capture exists; fast animated weapon trajectories and final P0A action coverage remain Review, and final P0B/Parry coverage belongs to T-CMB-09/15. Evidence: Saved/debugger-pie.json and debugger-pie-engine.log.
 
 ### P0A checkpoint (sequencing only, not a production gate)
 
