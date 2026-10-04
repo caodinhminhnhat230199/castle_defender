@@ -16,6 +16,14 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-04: Claude Code: FT_Smoke wired, T-FND-10 done
+- **Tasks:** T-FND-10 Review → Done.
+- **Changed:** `Content/CastleDefender/Maps/Test/BP_FT_Smoke.uasset` (Start Test graph wired by the user in the editor: spawn `TestDummy`, `Apply Debug Hit` 1000, `Get Health` → `Is Dead` → `Finish Test`), `00-foundation/tasks.md`.
+- **Verified:** editor Test Automation: `FT_Smoke_DummyDies` Success ("Dummy died"). `Tools/run_tests.ps1`: 11/11 passed (10 specs + FT_Smoke), exit 0.
+- **Manual steps for the user:** steps 2–4 from the entry below (PIE checks, editor checks, windowed packaged build).
+- **Open questions / blockers:** unchanged from the entry below.
+- **Next:** finish those checks, move T-FND-06…09 to Done, then run the Phase F gate check before P0 (T-CMB-01).
+
 ### 2026-10-04: Claude Code: Phase F foundation implemented
 - **Branch:** `task/T-FND-foundation` (from `main`), one commit per task, not pushed. Your uncommitted `.claude/settings.json` change was left untouched.
 - **Decisions (user, this session):** Q-15 answered: project and module `CastleDefender`, UE 5.8 (5.8.3), reference PC = the dev PC (i5-14500, RTX 4070 Ti SUPER, 32 GB, 1080p) at 60 fps [TUNABLE]. Python Editor Script Plugin enabled for asset creation. Branch + commit per task allowed.

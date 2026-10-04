@@ -17,7 +17,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 | T-FND-07 | `UGameTuningSettings` + Primary Asset Types + `IsDataValid` pattern | TOOLS | F | P0-blocker | T-FND-03 | Review |
 | T-FND-08 | Reference PC spec + packaged Development build smoke + profiling checklist | BUILD | F | High | T-FND-01 | Review |
 | T-FND-09 | Debug tooling: CVars, cheat manager, Visual Logger convention | TOOLS | F | High | T-FND-03 | Review |
-| T-FND-10 | Automation test harness: Spec + Functional Test map + CLI runner | QA | F | High | T-FND-05 | Review |
+| T-FND-10 | Automation test harness: Spec + Functional Test map + CLI runner | QA | F | High | T-FND-05 | Done |
 
 ## 3. Detailed Tasks
 
@@ -278,7 +278,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 
 **Implementation Notes**
 - [x] `Source/<Game>/Tests/` with the Health Spec from `T-FND-05` named `<Game>.Combat.Health`.
-- [ ] Enable Functional Testing Editor plugin; create `Content/<Game>/Maps/Test/FT_Smoke` with one `AFunctionalTest` that spawns a dummy, damages it and asserts death. — map, `BP_FT_Smoke` and the placed actor are created by `Tools/create_foundation_assets.ps1`; **the Start Test graph is a manual step** (progress.md). A C++ `AFunctionalTest` would need the Developer module `FunctionalTesting`, which breaks Shipping for the single runtime module (D-01).
+- [x] Enable Functional Testing Editor plugin; create `Content/<Game>/Maps/Test/FT_Smoke` with one `AFunctionalTest` that spawns a dummy, damages it and asserts death. — map, `BP_FT_Smoke` and the placed actor are created by `Tools/create_foundation_assets.ps1`; the Start Test graph was wired by the user in the editor (2026-10-04). A C++ `AFunctionalTest` would need the Developer module `FunctionalTesting`, which breaks Shipping for the single runtime module (D-01).
 - [x] Script `Tools/run_tests.sh` / `.bat` invoking `UnrealEditor-Cmd <Game>.uproject -ExecCmds="Automation RunTests <Game>.;Quit" -unattended -nullrhi -log` (verify flags for the pinned UE version; Functional Tests may need RHI).
 - [x] Document test naming: `<Game>.<Feature>.<Case>`; Functional Test maps `FT_<Feature>_<Case>`.
 - [x] Fill `AGENTS.md` §7 "Run automation tests" with the script command.
@@ -288,7 +288,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 **Test Case** Run the script → both tests reported as passed; exit code 0.
 
 **Acceptance Criteria**
-- [ ] CLI run passes both tests. *(specs pass; FT_Smoke fails by timeout until its graph is wired)*
+- [x] CLI run passes both tests. *(`Tools/run_tests.ps1`: 11/11 passed, exit 0, 2026-10-04)*
 - [x] A deliberately failing assert makes the script exit non-zero.
 
 **Verification** CLI run.
@@ -310,7 +310,7 @@ flowchart LR
 
 ## 5. Integration / Regression Checklist
 - [x] Fresh clone builds.
-- [ ] Test script passes. *(specs pass; FT_Smoke waits on its manual graph)*
+- [x] Test script passes.
 - [x] Packaged Development build launches.
 - [x] No gameplay logic added in Foundation tasks.
 - [ ] State ownership in code matches the D-07 table (R-FND-05); review at every gate.
