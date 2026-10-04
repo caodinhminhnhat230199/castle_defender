@@ -16,6 +16,17 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-04: Claude Code: Phase F complete, gate passed
+- **Tasks:** T-FND-06 Review → Done, T-FND-07 Review → Done. All ten FND tasks Done.
+- **Decision (user):** AC-FND-06's "Asset Manager lists the registered type" moves to T-CMB-01, which creates the first definition type; T-FND-07 no longer waits on it (it was a circular dependency: T-CMB-01 depends on T-FND-07).
+- **Changed:** `00-foundation/tasks.md` (statuses, gate note in §6), `01-hero-combat/tasks.md` T-CMB-01 (`UHeroClassDefinition : UGameDefinition`, type name `HeroClassDefinition`, new Asset Manager criterion), `02-enemies/tasks.md` T-ENM-01 (`: UGameDefinition`, type name `EnemyArchetypeDefinition`), `AGENTS.md` §1 current phase → P0.
+- **Verified (by the user):** F5 Build toggle logged in PIE; Project Settings → Game → Game Tuning page present; `game.debug.Combat 1` + `SpawnTestDummy` draws in the packaged Development build. Phase F gate (main plan §3: build + automation run + debug draw in a packaged Development build) met.
+- **Open questions / blockers:**
+  - Later-phase task text still says `(UPrimaryDataAsset)` for `USquadDefinition` (T-SQD), `UTacticalZoneDefinition` (ZON) and `UBossDefinition` (BOS); foundation §9 wins (all definitions derive from `UGameDefinition`). Fix when those tasks start.
+  - Branch `task/T-FND-foundation` is not merged into `main` yet.
+  - Spec-audit Phase F leftovers (L2, L4, L7, L8, L10) still open.
+- **Next:** P0. Tasks whose dependencies are all Done: T-CMB-13 (`L_CombatSandbox` + `BP_SandboxGameMode`, unblocks T-CMB-01), T-ENM-01, T-UXF-01, T-UXF-11. Before P0 coding, spec-audit says decide NEW-CMB-01 (parry input).
+
 ### 2026-10-04: Claude Code: user checks, T-FND-08 and T-FND-09 done
 - **Tasks:** T-FND-08 Review → Done, T-FND-09 Review → Done. T-FND-06, T-FND-07 stay Review.
 - **Changed:** `00-foundation/tasks.md`.

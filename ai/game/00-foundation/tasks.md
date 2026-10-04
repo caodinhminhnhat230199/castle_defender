@@ -13,8 +13,8 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 | T-FND-03 | Domain folders, log categories, Build.cs dependencies | BUILD | F | P0-blocker | T-FND-01 | Done |
 | T-FND-04 | Gameplay Tag taxonomy (native tags) | GAMEPLAY | F | P0-blocker | T-FND-03 | Done |
 | T-FND-05 | Shared combat contract skeletons + team interface | GAMEPLAY | F | P0-blocker | T-FND-04 | Done |
-| T-FND-06 | Enhanced Input base + `AHeroPlayerController` skeleton + context switching | GAMEPLAY | F | P0-blocker | T-FND-03 | Review |
-| T-FND-07 | `UGameTuningSettings` + Primary Asset Types + `IsDataValid` pattern | TOOLS | F | P0-blocker | T-FND-03 | Review |
+| T-FND-06 | Enhanced Input base + `AHeroPlayerController` skeleton + context switching | GAMEPLAY | F | P0-blocker | T-FND-03 | Done |
+| T-FND-07 | `UGameTuningSettings` + Primary Asset Types + `IsDataValid` pattern | TOOLS | F | P0-blocker | T-FND-03 | Done |
 | T-FND-08 | Reference PC spec + packaged Development build smoke + profiling checklist | BUILD | F | High | T-FND-01 | Done |
 | T-FND-09 | Debug tooling: CVars, cheat manager, Visual Logger convention | TOOLS | F | High | T-FND-03 | Done |
 | T-FND-10 | Automation test harness: Spec + Functional Test map + CLI runner | QA | F | High | T-FND-05 | Done |
@@ -181,7 +181,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 **Test Case** PIE: debug key pushes `Build` → log shows switch, `IA_LightAttack` no longer fires; push `Modal` then pop it → back to `Build`, not `Combat`; pop `Build` → `Combat`. Automation Spec on the stack: pop of a reason not on top removes only that entry and the top mode is unchanged.
 
 **Acceptance Criteria**
-- [x] Mode stack works (push/pop, out-of-order pop), every change is logged and broadcast. *(spec `CastleDefender.Player.ModeStack` + headless `-game` run with `DebugPushMode`/`DebugPopMode`; F5 key press in PIE is the user's check)*
+- [x] Mode stack works (push/pop, out-of-order pop), every change is logged and broadcast. *(spec `CastleDefender.Player.ModeStack` + headless `-game` run with `DebugPushMode`/`DebugPopMode`; F5 Build toggle confirmed in PIE by the user 2026-10-04)*
 - [x] No input bound directly to keys in C++ (all via actions).
 
 **Verification** PIE manual check.
@@ -208,8 +208,8 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 **Test Case** Create a test Data Asset with an empty required field → Data Validation reports an error.
 
 **Acceptance Criteria**
-- [ ] Settings page visible under Project Settings → Game. *(editor check, user)*
-- [ ] Asset Manager lists the registered type. *(no type exists until the first `UGameDefinition` subclass lands, e.g. `UHeroClassDefinition`; check then)*
+- [x] Settings page visible under Project Settings → Game. *(confirmed by the user 2026-10-04)*
+- [x] Asset Manager lists the registered type. *(moved to T-CMB-01, which creates the first definition type `HeroClassDefinition`; user decision 2026-10-04)*
 
 **Verification** Editor: Data Validation on the folder; Asset Manager audit window.
 
@@ -316,4 +316,6 @@ flowchart LR
 - [ ] State ownership in code matches the D-07 table (R-FND-05); review at every gate.
 
 ## 6. Final Definition of Done
+
+**Phase F gate passed 2026-10-04:** editor and game targets build; `Tools/run_tests.ps1` 11/11; debug draw (`game.debug.Combat` + `SpawnTestDummy`) confirmed in the packaged Development build. AC-FND-06's Asset Manager check moved to T-CMB-01.
 All AC-FND-01…09 pass; master plan §2 updated with project name, UE version and reference PC.

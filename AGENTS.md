@@ -20,7 +20,7 @@ Action Strategy Roguelite: a third-person Hero fights alongside squads while tow
 
 | Item | Value |
 |---|---|
-| Current phase | **F (Foundation), in progress.** Update this line when a gate passes. |
+| Current phase | **P0 (Combat Sandbox).** Phase F gate passed 2026-10-04. Update this line when a gate passes. |
 | Engine / module | UE 5.8, runtime module `CastleDefender` (docs write `<Game>`). Project file `CastleDefender.uproject`. |
 | Dev OS | Windows 11 (Visual Studio 2026, MSVC 14.51). Win64 builds and profiling run on the dev PC. |
 | Language | Code, comments, docs and commit messages in English. Reply to the user in the language they write (often Vietnamese). |
