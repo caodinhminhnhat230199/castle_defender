@@ -1,6 +1,7 @@
 #include "Hero/HeroCombatComponent.h"
 #include "Hero/HeroCharacter.h"
 #include "Combat/CombatStateComponent.h"
+#include "Hero/StaminaComponent.h"
 #include "Core/GameLog.h"
 #include "Core/GameTags.h"
 #include "Animation/AnimMontage.h"
@@ -33,15 +34,59 @@ bool UHeroCombatComponent::IsSharedStaggered() const
 	return CombatStateComp && CombatStateComp->HasState(GameTags::State_Combat_Staggered);
 }
 
+float UHeroCombatComponent::GetActionStaminaCost(EHeroAction Action) const
+{
+	if (HeroOwner)
+	{
+		if (const UHeroClassDefinition* Def = HeroOwner->GetHeroClassDefinition())
+		{
+			switch (Action)
+			{
+			case EHeroAction::Dodge:
+				return Def->DodgeStaminaCost;
+			case EHeroAction::Heavy:
+				return Def->HeavyStaminaCost;
+			default:
+				return 0.f;
+			}
+		}
+	}
+	return 0.f;
+}
+
 bool UHeroCombatComponent::CanStartAction(EHeroAction Action) const
 {
-	const bool bStaminaOk = true; // Stamina rules plumbed in T-CMB-03
+	bool bStaminaOk = true;
+	const float Cost = GetActionStaminaCost(Action);
+	if (Cost > 0.f && HeroOwner)
+	{
+		if (const UStaminaComponent* Stamina = HeroOwner->GetStaminaComponent())
+		{
+			bStaminaOk = Stamina->HasInfiniteStamina() || (Stamina->GetCurrentStamina() >= Cost);
+		}
+	}
+
 	const bool bStaggered = IsSharedStaggered();
 	return FHeroActionRules::CanStart(CurrentState, OpenCancelActions, Action, bStaminaOk, bStaggered);
 }
 
 bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 {
+	const float StaminaCost = GetActionStaminaCost(Action);
+	if (StaminaCost > 0.f && HeroOwner)
+	{
+		if (UStaminaComponent* Stamina = HeroOwner->GetStaminaComponent())
+		{
+			if (!Stamina->HasInfiniteStamina() && Stamina->GetCurrentStamina() < StaminaCost)
+			{
+				Stamina->TrySpend(StaminaCost); // emits OnStaminaSpendFailed
+				UE_LOG(LogGameCombat, Log, TEXT("Hero action %d rejected: stamina insufficient (cost %.1f, current %.1f) - not buffered"),
+					static_cast<int32>(Action), StaminaCost, Stamina->GetCurrentStamina());
+				return false;
+			}
+		}
+	}
+
 	if (CanStartAction(Action))
 	{
 		ClearBuffer();
@@ -49,6 +94,13 @@ bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 		if (HeroOwner)
 		{
 			HeroOwner->StopSprint();
+			if (StaminaCost > 0.f)
+			{
+				if (UStaminaComponent* Stamina = HeroOwner->GetStaminaComponent())
+				{
+					Stamina->TrySpend(StaminaCost);
+				}
+			}
 		}
 
 		switch (Action)

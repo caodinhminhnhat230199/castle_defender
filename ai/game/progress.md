@@ -16,6 +16,29 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-04: Antigravity: T-CMB-03 UStaminaComponent and stamina rules implemented
+- **Tasks:** T-CMB-03 Todo → Done. Unblocks T-CMB-05, T-CMB-06, T-CMB-07.
+- **Changed:**
+  - `Source/CastleDefender/Core/GameTags.h/.cpp`: declared and defined `Feedback_Hero_StaminaInsufficient` tag.
+  - `Source/CastleDefender/Hero/HeroCombatTypes.h`: added `FStaminaConfig` (Max 100, RegenDelay 0.8s, RegenRate 30/s, BlockingRegenMultiplier 0.5, SprintDrainPerSecond 0/s) and pure simulation struct `FStaminaState` with `TrySpend`, `ApplyDamage`, `OnBlockedHit`, `Advance`, and `DrainSprint`.
+  - `Source/CastleDefender/Hero/HeroClassDefinition.h/.cpp`: added `Stamina` (`FStaminaConfig`), `DodgeStaminaCost` (20), `HeavyStaminaCost` (25), and editor validation for positive max, non-negative delay/rate/multipliers/costs.
+  - `Source/CastleDefender/Hero/StaminaComponent.h/.cpp`: created `UStaminaComponent : UActorComponent` with dilated hero clock, tick gating (disabled when full and not draining), delegates `OnStaminaChanged`, `OnStaminaSpendFailed`, `OnStaminaDepleted`, `SetBlocking`, `SetSprintDraining`, and `SetInfiniteStamina`.
+  - `Source/CastleDefender/Hero/HeroCharacter.h/.cpp`: added `UStaminaComponent` subobject, wired sprint drain on `StartSprint()` / `StopSprint()`, `ApplyTuning()`, `Tick` with stamina and tick state overlay under `game.debug.Combat`.
+  - `Source/CastleDefender/Hero/HeroCombatComponent.h/.cpp`: added `GetActionStaminaCost`, integrated stamina checking and spending into `CanStartAction` and `RequestAction`, rejecting costed actions without buffering when stamina is insufficient.
+  - `Source/CastleDefender/Core/GameCheatManager.h/.cpp`: implemented `InfiniteStamina` cheat command.
+  - `Source/CastleDefender/Tests/CombatTestListener.h`: added stamina delegate listeners for dynamic multicast test verification.
+  - `Source/CastleDefender/Tests/StaminaRules.spec.cpp`: 6 automation specs covering AC-CMB-15 lifecycle, blocked hit suppression, sprint drain, tick gating, infinite stamina cheat, and delegate broadcasts.
+  - `Tools/create_hero_assets.py`: populated stamina config and action costs on `DA_HeroClass_Warlord`.
+  - `ai/game/01-hero-combat/tasks.md`: marked T-CMB-03 Done.
+- **Verified:**
+  - Automated tests: `Tools/run_tests.bat` passes all 38 tests (33 specs including all 6 `CastleDefender.Combat.Hero.Stamina.*` tests + FT_Smoke), 0 failed, editor exit 0.
+  - Scripted PIE: `Saved/run_hero_pie.ps1` runs PIE on `L_CombatSandbox`, verifies `BP_Hero_Warlord` spawns with `UStaminaComponent` at 100/100, component tick disabled when full, spend 30 succeeds (70 remaining, tick enabled), `InfiniteStamina` cheat sets infinite mode (100 stamina, tick disabled), toggle off restores normal mode, and Dodge action spends 20 stamina down to 80 (`Saved/combat-hero-pie.json`).
+  - Packaging: `Tools/build.bat` (Editor & Game targets) and `Tools/package.bat` succeed with 0 errors.
+  - Packaged headless smoke: `Saved/test_packaged_smoke.ps1` runs packaged `CastleDefender.exe` for 5 seconds without errors.
+- **Manual steps for the user:** none.
+- **Open questions / blockers:** none.
+- **Next:** T-CMB-04 (Melee hit detection → `FCombatHit` dispatch).
+
 ### 2026-10-04: Antigravity: T-CMB-02 HeroCombatComponent action state machine and cancel windows implemented
 - **Tasks:** T-CMB-02 Todo → Done. Unblocks T-CMB-04.
 - **Changed:**

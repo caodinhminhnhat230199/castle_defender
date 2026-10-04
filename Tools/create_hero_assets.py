@@ -45,6 +45,16 @@ camera.set_editor_property("enable_camera_lag", True)
 camera.set_editor_property("camera_lag_speed", 10.0)
 da.set_editor_property("camera", camera)
 
+stamina = unreal.StaminaConfig()
+stamina.set_editor_property("max", 100.0)
+stamina.set_editor_property("regen_delay", 0.8)
+stamina.set_editor_property("regen_rate", 30.0)
+stamina.set_editor_property("blocking_regen_multiplier", 0.5)
+stamina.set_editor_property("sprint_drain_per_second", 0.0)
+da.set_editor_property("stamina", stamina)
+da.set_editor_property("dodge_stamina_cost", 20.0)
+da.set_editor_property("heavy_stamina_cost", 25.0)
+
 assets.save_loaded_asset(da, only_if_is_dirty=False)
 unreal.log(f"Saved DA_HeroClass_Warlord at {da_path}")
 

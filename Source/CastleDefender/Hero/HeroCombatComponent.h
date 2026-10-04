@@ -35,6 +35,9 @@ public:
 	bool CanStartAction(EHeroAction Action) const;
 
 	UFUNCTION(BlueprintPure, Category = "Combat")
+	float GetActionStaminaCost(EHeroAction Action) const;
+
+	UFUNCTION(BlueprintPure, Category = "Combat")
 	EHeroActionState GetActionState() const { return CurrentState; }
 
 	UFUNCTION(BlueprintPure, Category = "Combat")

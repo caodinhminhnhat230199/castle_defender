@@ -35,4 +35,32 @@ public:
 
 	UFUNCTION()
 	void HandleDeath(const FCombatHit& KillingHit) { ++DeathCount; }
+
+	int32 StaminaChangedCount = 0;
+	float LastStaminaCurrent = 0.f;
+	float LastStaminaMax = 0.f;
+	int32 StaminaSpendFailedCount = 0;
+	float LastFailedCost = 0.f;
+	int32 StaminaDepletedCount = 0;
+
+	UFUNCTION()
+	void HandleStaminaChanged(float Current, float Max)
+	{
+		++StaminaChangedCount;
+		LastStaminaCurrent = Current;
+		LastStaminaMax = Max;
+	}
+
+	UFUNCTION()
+	void HandleStaminaSpendFailed(float Cost)
+	{
+		++StaminaSpendFailedCount;
+		LastFailedCost = Cost;
+	}
+
+	UFUNCTION()
+	void HandleStaminaDepleted()
+	{
+		++StaminaDepletedCount;
+	}
 };

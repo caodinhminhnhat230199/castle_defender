@@ -19,7 +19,7 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 |---|---|---|---|---|---|---|
 | T-CMB-01 | `AHeroCharacter` + `UHeroClassDefinition` + locomotion/sprint + third-person camera | GAMEPLAY | P0A | Must | T-FND-05, T-FND-06, T-FND-07, T-CMB-13 | Done |
 | T-CMB-02 | `UHeroCombatComponent` action state machine, commitment and cancel windows via anim notify states | GAMEPLAY | P0A | Must | T-CMB-01 | Done |
-| T-CMB-03 | `UStaminaComponent` + stamina rules | GAMEPLAY | P0A | Must | T-CMB-01, T-FND-10 | Todo |
+| T-CMB-03 | `UStaminaComponent` + stamina rules | GAMEPLAY | P0A | Must | T-CMB-01, T-FND-10 | Done |
 | T-CMB-04 | Melee hit detection → `FCombatHit` dispatch (`DeliverHit`, interceptor, one hit per target per swing) | GAMEPLAY | P0A | Must | T-CMB-02, T-FND-05, T-UXF-01 | Todo |
 | T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Todo |
 | T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04, T-SYN-01 | Todo |
@@ -127,22 +127,22 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-01, T-FND-10
 
 **Implementation Notes**
-- [ ] `FStaminaConfig` in the DA: `Max`, `RegenDelay`, `RegenRate`, `BlockingRegenMultiplier`, `SprintDrainPerSecond`.
-- [ ] Pure struct `FStaminaState` with `TrySpend`, `ApplyDamage`, `Advance` (technical-plan §5.2).
-- [ ] Component inits from DA; Tick enabled only while below max or sprint-draining; delegates `OnStaminaChanged(Current, Max)`, `OnStaminaSpendFailed(Cost)`, `OnStaminaDepleted`.
-- [ ] `SetBlocking(bool)` for the regen multiplier (used by T-CMB-08); post-block suppression is implemented/tested with T-CMB-08. Stamina uses the hero clock (D-20); shared state expiry uses world game time.
-- [ ] If `SprintDrainPerSecond > 0` and stamina hits 0, stop sprint (default drain 0).
-- [ ] Combat component calls `TrySpend` before costed actions; on failure plays `Feedback.Hero.StaminaInsufficient` and does not buffer.
-- [ ] Wire FND cheat `InfiniteStamina`. Add stamina value to `game.debug.Combat`.
+- [x] `FStaminaConfig` in the DA: `Max`, `RegenDelay`, `RegenRate`, `BlockingRegenMultiplier`, `SprintDrainPerSecond`.
+- [x] Pure struct `FStaminaState` with `TrySpend`, `ApplyDamage`, `Advance` (technical-plan §5.2).
+- [x] Component inits from DA; Tick enabled only while below max or sprint-draining; delegates `OnStaminaChanged(Current, Max)`, `OnStaminaSpendFailed(Cost)`, `OnStaminaDepleted`.
+- [x] `SetBlocking(bool)` for the regen multiplier (used by T-CMB-08); post-block suppression is implemented/tested with T-CMB-08. Stamina uses the hero clock (D-20); shared state expiry uses world game time.
+- [x] If `SprintDrainPerSecond > 0` and stamina hits 0, stop sprint (default drain 0).
+- [x] Combat component calls `TrySpend` before costed actions; on failure plays `Feedback.Hero.StaminaInsufficient` and does not buffer.
+- [x] Wire FND cheat `InfiniteStamina`. Add stamina value to `game.debug.Combat`.
 
 **Expected Files / Assets** `Source/<Game>/Hero/StaminaComponent.h/.cpp`; `Source/<Game>/Tests/StaminaRules.spec.cpp`
 
 **Test Case** Spec with Max 100, delay 0.8, rate 30: spend 30 → 70; spend 80 → rejected, 70; advance to 0.5 s → 70; advance to 1.8 s → 100 (clamped); same with blocking → 85; `ApplyDamage(200)` → 0 and returns depleted.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-15 passes.
-- [ ] Component tick is disabled when stamina is full (check with debug output).
-- [ ] `InfiniteStamina` keeps stamina at max.
+- [x] AC-CMB-15 passes.
+- [x] Component tick is disabled when stamina is full (check with debug output).
+- [x] `InfiniteStamina` keeps stamina at max.
 
 **Verification** Automation Spec `CastleDefender.Combat.Hero.Stamina`; PIE check of tick state and cheat.
 

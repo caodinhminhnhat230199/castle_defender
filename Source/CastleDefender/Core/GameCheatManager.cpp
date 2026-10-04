@@ -4,6 +4,7 @@
 #include "Core/GameLog.h"
 #include "Engine/World.h"
 #include "Hero/HeroCharacter.h"
+#include "Hero/StaminaComponent.h"
 #include "Player/HeroPlayerController.h"
 
 void UGameCheatManager::SpawnTestDummy(float Distance)
@@ -75,6 +76,31 @@ void UGameCheatManager::ReloadHeroTuning()
 	else
 	{
 		UE_LOG(LogGamePlayer, Warning, TEXT("ReloadHeroTuning: controlled pawn is not an AHeroCharacter"));
+	}
+#endif
+}
+
+void UGameCheatManager::InfiniteStamina()
+{
+#if UE_WITH_CHEAT_MANAGER
+	APlayerController* PC = GetOuterAPlayerController();
+	if (!PC)
+	{
+		return;
+	}
+
+	if (AHeroCharacter* Hero = Cast<AHeroCharacter>(PC->GetPawn()))
+	{
+		if (UStaminaComponent* Stamina = Hero->GetStaminaComponent())
+		{
+			const bool bNewState = !Stamina->HasInfiniteStamina();
+			Stamina->SetInfiniteStamina(bNewState);
+			UE_LOG(LogGamePlayer, Log, TEXT("InfiniteStamina set to %s on '%s'"), bNewState ? TEXT("true") : TEXT("false"), *Hero->GetName());
+		}
+	}
+	else
+	{
+		UE_LOG(LogGamePlayer, Warning, TEXT("InfiniteStamina: controlled pawn is not an AHeroCharacter"));
 	}
 #endif
 }

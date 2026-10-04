@@ -6,11 +6,14 @@
 #include "Combat/HealthComponent.h"
 #include "Combat/CombatStateComponent.h"
 #include "Hero/HeroCombatComponent.h"
+#include "Hero/StaminaComponent.h"
 #include "Core/GameLog.h"
+#include "Core/GameDebug.h"
+#include "DrawDebugHelpers.h"
 
 AHeroCharacter::AHeroCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	TeamId = FGenericTeamId(Team_Player);
 
@@ -36,6 +39,7 @@ AHeroCharacter::AHeroCharacter()
 	Health = CreateDefaultSubobject<UHealthComponent>(TEXT("Health"));
 	CombatState = CreateDefaultSubobject<UCombatStateComponent>(TEXT("CombatState"));
 	CombatComponent = CreateDefaultSubobject<UHeroCombatComponent>(TEXT("CombatComponent"));
+	StaminaComponent = CreateDefaultSubobject<UStaminaComponent>(TEXT("StaminaComponent"));
 }
 
 void AHeroCharacter::BeginPlay()
@@ -48,6 +52,27 @@ void AHeroCharacter::BeginPlay()
 	{
 		Health->OnDeath.AddDynamic(this, &AHeroCharacter::HandleDeath);
 	}
+}
+
+void AHeroCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+#if ENABLE_DRAW_DEBUG
+	if (GameDebug::CVarCombat.GetValueOnGameThread() > 0)
+	{
+		const FVector Top = GetActorLocation() + FVector(0.f, 0.f, 110.f);
+		const float CurHP = Health ? Health->GetCurrentHealth() : 0.f;
+		const float MaxHP = Health ? Health->GetMaxHealth() : 0.f;
+		const float CurStam = StaminaComponent ? StaminaComponent->GetCurrentStamina() : 0.f;
+		const float MaxStam = StaminaComponent ? StaminaComponent->GetMaxStamina() : 0.f;
+		const bool bTickOn = StaminaComponent ? StaminaComponent->IsComponentTickEnabled() : false;
+		DrawDebugString(GetWorld(), Top,
+			FString::Printf(TEXT("HP: %.0f/%.0f | Stamina: %.0f/%.0f (Tick:%s)"),
+				CurHP, MaxHP, CurStam, MaxStam, bTickOn ? TEXT("ON") : TEXT("OFF")),
+			nullptr, FColor::Yellow, 0.f);
+	}
+#endif
 }
 
 void AHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -113,6 +138,11 @@ void AHeroCharacter::ApplyTuning()
 		{
 			Health->InitializeHealth(HeroClassDefinition->MaxHealth, 0.f);
 		}
+
+		if (StaminaComponent)
+		{
+			StaminaComponent->InitializeFromConfig(HeroClassDefinition->Stamina);
+		}
 	}
 
 	UpdateMaxWalkSpeed();
@@ -121,12 +151,20 @@ void AHeroCharacter::ApplyTuning()
 void AHeroCharacter::StartSprint()
 {
 	bIsSprinting = true;
+	if (StaminaComponent && HeroClassDefinition && HeroClassDefinition->Stamina.SprintDrainPerSecond > 0.f)
+	{
+		StaminaComponent->SetSprintDraining(true);
+	}
 	UpdateMaxWalkSpeed();
 }
 
 void AHeroCharacter::StopSprint()
 {
 	bIsSprinting = false;
+	if (StaminaComponent)
+	{
+		StaminaComponent->SetSprintDraining(false);
+	}
 	UpdateMaxWalkSpeed();
 }
 

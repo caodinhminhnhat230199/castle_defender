@@ -33,4 +33,8 @@ public:
 	/** Reloads hero tuning from its class definition asset. */
 	UFUNCTION(Exec)
 	void ReloadHeroTuning();
+
+	/** Toggles infinite stamina cheat on the controlled hero. */
+	UFUNCTION(Exec)
+	void InfiniteStamina();
 };

@@ -13,6 +13,7 @@ class UCameraComponent;
 class UHealthComponent;
 class UCombatStateComponent;
 class UHeroCombatComponent;
+class UStaminaComponent;
 class UInputAction;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHeroDeathSignature, const FCombatHit&, KillingHit);
@@ -30,6 +31,7 @@ public:
 	AHeroCharacter();
 
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	// IGenericTeamAgentInterface
@@ -64,6 +66,9 @@ public:
 	UHeroCombatComponent* GetCombatComponent() const { return CombatComponent; }
 
 	UFUNCTION(BlueprintPure, Category = "Hero")
+	UStaminaComponent* GetStaminaComponent() const { return StaminaComponent; }
+
+	UFUNCTION(BlueprintPure, Category = "Hero")
 	USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 	UFUNCTION(BlueprintPure, Category = "Hero")
@@ -87,6 +92,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<UHeroCombatComponent> CombatComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<UStaminaComponent> StaminaComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hero")
 	TObjectPtr<UHeroClassDefinition> HeroClassDefinition;

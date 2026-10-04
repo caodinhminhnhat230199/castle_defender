@@ -78,6 +78,108 @@ struct FHeroInputData
 	float InputBufferTime = 0.2f;
 };
 
+/** Stamina tunables for hero classes (spec §4.4, technical-plan §5.2). */
+USTRUCT(BlueprintType)
+struct FStaminaConfig
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stamina", meta = (ClampMin = "0.0"))
+	float Max = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stamina", meta = (ClampMin = "0.0"))
+	float RegenDelay = 0.8f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stamina", meta = (ClampMin = "0.0"))
+	float RegenRate = 30.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stamina", meta = (ClampMin = "0.0"))
+	float BlockingRegenMultiplier = 0.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stamina", meta = (ClampMin = "0.0"))
+	float SprintDrainPerSecond = 0.f;
+};
+
+/** Pure stamina state and simulation rules (technical-plan §5.2). */
+USTRUCT(BlueprintType)
+struct CASTLEDEFENDER_API FStaminaState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Stamina")
+	float Current = 100.f;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Stamina")
+	float Max = 100.f;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Stamina")
+	double LastSpendTime = -100.0;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Stamina")
+	double BlockedRegenUntil = 0.0;
+
+	void Init(const FStaminaConfig& Config)
+	{
+		Max = Config.Max;
+		Current = Max;
+		LastSpendTime = -100.0;
+		BlockedRegenUntil = 0.0;
+	}
+
+	bool TrySpend(float Cost, double Now)
+	{
+		if (Cost > Current)
+		{
+			return false;
+		}
+		Current -= Cost;
+		LastSpendTime = Now;
+		return true;
+	}
+
+	bool ApplyDamage(float Amount, double Now)
+	{
+		Current = FMath::Max(0.f, Current - Amount);
+		LastSpendTime = Now;
+		return Current == 0.f;
+	}
+
+	void OnBlockedHit(double Now, float Suppression)
+	{
+		BlockedRegenUntil = Now + (double)Suppression;
+	}
+
+	void Advance(float Dt, double Now, bool bBlocking, const FStaminaConfig& Config)
+	{
+		if (Dt <= 0.f)
+		{
+			return;
+		}
+
+		const double RegenStartTime = LastSpendTime + (double)Config.RegenDelay;
+		const double AllowedStartTime = bBlocking ? FMath::Max(RegenStartTime, BlockedRegenUntil) : RegenStartTime;
+
+		if (Now >= AllowedStartTime)
+		{
+			const float ActiveTime = FMath::Min(Dt, (float)(Now - AllowedStartTime));
+			if (ActiveTime > 0.f)
+			{
+				const float Multiplier = bBlocking ? Config.BlockingRegenMultiplier : 1.0f;
+				Current = FMath::Min(Config.Max, Current + Config.RegenRate * Multiplier * ActiveTime);
+			}
+		}
+	}
+
+	void DrainSprint(float Dt, double Now, float DrainRate)
+	{
+		if (DrainRate > 0.f && Dt > 0.f)
+		{
+			Current = FMath::Max(0.f, Current - DrainRate * Dt);
+			LastSpendTime = Now;
+		}
+	}
+};
+
 /** Pure rules for hero action transitions and commitment windows (technical-plan §5.1). */
 struct CASTLEDEFENDER_API FHeroActionRules
 {
