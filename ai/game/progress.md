@@ -16,6 +16,13 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-04: Claude Code: user checks, T-FND-08 and T-FND-09 done
+- **Tasks:** T-FND-08 Review → Done, T-FND-09 Review → Done. T-FND-06, T-FND-07 stay Review.
+- **Changed:** `00-foundation/tasks.md`.
+- **Verified (by the user, in the editor and packaged build):** `game.debug.Combat 1` + `SpawnTestDummy` draws the green debug sphere in PIE; Gameplay Tag picker shows the native tags; packaged Development build shows `stat unit` in a window.
+- **Still unconfirmed:** F5 Build-mode switch in PIE (T-FND-06); Project Settings → Game → Game Tuning page (T-FND-07); debug draw inside the **packaged** build (Phase F gate wording); viewing the trace in Insights (optional).
+- **Next:** those checks, then the Phase F gate.
+
 ### 2026-10-04: Claude Code: FT_Smoke wired, T-FND-10 done
 - **Tasks:** T-FND-10 Review → Done.
 - **Changed:** `Content/CastleDefender/Maps/Test/BP_FT_Smoke.uasset` (Start Test graph wired by the user in the editor: spawn `TestDummy`, `Apply Debug Hit` 1000, `Get Health` → `Is Dead` → `Finish Test`), `00-foundation/tasks.md`.

@@ -15,8 +15,8 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 | T-FND-05 | Shared combat contract skeletons + team interface | GAMEPLAY | F | P0-blocker | T-FND-04 | Done |
 | T-FND-06 | Enhanced Input base + `AHeroPlayerController` skeleton + context switching | GAMEPLAY | F | P0-blocker | T-FND-03 | Review |
 | T-FND-07 | `UGameTuningSettings` + Primary Asset Types + `IsDataValid` pattern | TOOLS | F | P0-blocker | T-FND-03 | Review |
-| T-FND-08 | Reference PC spec + packaged Development build smoke + profiling checklist | BUILD | F | High | T-FND-01 | Review |
-| T-FND-09 | Debug tooling: CVars, cheat manager, Visual Logger convention | TOOLS | F | High | T-FND-03 | Review |
+| T-FND-08 | Reference PC spec + packaged Development build smoke + profiling checklist | BUILD | F | High | T-FND-01 | Done |
+| T-FND-09 | Debug tooling: CVars, cheat manager, Visual Logger convention | TOOLS | F | High | T-FND-03 | Done |
 | T-FND-10 | Automation test harness: Spec + Functional Test map + CLI runner | QA | F | High | T-FND-05 | Done |
 
 ## 3. Detailed Tasks
@@ -235,7 +235,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 
 **Acceptance Criteria**
 - [x] Packaged build runs on the reference PC. *(headless `-nullrhi` run of `Saved/Packaged/Windows/CastleDefender.exe`: `BP_BootGameMode` loads, `game.debug.Combat 1`, `SpawnTestDummy`, `DebugPushMode` work; windowed `stat unit` look is the user's check)*
-- [ ] Checklist reproduces a trace capture. *(a 670 KB `.utrace` was captured from the packaged build with `-trace=cpu,frame,log,bookmark`; opening it in Insights and a windowed capture are the user's check)*
+- [x] Checklist reproduces a trace capture. *(a 670 KB `.utrace` was captured from the packaged build with `-trace=cpu,frame,log,bookmark`; windowed `stat unit` confirmed by the user 2026-10-04; viewing in Insights not checked)*
 
 **Verification** Manual run following the checklist.
 
@@ -261,7 +261,7 @@ Ten tasks that turn an empty folder into a buildable, testable, debuggable UE5 C
 
 **Acceptance Criteria**
 - [x] CVars listed by `help game.debug`.
-- [ ] Cheats work in PIE and are compiled out of Shipping. *(SpawnTestDummy and mode cheats verified in headless `-game` and packaged runs; `CastleDefender` Shipping builds with zero project warnings; debug sphere draw needs a PIE look)*
+- [x] Cheats work in PIE and are compiled out of Shipping. *(SpawnTestDummy and mode cheats verified in headless `-game` and packaged runs; `CastleDefender` Shipping builds with zero project warnings; debug sphere seen in PIE by the user 2026-10-04)*
 
 **Verification** PIE console.
 
