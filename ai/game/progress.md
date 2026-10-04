@@ -16,6 +16,15 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-04: Codex: Saved remaining Hero Combat work as a teammate handoff
+- **Agent / branch:** Codex, `feat/01-hero-combat`; preserved the existing empty, untracked `01-hero-combat/WIP.md` by filling the file requested by the user. No gameplay implementation or binary assets changed.
+- **Tasks:** no status changes; Hero Combat remains 5 Done, 4 Review and 12 Todo. This documentation-only handoff covers all 16 incomplete tasks.
+- **Changed:** `01-hero-combat/WIP.md` saves the requested Vietnamese explanation, task blockers, approved feature-branch workflow, continuation order, provider-document links and the distinction between recorded verification and remaining content/PIE acceptance. This log records the handoff.
+- **Verified:** checked all 16 incomplete task IDs and relative document links, task counts against `tasks.md`, and whitespace. No fresh Unreal build/tests/PIE for this documentation-only change; earlier evidence is linked without claiming new verification.
+- **Manual steps for the user:** none to save the handoff; the teammate should follow the editor and verification steps in WIP and earlier entries.
+- **Open questions / blockers:** existing animation/hero assembly and external SYN/ENM/UXF dependencies remain. P2/VS tasks stay closed until their gates open. No push or PR in this session.
+- **Next:** complete content/PIE for T-CMB-05/07/11, then follow T-UXF-01 -> T-SYN-01 -> T-CMB-06 -> T-CMB-20 and the P0A checkpoint.
+
 ### 2026-10-04: Codex: Corrected workflow to one Hero Combat feature branch with incremental commits
 - **Approval / workflow:** the user clarified that one branch means `feat/01-hero-combat` for every Hero Combat task, with multiple commits, followed by a PR into `main` only after all feature tasks are complete. This supersedes the main-only interpretation below. The user explicitly requested committing all current work to this feature branch. Subsequent task increments reuse it; no per-task branches. Phase/dependency gates and task verification requirements still apply.
 - **Agent / branch:** Codex, `feat/01-hero-combat`, original checkout. Verified one worktree and no other active agents before switching. Created the feature branch at existing HEAD `509d51d`, then restored local `main` to its recorded pre-consolidation Foundation merge `0e6e6b0` (also the `origin/main` tracking ref). All six existing Hero Combat commits remain unchanged and reachable on the feature branch; no commits were rewritten or remote refs changed.
