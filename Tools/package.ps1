@@ -1,5 +1,5 @@
 # Packages a Win64 build into Saved/Packaged (not committed).
-# Usage: powershell -File Tools/package.ps1 [-Configuration Development|Shipping]
+# Usage: Tools/package.bat [-Configuration Development|Shipping]
 param(
     [string]$Configuration = 'Development'
 )
