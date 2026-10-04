@@ -37,4 +37,8 @@ public:
 	/** Toggles infinite stamina cheat on the controlled hero. */
 	UFUNCTION(Exec)
 	void InfiniteStamina();
+
+	/** Dispatches a synthetic FCombatHit against the controlled hero via DeliverHit. */
+	UFUNCTION(Exec)
+	void DebugHitHero(float Damage = 25.f, float Delay = 0.f, bool bFromFront = true);
 };

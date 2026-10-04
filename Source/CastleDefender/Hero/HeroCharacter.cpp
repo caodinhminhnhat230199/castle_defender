@@ -7,6 +7,7 @@
 #include "Combat/CombatStateComponent.h"
 #include "Hero/HeroCombatComponent.h"
 #include "Hero/StaminaComponent.h"
+#include "Combat/MeleeTraceComponent.h"
 #include "Core/GameLog.h"
 #include "Core/GameDebug.h"
 #include "DrawDebugHelpers.h"
@@ -40,6 +41,7 @@ AHeroCharacter::AHeroCharacter()
 	CombatState = CreateDefaultSubobject<UCombatStateComponent>(TEXT("CombatState"));
 	CombatComponent = CreateDefaultSubobject<UHeroCombatComponent>(TEXT("CombatComponent"));
 	StaminaComponent = CreateDefaultSubobject<UStaminaComponent>(TEXT("StaminaComponent"));
+	MeleeTraceComponent = CreateDefaultSubobject<UMeleeTraceComponent>(TEXT("MeleeTraceComponent"));
 }
 
 void AHeroCharacter::BeginPlay()

@@ -1,6 +1,7 @@
 #include "Hero/HeroCombatComponent.h"
 #include "Hero/HeroCharacter.h"
 #include "Combat/CombatStateComponent.h"
+#include "Combat/MeleeTraceComponent.h"
 #include "Hero/StaminaComponent.h"
 #include "Core/GameLog.h"
 #include "Core/GameTags.h"
@@ -25,6 +26,10 @@ void UHeroCombatComponent::BeginPlay()
 		{
 			CombatStateComp->OnStateAdded.AddDynamic(this, &UHeroCombatComponent::HandleStateAdded);
 			CombatStateComp->OnStateRemoved.AddDynamic(this, &UHeroCombatComponent::HandleStateRemoved);
+		}
+		if (UMeleeTraceComponent* TraceComp = HeroOwner->FindComponentByClass<UMeleeTraceComponent>())
+		{
+			TraceComp->OnHitResolved.AddDynamic(this, &UHeroCombatComponent::HandleMeleeHitResolved);
 		}
 	}
 }
@@ -222,6 +227,14 @@ void UHeroCombatComponent::ForceCloseAllWindows()
 	CloseCancelWindow();
 	CloseInvulnerableWindow();
 	CloseParryWindow();
+
+	if (HeroOwner)
+	{
+		if (UMeleeTraceComponent* TraceComp = HeroOwner->FindComponentByClass<UMeleeTraceComponent>())
+		{
+			TraceComp->EndHitWindow();
+		}
+	}
 }
 
 void UHeroCombatComponent::BufferAction(EHeroAction Action)
@@ -344,3 +357,30 @@ void UHeroCombatComponent::HandleOwnerDeath(const FCombatHit& KillingHit)
 
 	SetActionState(EHeroActionState::Dead);
 }
+
+ECombatHitResult UHeroCombatComponent::InterceptHit(FCombatHit& Hit)
+{
+	if (IsInInvulnerableWindow())
+	{
+		return ECombatHitResult::Evaded;
+	}
+
+	if (IsInParryWindow())
+	{
+		// TODO: T-CMB-09 full parry counter and poise damage
+		return ECombatHitResult::Parried;
+	}
+
+	return ECombatHitResult::Hit;
+}
+
+void UHeroCombatComponent::NotifyCombatResolved(const FCombatResolutionEvent& Event)
+{
+	OnCombatResolved.Broadcast(Event);
+}
+
+void UHeroCombatComponent::HandleMeleeHitResolved(AActor* Target, ECombatHitResult Result)
+{
+	OnHitLanded.Broadcast(Target, Result);
+}
+

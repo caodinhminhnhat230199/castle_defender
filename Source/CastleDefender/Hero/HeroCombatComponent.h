@@ -4,6 +4,8 @@
 #include "Components/ActorComponent.h"
 #include "GameplayTagContainer.h"
 #include "Hero/HeroCombatTypes.h"
+#include "Combat/CombatHitInterceptor.h"
+#include "Combat/CombatTypes.h"
 #include "HeroCombatComponent.generated.h"
 
 class UAnimMontage;
@@ -11,13 +13,15 @@ class AHeroCharacter;
 class UCombatStateComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHeroActionStateChangedSignature, EHeroActionState, OldState, EHeroActionState, NewState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCombatResolvedSignature, const FCombatResolutionEvent&, ResolutionEvent);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHitLandedSignature, AActor*, Target, ECombatHitResult, Result);
 
 /**
  * Action state machine and commitment manager for the Hero (spec §4.4, technical-plan §5.1).
  * Manages action commitment, cancel/invulnerable/parry windows, and input buffering.
  */
 UCLASS(ClassGroup = (Combat), meta = (BlueprintSpawnableComponent))
-class CASTLEDEFENDER_API UHeroCombatComponent : public UActorComponent
+class CASTLEDEFENDER_API UHeroCombatComponent : public UActorComponent, public ICombatHitInterceptor
 {
 	GENERATED_BODY()
 
@@ -84,8 +88,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void ClearBuffer();
 
+	// ICombatHitInterceptor
+	virtual ECombatHitResult InterceptHit(FCombatHit& Hit) override;
+	virtual void NotifyCombatResolved(const FCombatResolutionEvent& Event) override;
+
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FHeroActionStateChangedSignature OnActionStateChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnCombatResolvedSignature OnCombatResolved;
+
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnHitLandedSignature OnHitLanded;
+
+	UFUNCTION()
+	void HandleMeleeHitResolved(AActor* Target, ECombatHitResult Result);
 
 protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Combat")

@@ -16,6 +16,33 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-04: Antigravity: T-CMB-04 Melee hit detection and combat hit dispatch implemented
+- **Tasks:** T-CMB-04 Todo → Done. Unblocks T-CMB-05, T-CMB-06, T-CMB-07.
+- **Changed:**
+  - `Source/CastleDefender/Combat/CombatHitInterceptor.h`: created `ICombatHitInterceptor` interface (`InterceptHit`, `NotifyCombatResolved`).
+  - `Source/CastleDefender/Combat/CombatLibrary.h/.cpp`: implemented `UCombatLibrary::DeliverHit` (authoritative hit resolution pipeline, friendly fire rejection via team checks, defensive interception, health damage, poise/applied states propagation, resolution telemetry dispatch), `UCombatLibrary::IsInFrontArc` (2D horizontal front arc test).
+  - `Source/CastleDefender/Combat/MeleeTraceComponent.h/.cpp`: implemented `UMeleeTraceComponent` (sphere sweep along blade sockets, `AlreadyHitActors` tracking for one-hit-per-target-per-swing AC-CMB-01, `TryHitTarget`, `BeginHitWindow`/`EndHitWindow`, `game.debug.CombatTrace 1` debug draw).
+  - `Source/CastleDefender/Combat/AnimNotifyState_CombatHitWindow.h/.cpp`: montage notify state managing active trace window on owner.
+  - `Source/CastleDefender/Combat/CombatTypes.h`: added `ECombatHitResult` (`Ignored`, `Evaded`, `Parried`, `Blocked`, `BlockBroken`, `Hit`, `Killed`), `FCombatInterruptData`, `FCombatResolutionEvent`.
+  - `Source/CastleDefender/Hero/HeroCombatComponent.h/.cpp`: implemented `ICombatHitInterceptor`, `OnCombatResolved` & `OnHitLanded` delegates, auto-binds to `UMeleeTraceComponent::OnHitResolved`, ends trace window on `ForceCloseAllWindows`.
+  - `Source/CastleDefender/Hero/HeroCharacter.h/.cpp`: attached `UMeleeTraceComponent` subobject, added getter `GetMeleeTraceComponent()`.
+  - `Source/CastleDefender/Combat/TestDummy.h/.cpp`: added `SetGenericTeamId` override, updated `ApplyDebugHit` to call `UCombatLibrary::DeliverHit`.
+  - `Source/CastleDefender/Core/GameDebug.h/.cpp`: added `CVarCombatTrace` (`game.debug.CombatTrace`).
+  - `Source/CastleDefender/Core/GameCheatManager.h/.cpp`: implemented `DebugHitHero <damage> [delay] [from_front]` cheat.
+  - `Source/CastleDefender/Tests/CombatArc.spec.cpp`: 3 automation specs testing 180° arc, 140° Warlord arc, and edge cases.
+  - `Source/CastleDefender/Tests/CombatResolution.spec.cpp`: 8 automation specs testing `DeliverHit` pipeline, friendly fire filtering, lethal/non-lethal hits, poise and status propagation, `ICombatHitInterceptor` (Evaded, Parried, Blocked), and `UMeleeTraceComponent` single hit per swing.
+  - `Source/CastleDefender/Tests/CombatTestListener.h`: added `UMockHitInterceptorComponent` and resolution event handlers.
+  - `Saved/verify_hero_combat_pie.py`: updated to verify `UMeleeTraceComponent` validity, window open/close, `DebugHitHero` cheat (200 -> 175 HP), and dummy `DeliverHit` (100 -> 70 HP).
+  - `ai/game/01-hero-combat/tasks.md`: marked T-CMB-04 Done.
+- **Verified:**
+  - Automated tests: `Tools/run_tests.bat` passes all 49 tests (44 specs including all 3 `CombatArc` specs, all 8 `CombatResolution` specs, plus all existing combat specs + FT_Smoke), 0 failed, editor exit 0.
+  - Scripted PIE: `Saved/run_hero_pie.ps1` runs PIE on `L_CombatSandbox`, verifies `BP_Hero_Warlord` spawns with `UMeleeTraceComponent`, opens/closes hit window, `DebugHitHero` applies 25 damage, dummy hit applies 30 damage (`Saved/combat-hero-pie.json`).
+  - Packaging: `Tools/build.bat` (Editor & Game targets) and `Tools/package.bat` succeed with 0 errors.
+  - Packaged headless smoke: `Saved/test_packaged_smoke.ps1` runs packaged `CastleDefender.exe` for 5 seconds without errors.
+- **Manual steps for the user:** none.
+- **Open questions / blockers:** none.
+- **Next:** T-CMB-05 (Light attack 3-hit chain).
+
 ### 2026-10-04: Antigravity: T-CMB-03 UStaminaComponent and stamina rules implemented
 - **Tasks:** T-CMB-03 Todo → Done. Unblocks T-CMB-05, T-CMB-06, T-CMB-07.
 - **Changed:**

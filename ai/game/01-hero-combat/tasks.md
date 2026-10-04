@@ -20,7 +20,7 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-01 | `AHeroCharacter` + `UHeroClassDefinition` + locomotion/sprint + third-person camera | GAMEPLAY | P0A | Must | T-FND-05, T-FND-06, T-FND-07, T-CMB-13 | Done |
 | T-CMB-02 | `UHeroCombatComponent` action state machine, commitment and cancel windows via anim notify states | GAMEPLAY | P0A | Must | T-CMB-01 | Done |
 | T-CMB-03 | `UStaminaComponent` + stamina rules | GAMEPLAY | P0A | Must | T-CMB-01, T-FND-10 | Done |
-| T-CMB-04 | Melee hit detection → `FCombatHit` dispatch (`DeliverHit`, interceptor, one hit per target per swing) | GAMEPLAY | P0A | Must | T-CMB-02, T-FND-05, T-UXF-01 | Todo |
+| T-CMB-04 | Melee hit detection → `FCombatHit` dispatch (`DeliverHit`, interceptor, one hit per target per swing) | GAMEPLAY | P0A | Must | T-CMB-02, T-FND-05, T-UXF-01 | Done |
 | T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Todo |
 | T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04, T-SYN-01 | Todo |
 | T-CMB-07 | Dodge with i-frames | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Todo |
@@ -159,27 +159,27 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-02, T-FND-05, T-UXF-01
 
 **Implementation Notes**
-- [ ] `ECombatHitResult` {Ignored, Evaded, Parried, Blocked, BlockBroken, Hit, Killed} and `ICombatHitInterceptor::InterceptHit(FCombatHit&)` in `Combat/`.
-- [ ] Reuse/extend existing `CombatTypes.h` with `FCombatResolutionEvent` and data-defined interrupt metadata for R-CMB-51 (default resistance off, no implicit Heavy immunity); record shared contracts in master plan §8a.
-- [ ] `UCombatLibrary::DeliverHit(Target, Hit)` as in technical-plan §4.2: hostile + alive check (team attitude via FND team interface), interceptors, `UHealthComponent::ApplyHit`, `UCombatStateComponent::ApplyPoiseDamage`, `ApplyState` for `AppliedStates`, exactly one resolution event per attempt and, only when presentation is required, one matching `UFeedbackSubsystem::Play` with context (instigator, target, location, direction, `bIsHeavy`, `bTargetArmored`).
-- [ ] `UCombatLibrary::IsInFrontArc(Defender, AttackerLocation, ArcDegrees)` + Automation Spec.
-- [ ] `UMeleeTraceComponent`: `SetPendingAttack(Template, Radius)` (called by whoever starts the attack), `BeginHitWindow()` / `EndHitWindow()`; per tick in window, sphere sweeps at data-authored sample points along the blade from previous to current socket positions (configurable object types, Pawn in P0; ENM adds Structure in P2 without a second trace system); hit set reset per swing/action token, never per frame; ignore owner; `OnHitResolved(Target, Result)`.
-- [ ] `UAnimNotifyState_CombatHitWindow` calls the owner's `UMeleeTraceComponent` Begin/End.
-- [ ] DeliverHit publishes `OnCombatResolved(FCombatResolutionEvent)` on the participating combat components (outgoing/incoming roles); a unique resolution ID lets telemetry deduplicate self/both-role subscriptions. No global event bus. `OnHitLanded(Target, Result)` remains a landed-hit observer, not a second resolution/feedback producer.
-- [ ] Cheat `DebugHitHero <Damage> <Delay> <bFromFront>`: a hidden test instigator (hostile team, has `UCombatStateComponent`) delivers a hit to the hero after the delay. Used by T-CMB-07…11 and T-CMB-15.
-- [ ] `game.debug.CombatTrace 1` draws sweeps, hit points and the per-swing already-hit set (T-CMB-21); resolution logging includes Evaded/Ignored with zero feedback when appropriate.
-- [ ] Document in the header comment: ENM, SQD and DEF must deliver hits through `DeliverHit`.
+- [x] `ECombatHitResult` {Ignored, Evaded, Parried, Blocked, BlockBroken, Hit, Killed} and `ICombatHitInterceptor::InterceptHit(FCombatHit&)` in `Combat/`.
+- [x] Reuse/extend existing `CombatTypes.h` with `FCombatResolutionEvent` and data-defined interrupt metadata for R-CMB-51 (default resistance off, no implicit Heavy immunity); record shared contracts in master plan §8a.
+- [x] `UCombatLibrary::DeliverHit(Target, Hit)` as in technical-plan §4.2: hostile + alive check (team attitude via FND team interface), interceptors, `UHealthComponent::ApplyHit`, `UCombatStateComponent::ApplyPoiseDamage`, `ApplyState` for `AppliedStates`, exactly one resolution event per attempt and, only when presentation is required, one matching `UFeedbackSubsystem::Play` with context (instigator, target, location, direction, `bIsHeavy`, `bTargetArmored`).
+- [x] `UCombatLibrary::IsInFrontArc(Defender, AttackerLocation, ArcDegrees)` + Automation Spec.
+- [x] `UMeleeTraceComponent`: `SetPendingAttack(Template, Radius)` (called by whoever starts the attack), `BeginHitWindow()` / `EndHitWindow()`; per tick in window, sphere sweeps at data-authored sample points along the blade from previous to current socket positions (configurable object types, Pawn in P0; ENM adds Structure in P2 without a second trace system); hit set reset per swing/action token, never per frame; ignore owner; `OnHitResolved(Target, Result)`.
+- [x] `UAnimNotifyState_CombatHitWindow` calls the owner's `UMeleeTraceComponent` Begin/End.
+- [x] DeliverHit publishes `OnCombatResolved(FCombatResolutionEvent)` on the participating combat components (outgoing/incoming roles); a unique resolution ID lets telemetry deduplicate self/both-role subscriptions. No global event bus. `OnHitLanded(Target, Result)` remains a landed-hit observer, not a second resolution/feedback producer.
+- [x] Cheat `DebugHitHero <Damage> <Delay> <bFromFront>`: a hidden test instigator (hostile team, has `UCombatStateComponent`) delivers a hit to the hero after the delay. Used by T-CMB-07…11 and T-CMB-15.
+- [x] `game.debug.CombatTrace 1` draws sweeps, hit points and the per-swing already-hit set (T-CMB-21); resolution logging includes Evaded/Ignored with zero feedback when appropriate.
+- [x] Document in the header comment: ENM, SQD and DEF must deliver hits through `DeliverHit`.
 
 **Expected Files / Assets** `Source/<Game>/Combat/CombatLibrary.h/.cpp`, `CombatHitInterceptor.h`, `MeleeTraceComponent.h/.cpp`, `AnimNotifyState_CombatHitWindow.h/.cpp`, existing `CombatTypes.h`; `Source/<Game>/Tests/CombatArc.spec.cpp`, `CombatResolution.spec.cpp`
 
 **Test Case** FND hostile dummy in front; debug swing whose blade overlaps it for 5 frames → dummy HP −Damage once, one feedback log line. Two hostile dummies in the arc → each once. Ally-team dummy → HP unchanged, result Ignored.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-04 passes.
-- [ ] AC-CMB-13/23 dispatcher contract verified with test interceptors here; actual Dodge/Block/Parry/HeroDamaged integration completes in T-CMB-07/08/09/11/15: one resolution record per attempt; one feedback for a presentation outcome, zero allowed for Evaded/Ignored; no duplicate HeroDamaged feedback from OnDamaged.
-- [ ] `CombatArc` Spec passes (0°, 89°, 91°, 180° for a generic 180° arc, plus inside/on/outside ±70° for the Warlord 140° default).
+- [x] AC-CMB-04 passes.
+- [x] AC-CMB-13/23 dispatcher contract verified with test interceptors here; actual Dodge/Block/Parry/HeroDamaged integration completes in T-CMB-07/08/09/11/15: one resolution record per attempt; one feedback for a presentation outcome, zero allowed for Evaded/Ignored; no duplicate HeroDamaged feedback from OnDamaged.
+- [x] `CombatArc` Spec passes (0°, 89°, 91°, 180° for a generic 180° arc, plus inside/on/outside ±70° for the Warlord 140° default).
 
-**Verification** Automation Spec `CastleDefender.Combat.Arc`; PIE with debug draw; covered again by T-CMB-15 `FT_OneHitPerSwing`.
+**Verification** Passed: 11 Automation Specs in `CastleDefender.Combat.Arc.*` and `CastleDefender.Combat.Resolution.*` (total 49 passed, 0 failed); automated PIE verified in `L_CombatSandbox` (`Saved/combat-hero-pie.json`: MeleeTraceComponent valid, window activate/close verified, `DebugHitHero` cheat delivered 25 damage -> 175 HP, `DeliverHit` on spawned dummy delivered 30 damage -> 70 HP); Win64 Development packaged and verified headless.
 
 ---
 

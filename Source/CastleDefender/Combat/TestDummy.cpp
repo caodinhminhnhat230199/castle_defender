@@ -1,6 +1,7 @@
 #include "Combat/TestDummy.h"
 
 #include "Combat/HealthComponent.h"
+#include "Combat/CombatLibrary.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/GameDebug.h"
 #include "Core/GameLog.h"
@@ -45,7 +46,7 @@ void ATestDummy::ApplyDebugHit(float Damage)
 	Hit.DamageType = GameTags::Damage_Physical;
 	Hit.SourceLayer = ECombatLayer::Environment;
 	Hit.HitLocation = GetActorLocation();
-	Health->ApplyHit(Hit);
+	UCombatLibrary::DeliverHit(this, Hit);
 }
 
 void ATestDummy::BeginPlay()

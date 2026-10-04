@@ -1,11 +1,14 @@
 #include "Core/GameCheatManager.h"
 
+#include "Combat/CombatLibrary.h"
 #include "Combat/TestDummy.h"
 #include "Core/GameLog.h"
+#include "Core/GameTags.h"
 #include "Engine/World.h"
 #include "Hero/HeroCharacter.h"
 #include "Hero/StaminaComponent.h"
 #include "Player/HeroPlayerController.h"
+#include "TimerManager.h"
 
 void UGameCheatManager::SpawnTestDummy(float Distance)
 {
@@ -104,4 +107,61 @@ void UGameCheatManager::InfiniteStamina()
 	}
 #endif
 }
+
+void UGameCheatManager::DebugHitHero(float Damage, float Delay, bool bFromFront)
+{
+#if UE_WITH_CHEAT_MANAGER
+	APlayerController* PC = GetOuterAPlayerController();
+	if (!PC)
+	{
+		return;
+	}
+
+	AHeroCharacter* Hero = Cast<AHeroCharacter>(PC->GetPawn());
+	if (!Hero)
+	{
+		UE_LOG(LogGamePlayer, Warning, TEXT("DebugHitHero: controlled pawn is not an AHeroCharacter"));
+		return;
+	}
+
+	if (Damage <= 0.f)
+	{
+		Damage = 25.f;
+	}
+
+	auto ExecuteHit = [Hero, Damage, bFromFront]()
+	{
+		if (!IsValid(Hero))
+		{
+			return;
+		}
+
+		const FVector HeroForward = Hero->GetActorForwardVector();
+		const FVector AttackerLocation = Hero->GetActorLocation() + (bFromFront ? HeroForward * 200.f : -HeroForward * 200.f);
+
+		FCombatHit Hit;
+		Hit.Damage = Damage;
+		Hit.PoiseDamage = 10.f;
+		Hit.DamageType = GameTags::Damage_Physical;
+		Hit.SourceLayer = ECombatLayer::Enemy;
+		Hit.HitLocation = AttackerLocation;
+		Hit.HitDirection = (Hero->GetActorLocation() - AttackerLocation).GetSafeNormal();
+
+		const ECombatHitResult Result = UCombatLibrary::DeliverHit(Hero, Hit);
+		UE_LOG(LogGamePlayer, Log, TEXT("DebugHitHero: delivered %f dmg (FromFront: %d), outcome: %s"),
+			Damage, bFromFront ? 1 : 0, *UEnum::GetValueAsString(Result));
+	};
+
+	if (Delay > 0.f && Hero->GetWorld())
+	{
+		FTimerHandle Handle;
+		Hero->GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda(ExecuteHit), Delay, false);
+	}
+	else
+	{
+		ExecuteHit();
+	}
+#endif
+}
+
 

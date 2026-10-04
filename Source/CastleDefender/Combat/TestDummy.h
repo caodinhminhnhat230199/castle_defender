@@ -19,6 +19,7 @@ public:
 	ATestDummy();
 
 	virtual FGenericTeamId GetGenericTeamId() const override { return TeamId; }
+	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamId) override { TeamId = NewTeamId; }
 	virtual void Tick(float DeltaSeconds) override;
 
 	/** Test entry point. Switch to UCombatLibrary::DeliverHit when T-CMB-04 lands. */
