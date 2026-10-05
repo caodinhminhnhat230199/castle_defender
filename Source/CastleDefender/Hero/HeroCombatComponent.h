@@ -99,6 +99,9 @@ public:
 	void CloseParryWindow();
 	void OpenInterruptResistanceWindow() { bInterruptResistanceWindowOpen = true; }
 	void CloseInterruptResistanceWindow() { bInterruptResistanceWindowOpen = false; }
+	void OpenRotationAssistWindow();
+	void CloseRotationAssistWindow();
+	AActor* GetAssistTarget() const { return AssistTarget.Get(); }
 
 	/** Plays a montage owning a given action state, wiring blend-out and completion to return to Idle. */
 	bool PlayActionMontage(UAnimMontage* Montage, EHeroActionState NewState);
@@ -160,6 +163,8 @@ private:
 	void TryConsumeBuffer();
 	void BufferAction(EHeroAction Action);
 	bool IsSharedStaggered() const;
+	bool IsEligibleAssistTarget(AActor* Candidate) const;
+	void UpdateRotationAssist(float HeroDelta);
 	/** Loads the attack's hit payload into the melee trace for the montage's hit window. */
 	void ArmMeleeTrace(const FHeroAttackData& Attack, bool bHeavy) const;
 
@@ -184,6 +189,9 @@ private:
 	float PreviousRootMotionScale = 1.f;
 	bool bDodgeRootMotionScaleApplied = false;
 	bool bInterruptResistanceWindowOpen = false;
+	bool bRotationAssistWindowOpen = false;
+	float AttackIntentYaw = 0.f;
+	TWeakObjectPtr<AActor> AssistTarget;
 
 	UPROPERTY()
 	TObjectPtr<UAnimMontage> ActiveMontage;

@@ -166,6 +166,12 @@ for i, attack in enumerate(attack_data_list):
         attack.set_editor_property("montage", light_montages[i])
 da.set_editor_property("light_chain", attack_data_list)
 
+# T-CMB-20: add only missing assist windows on the actual DA references; keep tuned notifies intact.
+for attack in attack_data_list + [da.get_editor_property("heavy")]:
+    montage = attack.get_editor_property("montage")
+    assert unreal.HeroCombatLibrary.ensure_rotation_assist_window(montage), f"Invalid assist montage: {montage}"
+    assets.save_loaded_asset(montage, only_if_is_dirty=True)
+
 assets.save_loaded_asset(da, only_if_is_dirty=False)
 unreal.log(f"Saved DA_HeroClass_Warlord at {da_path}")
 

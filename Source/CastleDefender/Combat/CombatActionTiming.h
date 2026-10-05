@@ -51,6 +51,12 @@ struct CASTLEDEFENDER_API FCombatActionTiming
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
 	float HitWindowEnd = 0.f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	bool bHasRotationAssistWindow = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	float RotationAssistWindowStart = 0.f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	float RotationAssistWindowEnd = 0.f;
 
 	/** Inspects a montage's authored notify states and builds a timing summary. */
 	static bool InspectMontage(const UAnimMontage* Montage, FCombatActionTiming& OutTiming, FString* OutError = nullptr);
@@ -111,6 +117,16 @@ public:
 /** Authored resistance availability only; strength/enablement come from the current attack definition. */
 UCLASS(meta = (DisplayName = "Hero Interrupt Resistance"))
 class CASTLEDEFENDER_API UAnimNotifyState_InterruptResistance : public UAnimNotifyState
+{
+	GENERATED_BODY()
+public:
+	virtual void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override;
+	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
+};
+
+/** Montage owns timing; the hero component owns the target and original attack intent. */
+UCLASS(meta = (DisplayName = "Hero Rotation Assist Window"))
+class CASTLEDEFENDER_API UAnimNotifyState_RotationAssist : public UAnimNotifyState
 {
 	GENERATED_BODY()
 public:

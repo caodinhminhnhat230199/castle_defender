@@ -46,6 +46,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
 	FHeroAttackData Heavy;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	FHeroAttackAssistData AttackAssist;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
 	FHeroDodgeData Dodge;

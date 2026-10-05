@@ -8,6 +8,28 @@ bool UHeroCombatLibrary::AddCombatHitWindowToMontage(UAnimMontage* Montage, floa
 	return FCombatActionTiming::AddHitWindow(Montage, StartTime, Duration);
 }
 
+bool UHeroCombatLibrary::EnsureRotationAssistWindow(UAnimMontage* Montage)
+{
+#if WITH_EDITOR
+	FCombatActionTiming Timing;
+	if (!FCombatActionTiming::InspectMontage(Montage, Timing) || Timing.HitWindowCount != 1) { return false; }
+	if (Timing.bHasRotationAssistWindow) { return true; }
+	// The initial assist covers authored startup through the hit; subsequent editor tuning is preserved.
+	Montage->Modify();
+	FAnimNotifyEvent& Event = Montage->Notifies.AddDefaulted_GetRef();
+	Event.NotifyStateClass = NewObject<UAnimNotifyState_RotationAssist>(Montage, NAME_None, RF_Transactional);
+	Event.Link(Montage, 0.f);
+	Event.SetTime(0.f);
+	Event.SetDuration(Timing.HitWindowEnd);
+	Event.EndLink.Link(Montage, Timing.HitWindowEnd);
+	Event.EndLink.SetTime(Timing.HitWindowEnd);
+	Event.NotifyName = FName(TEXT("RotationAssist"));
+	return true;
+#else
+	return false;
+#endif
+}
+
 bool UHeroCombatLibrary::AddCancelWindowToMontage(UAnimMontage* Montage, float StartTime, float Duration, const TArray<EHeroAction>& AllowedActions)
 {
 	return FCombatActionTiming::AddCancelWindow(Montage, StartTime, Duration, AllowedActions);
@@ -25,7 +47,8 @@ void UHeroCombatLibrary::ClearCombatNotifiesFromMontage(UAnimMontage* Montage)
 		return Event.NotifyStateClass && (
 			Event.NotifyStateClass->IsA<UAnimNotifyState_CombatHitWindow>() ||
 			Event.NotifyStateClass->IsA<UAnimNotifyState_CancelWindow>() ||
-			Event.NotifyStateClass->IsA<UAnimNotifyState_Invulnerable>()
+			Event.NotifyStateClass->IsA<UAnimNotifyState_Invulnerable>() ||
+			Event.NotifyStateClass->IsA<UAnimNotifyState_RotationAssist>()
 		);
 	});
 }

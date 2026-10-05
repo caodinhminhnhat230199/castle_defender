@@ -4,6 +4,30 @@
 #include "Hero/HeroCombatComponent.h"
 #include "Combat/AnimNotifyState_CombatHitWindow.h"
 
+void UAnimNotifyState_RotationAssist::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference)
+{
+	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
+	if (MeshComp && MeshComp->GetOwner())
+	{
+		if (UHeroCombatComponent* Combat = MeshComp->GetOwner()->FindComponentByClass<UHeroCombatComponent>())
+		{
+			Combat->OpenRotationAssistWindow();
+		}
+	}
+}
+
+void UAnimNotifyState_RotationAssist::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
+{
+	Super::NotifyEnd(MeshComp, Animation, EventReference);
+	if (MeshComp && MeshComp->GetOwner())
+	{
+		if (UHeroCombatComponent* Combat = MeshComp->GetOwner()->FindComponentByClass<UHeroCombatComponent>())
+		{
+			Combat->CloseRotationAssistWindow();
+		}
+	}
+}
+
 // --- FCombatActionTiming ---
 
 bool FCombatActionTiming::InspectMontage(const UAnimMontage* Montage, FCombatActionTiming& OutTiming, FString* OutError)
@@ -31,7 +55,8 @@ bool FCombatActionTiming::InspectMontage(const UAnimMontage* Montage, FCombatAct
 			|| NotifyEvent.NotifyStateClass->IsA<UAnimNotifyState_CombatHitWindow>()
 			|| NotifyEvent.NotifyStateClass->IsA<UAnimNotifyState_Invulnerable>()
 			|| NotifyEvent.NotifyStateClass->IsA<UAnimNotifyState_ParryWindow>()
-			|| NotifyEvent.NotifyStateClass->IsA<UAnimNotifyState_InterruptResistance>()))
+			|| NotifyEvent.NotifyStateClass->IsA<UAnimNotifyState_InterruptResistance>()
+			|| NotifyEvent.NotifyStateClass->IsA<UAnimNotifyState_RotationAssist>()))
 		{
 			const float Start = NotifyEvent.GetTime();
 			const float End = Start + NotifyEvent.GetDuration();
@@ -73,6 +98,17 @@ bool FCombatActionTiming::InspectMontage(const UAnimMontage* Montage, FCombatAct
 		{
 			OutTiming.bHasParryWindow = true;
 		}
+		else if (Cast<UAnimNotifyState_RotationAssist>(NotifyEvent.NotifyStateClass))
+		{
+			if (OutTiming.bHasRotationAssistWindow)
+			{
+				if (OutError) { *OutError = TEXT("Expected at most one rotation assist window per attack."); }
+				return false;
+			}
+			OutTiming.bHasRotationAssistWindow = true;
+			OutTiming.RotationAssistWindowStart = NotifyEvent.GetTime();
+			OutTiming.RotationAssistWindowEnd = NotifyEvent.GetTime() + NotifyEvent.GetDuration();
+		}
 	}
 
 	if (OutTiming.bHasHitWindow && (OutTiming.HitWindowStart <= 0.f
@@ -80,6 +116,11 @@ bool FCombatActionTiming::InspectMontage(const UAnimMontage* Montage, FCombatAct
 		|| (OutTiming.bHasCancelWindow && OutTiming.CancelWindowStart + KINDA_SMALL_NUMBER < OutTiming.HitWindowEnd)))
 	{
 		if (OutError) { *OutError = TEXT("Attack requires Startup, Active and Recovery; cancellation cannot precede Recovery."); }
+		return false;
+	}
+	if (OutTiming.bHasRotationAssistWindow && !OutTiming.bHasHitWindow)
+	{
+		if (OutError) { *OutError = TEXT("Rotation assist requires an attack hit window."); }
 		return false;
 	}
 	return true;
