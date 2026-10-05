@@ -1,4 +1,4 @@
-"""Creates Content/CastleDefender/Feedback/DT_Feedback with one row per P0 Feedback.* tag (T-UXF-01).
+"""Creates Content/CastleDefender/Feedback/DT_Feedback (T-UXF-01) and DT_CombatStatePresentation (T-SYN-01).
 
 Idempotent: existing rows and their edits are kept; only missing rows are added.
 Placeholder: non-hit rows play the engine 1 kHz ping until owners author real assets;
@@ -64,3 +64,34 @@ missing = [t for t in HIT_ROWS + PLACEHOLDER_ROWS if t not in names]
 if missing:
     raise RuntimeError(f"DT_Feedback is missing rows: {missing}")
 unreal.log(f"DT_Feedback OK: {len(names)} rows")
+
+# T-SYN-01: DT_CombatStatePresentation with the Staggered row (row name = state tag).
+STATE_NAME = "DT_CombatStatePresentation"
+STATE_ROWS = {
+    "State.Combat.Staggered": ("Feedback.State.Staggered.Applied", "Feedback.State.Staggered.Removed"),
+}
+state_full = f"{PATH}/{STATE_NAME}"
+if assets.does_asset_exist(state_full):
+    state_table = assets.load_asset(state_full)
+else:
+    factory = unreal.DataTableFactory()
+    factory.set_editor_property("struct", unreal.CombatStatePresentationRow.static_struct())
+    state_table = unreal.AssetToolsHelpers.get_asset_tools().create_asset(STATE_NAME, PATH, unreal.DataTable, factory)
+    if state_table is None:
+        raise RuntimeError(f"Failed to create {state_full}")
+    unreal.log(f"Created {state_full}")
+
+state_existing = {str(n) for n in unreal.DataTableFunctionLibrary.get_data_table_row_names(state_table)}
+state_rows = json.loads(unreal.DataTableFunctionLibrary.export_data_table_to_json_string(state_table) or "[]") if state_existing else []
+state_added = [tag for tag in STATE_ROWS if tag not in state_existing]
+for tag in state_added:
+    applied, removed = STATE_ROWS[tag]
+    state_rows.append({"Name": tag, "StateTag": {"TagName": tag},
+                       "AppliedFeedback": {"TagName": applied}, "RemovedFeedback": {"TagName": removed}})
+if state_added:
+    if not unreal.DataTableFunctionLibrary.fill_data_table_from_json_string(state_table, json.dumps(state_rows)):
+        raise RuntimeError("fill_data_table_from_json_string failed for DT_CombatStatePresentation")
+    assets.save_loaded_asset(state_table, only_if_is_dirty=False)
+    unreal.log(f"DT_CombatStatePresentation: added {', '.join(state_added)}")
+for row in json.loads(unreal.DataTableFunctionLibrary.export_data_table_to_json_string(state_table)):
+    unreal.log(f"DT_CombatStatePresentation OK: {row['Name']} -> {row['AppliedFeedback']['TagName']} / {row['RemovedFeedback']['TagName']}")

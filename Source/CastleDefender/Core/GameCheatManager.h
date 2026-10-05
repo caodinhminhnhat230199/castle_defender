@@ -29,4 +29,20 @@ public:
 
 	UFUNCTION(Exec)
 	void DebugPopMode(FName Reason);
+
+	/** Sets current poise on the crosshair target (T-SYN-01). */
+	UFUNCTION(Exec)
+	void SetPoise(float Value);
+
+	/** Applies State.Combat.<TagLeaf> on the crosshair target; Duration 0 = Game Tuning default. */
+	UFUNCTION(Exec)
+	void ApplyState(const FString& TagLeaf, float Duration);
+
+	/** Clears every combat state on the crosshair target. */
+	UFUNCTION(Exec)
+	void ClearStates();
+
+private:
+	/** First actor with a UCombatStateComponent under the crosshair (lock-on target once T-CMB-10 lands). */
+	class UCombatStateComponent* FindCrosshairCombatState() const;
 };

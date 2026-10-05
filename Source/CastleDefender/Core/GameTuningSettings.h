@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
+#include "GameplayTagContainer.h"
 #include "GameTuningSettings.generated.h"
 
 class UDataTable;
@@ -17,7 +18,17 @@ class CASTLEDEFENDER_API UGameTuningSettings : public UDeveloperSettings
 	GENERATED_BODY()
 
 public:
+	UGameTuningSettings();
+
 	static const UGameTuningSettings* Get() { return GetDefault<UGameTuningSettings>(); }
+
+	/** R-SYN-08: duration for a state applied without one (no hit duration, not a poise break). 0 or missing = not applied. */
+	UPROPERTY(Config, EditAnywhere, Category = "Combat", meta = (ForceInlineRow, Categories = "State.Combat"))
+	TMap<FGameplayTag, float> StateDefaultDurations;
+
+	/** DT_CombatStatePresentation (FCombatStatePresentationRow rows): feedback per state. */
+	UPROPERTY(Config, EditAnywhere, Category = "Combat", meta = (RequiredAssetDataTags = "RowStructure=/Script/CastleDefender.CombatStatePresentationRow"))
+	TSoftObjectPtr<UDataTable> CombatStatePresentationTable;
 
 	/** DT_Feedback (FFeedbackRow rows), loaded by UFeedbackSubsystem at map start (D-10). */
 	UPROPERTY(Config, EditAnywhere, Category = "Feedback", meta = (RequiredAssetDataTags = "RowStructure=/Script/CastleDefender.FeedbackRow"))
