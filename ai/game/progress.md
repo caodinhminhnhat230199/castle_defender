@@ -16,6 +16,54 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-06: Codex: commit P0 source and prepare branch delivery to the Windows PC
+- **Agent / branch:** Codex, `feat/01-hero-combat`; user explicitly requested committing/pushing the current work for PC continuation.
+- **Tasks:** T-CMB-20 and T-ENM-01 remain Review; no Unreal verification or task completion inferred from delivery.
+- **Changed:** committed rotation assist as `b0c6057`, enemy lifecycle as `22eaaf1`; this handoff, CMB task acceptance/WIP and the earlier AGENTS progress-update rule are included in the documentation commit.
+- **Verified:** source commits created successfully; `git diff --check` passed before committing. Remote push verification follows this entry.
+- **Manual steps for the user:** on the PC, fetch the remote and checkout `feat/01-hero-combat`. Follow the Windows build, asset-generation, Automation and PIE steps in the next entry before starting dependent tasks. Commit or stash existing PC edits before switching branches.
+- **Open questions / blockers:** source and new Specs still need UE 5.8 verification; no binary assets were created on Mac.
+- **Next:** publish the branch, verify the remote tip, then resume T-CMB-20/T-ENM-01 verification on Windows.
+
+### 2026-10-06: Codex: enemy lifecycle source ready; Windows verification blocks dependent tasks [T-ENM-01]
+- **Agent / branch:** Codex, `feat/01-hero-combat`; no commit/push. Earlier `AGENTS.md` and progress edits retained.
+- **Tasks:** T-ENM-01 In Progress → Review. T-CMB-20 remains Review. T-CMB-05/06/07/11/21 are Done by user acceptance. T-CMB-08/09/10/14/15/16 and T-ENM-02 remain Todo; no later-phase task opened.
+- **Changed:** `Enemy/EnemyArchetypeDefinition.h/.cpp`, `Enemy/EnemyCharacter.h/.cpp`; `Tests/EnemyLifecycle.spec.cpp` and `EnemyLifecycleTestListener.h`; Core/GameTags (Melee/Elite); `Config/DefaultGame.ini`; main plan §8a (ENM owns spawn init/removal, DIR owns capped spawning); ENM tasks/technical plan and CMB WIP. Refined assist Specs and synchronized accepted CMB criteria with the existing-action sign-off.
+- **Verified:** `git diff --check` passed; `python3 -X pycache_prefix=/private/tmp/game-p0-pycache -m py_compile Tools/create_hero_assets.py` passed. Inspected source lifecycle and assist cleanup/filtering paths. Checked Epic's UE 5.8 AActor::SetActorRotation, FGenericTeamId and AActor::SetLifeSpan documentation; lifespan 0 explicitly destroys the body because UE's SetLifeSpan(0) clears expiry. `uname -s` reports Darwin; Spotlight found no UnrealEditor.app, and no `pwsh` executable was available. No Unreal build, Automation Spec, PIE or binary asset generation was run. New Specs are authored, not passed.
+- **Manual steps for the user:**
+  1. On the Windows UE 5.8 executor, run `Tools/build.bat` and `Tools/build.bat -Target CastleDefender`, then `Tools/create_hero_assets.bat` for the missing Light/Heavy assist notifies, and `Tools/run_tests.bat` (full gate, including the new Hero.AttackAssist and Enemy.Lifecycle Specs). Fix failures before marking either Review task Done.
+  2. In Unreal Editor, create `Content/CastleDefender/Enemy/BP_Enemy_Base` derived from EnemyCharacter and `DA_Enemy_Test` of EnemyArchetypeDefinition. Keep the BP's Archetype default unset to avoid a DA/BP reference cycle. Assign EnemyClass = BP_Enemy_Base; fill DisplayName, positive health/walk speed/MaxPoise, attack montage/range/damage and wind-up turn rate. Use an existing placeholder montage for this lifecycle-only fixture; attack execution remains T-ENM-03. Other prototype defaults are decision interval 0.2 s, aggro radius 600 cm and despawn delay 3 s. Save and validate the DA; an empty attack list must fail.
+  3. Create/open `Maps/Test/L_Test_EnemyCombat`; place BP_Enemy_Base and set its per-instance Archetype to DA_Enemy_Test. Use the shared `UCombatLibrary::DeliverHit` node to apply lethal damage. Observe OnEnemyRemoved(Killed) once, no pawn collision and destruction after the configured delay; repeat with explicit Despawn and falling below KillZ (OutOfWorld). Confirm changing health/poise in the DA changes the next spawn, and record evidence.
+  4. Perform rendered assist checks and record the P0A checkpoint as described in the preceding entry. Then mark T-CMB-20 and T-ENM-01 Done only if all required checks pass, and continue T-CMB-08/10 and T-ENM-02 → 03.
+- **Open questions / blockers:** Windows UE 5.8 execution/editor access is required to advance dependency status. No remote Windows executor is connected in this session. An unattended run here cannot complete P0B/editor content/Functional Tests/G0; no acceptance evidence has been invented. P2/VS stay behind their phase gates.
+- **Next:** resume on the Windows UE 5.8 executor with the current branch and diff, verify T-CMB-20/T-ENM-01, then continue the remaining P0 Todo tasks in dependency order.
+
+### 2026-10-06: Codex: bounded attack assist source ready for Windows verification [T-CMB-20]
+- **Agent / branch:** Codex, `feat/01-hero-combat`.
+- **Tasks:** T-CMB-20 In Progress → Review; T-ENM-01 Todo → In Progress (independent P0 dependency for the sandbox).
+- **Changed:** HeroCombatTypes, HeroClassDefinition, HeroCombatComponent, HeroCombatLibrary, CombatActionTiming, new AttackAssist spec, `Tools/create_hero_assets.py`, CMB/ENM task tables and this log. Next intended files: EnemyCharacter, EnemyArchetypeDefinition, lifecycle spec, native unit tags and asset registration.
+- **Verified:** source inspection only. No Unreal build/test/PIE or asset generation executed on macOS.
+- **Manual steps for the user:** on Windows UE 5.8: `Tools/build.bat`; `Tools/create_hero_assets.bat`; `Tools/run_tests.bat`; also `Tools/build.bat -Target CastleDefender`. In `L_CombatSandbox`, enable `game.debug.Combat 1`, test targets within/outside 35° and 400 cm, allies/dead targets, interruption/death/Staggered and Light/Heavy under actor hit stop. Confirm facing turns within the authored window with no added translation; record P0A checkpoint.
+- **Open questions / blockers:** assist assets and tests are unverified. T-CMB-08/10 cannot start under the task dependency/P0A checkpoint rules until T-CMB-20 passes verification. T-CMB-09/14/15/16 depend on subsequent combat/enemy/content/QA tasks. P2/VS remain gate-closed.
+- **Next:** finish the eligible T-ENM-01 source work, then record its Windows/editor handoff.
+
+### 2026-10-06: Codex: user accepts Hero Combat review tasks; continue P0
+- **Agent / branch:** Codex, `feat/01-hero-combat`, recreated from `main` at `350161a`; existing instruction/log edits preserved. No other active agent recorded in this checkout.
+- **Tasks:** T-CMB-05/06/07/11/21 Review → Done following the user's explicit report that all five were tested and acceptable. T-CMB-20 Todo → In Progress.
+- **Changed:** CMB `tasks.md`, this log. Intended implementation files: HeroCombatTypes, HeroClassDefinition, HeroCombatComponent, HeroCombatLibrary, CombatActionTiming, AttackAssist spec and hero asset setup script.
+- **Verified:** matched the user's acceptance to the earlier Windows build/107-test/PIE entries. No new Unreal run in this session.
+- **Manual steps for the user:** new gameplay requires the Windows UE 5.8 build/test/PIE path before acceptance.
+- **Open questions / blockers:** this executor is macOS; no Unreal installation found in `/Applications` or `/Users/Shared`. Existing build/test runners are Windows `.bat`/PowerShell. P0B requires T-CMB-20 verification and a recorded P0A checkpoint; later phases remain closed.
+- **Next:** implement T-CMB-20; then independent P0 dependencies with all prerequisites Done. Continue until the remaining work needs unavailable engine verification or a phase gate.
+
+### 2026-10-06: Codex: require progress update after every completed task
+- **Tasks:** workflow rule only; no feature task started.
+- **Changed:** `AGENTS.md` §9; removed the temporary standalone rule section from this file.
+- **Verified:** reviewed the rule in `AGENTS.md` and confirmed `progress.md` retains the entry template and history.
+- **Manual steps for the user:** none.
+- **Open questions / blockers:** none.
+- **Next:** apply this rule after every completed task or work item.
+
 ### 2026-10-06: Claude Code: One branch for all work, dependency features included
 - **Decision (user):** too many branches; use one branch with multiple commits. Dependency tasks from other features (UXF, SYN, …) are now committed on the active feature branch `feat/01-hero-combat`, not on their own `feat/<NN>` branches. Supersedes the 2026-10-05 dependency-branch plan.
 - **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents.

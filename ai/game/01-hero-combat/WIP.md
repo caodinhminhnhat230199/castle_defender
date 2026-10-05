@@ -1,5 +1,17 @@
 # Hero Combat — WIP và handoff
 
+## Current handoff (2026-10-06, Codex)
+
+This section supersedes the historical snapshot below. Branch: `feat/01-hero-combat`, from merged `main` at `350161a`. The user accepted T-CMB-05/06/07/11/21 after testing: all five are Done. CMB now has **10 Done, 1 Review, 10 Todo**.
+
+- **T-CMB-20 Review:** bounded rotation assist source, notify/timing validation, debugger, asset setup hook and Automation Specs added. This macOS executor has no Unreal Engine; no new build/test/PIE run or binary asset save. Run `Tools/build.bat`, `Tools/create_hero_assets.bat`, `Tools/run_tests.bat` and rendered AC-CMB-21 checks on the Windows PC; record the P0A checkpoint before T-CMB-08/10.
+- **T-ENM-01 Review:** independent P0 enemy lifecycle source and Specs added on this branch. Native asset registration and removal contract are updated; Blueprint/DA/test-map creation and Windows verification remain. Check the latest `progress.md` entry for editor steps.
+- **Remaining P0 CMB:** 08/09/10/14/15/16. These require the assist checkpoint, verified enemy providers, editor content and QA/playtest evidence. Do not treat source-ready Review tasks as Done.
+- **Later phases:** 12 (P2) and 17/18/19 (VS) remain closed by phase gates.
+- **Delivery:** source commits `b0c6057` (T-CMB-20) and `22eaaf1` (T-ENM-01). User authorized pushing `feat/01-hero-combat` for continuation on the Windows PC. See the latest progress entry for remote verification. Existing user instruction/log edits preserved.
+
+## Historical snapshot (superseded where it conflicts with the handoff above)
+
 Cập nhật: 2026-10-05 · Agent: Claude Code (phần mesh/animation; bản trước: Codex 2026-10-04) · Branch: `feat/01-hero-combat`.
 
 Tài liệu này lưu danh sách công việc còn lại và lý do chưa hoàn tất để teammate tiếp tục. Đây là snapshot; trước khi làm hãy đối chiếu [tasks.md](tasks.md), [technical-plan.md](technical-plan.md), [spec.md](spec.md), [progress.md](../progress.md) và Git diff hiện tại.

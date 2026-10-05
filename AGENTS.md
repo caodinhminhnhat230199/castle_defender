@@ -131,7 +131,8 @@ If you cannot run Unreal in your environment (for example as a cloud agent), say
 - Never edit the GDD. Don't edit `.claude/skills/*` unless asked (see README).
 - If the code's behavior must differ from the spec, update `spec.md` (and `tasks.md`) in the same change. If the difference is a design decision, stop and ask instead.
 - Record a new open question as `NEW-<FEAT>-n`, with a default, in the feature spec §12.
-- **End of every session:** add a `progress.md` entry with the date, agent, tasks touched and their status, files changed, the verification you ran and its result, manual steps for the user, open questions or blockers, and the next task.
+- **After every completed task or work item:** immediately add a `progress.md` entry, regardless of whether the work was implementation, testing, documentation, investigation, or another kind of work. Record the date, agent, tasks touched and their status, files changed, the verification you ran and its result, manual steps for the user, open questions or blockers, and the next task so the whole team can follow the current state without relying on chat history.
+- **End of every session:** confirm that all completed tasks or work items from the session have a corresponding `progress.md` entry.
 - **Start of every session:** read the latest `progress.md` entries and `git status` before acting. Don't assume approvals from earlier sessions unless they are written down.
 
 ## 10. Conflicts and Safety

@@ -21,13 +21,13 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-02 | `UHeroCombatComponent` action state machine, commitment and cancel windows via anim notify states | GAMEPLAY | P0A | Must | T-CMB-01 | Done |
 | T-CMB-03 | `UStaminaComponent` + stamina rules | GAMEPLAY | P0A | Must | T-CMB-01, T-FND-10 | Done |
 | T-CMB-04 | Melee hit detection → `FCombatHit` dispatch (`DeliverHit`, interceptor, one hit per target per swing) | GAMEPLAY | P0A | Must | T-CMB-02, T-FND-05, T-UXF-01 | Done |
-| T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Review |
-| T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04, T-SYN-01 | Review |
-| T-CMB-07 | Dodge with i-frames | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Review |
+| T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Done |
+| T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04, T-SYN-01 | Done |
+| T-CMB-07 | Dodge with i-frames | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Done |
 | T-CMB-08 | Block + block break | GAMEPLAY | P0B | Must | T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Todo |
 | T-CMB-09 | Parry + counter / vulnerability window | GAMEPLAY | P0B | Must | T-CMB-08, T-SYN-01 | Todo |
 | T-CMB-10 | Lock-on | GAMEPLAY | P0B | Must | T-CMB-01, T-FND-09, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Todo |
-| T-CMB-11 | Hero hit reactions, damage taken, death event | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-13 | Review |
+| T-CMB-11 | Hero hit reactions, damage taken, death event | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-13 | Done |
 | T-CMB-12 | Interact verb (`IInteractable`) | GAMEPLAY | P2 | Must | T-CMB-02, T-FND-06 | Todo |
 | T-CMB-13 | `L_CombatSandbox` map + `BP_SandboxGameMode` | TOOLS | P0A | Must | T-FND-06, T-FND-09 | Done |
 | T-CMB-14 | Sandbox enemy respawner + scenario presets | TOOLS | P0B | Must | T-CMB-13, T-ENM-01, T-ENM-03 | Todo |
@@ -36,12 +36,14 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-17 | Warlord proximity buff (provisional) | GAMEPLAY | VS | Should | T-PRK-02, T-SQD-01 | Todo |
 | T-CMB-18 | Rally / charge / hold-line design spike (provisional) | DESIGN | VS | Could | T-CMB-17 | Todo |
 | T-CMB-19 | Combat animation polish with production animation (provisional) | ANIM | VS | Should | T-CMB-15, T-CMB-16 | Todo |
-| T-CMB-20 | Bounded attack rotation assist | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-05, T-CMB-06 | Todo |
-| T-CMB-21 | Combat timing/state debugger + trace visualization | TOOLS | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Review |
+| T-CMB-20 | Bounded attack rotation assist | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-05, T-CMB-06 | Review |
+| T-CMB-21 | Combat timing/state debugger + trace visualization | TOOLS | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Done |
 
 P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression and final stamina tuning land in T-CMB-08/15/16. T-CMB-04 establishes resolution/feedback separation early; P0B completes outcome coverage as defenses land. T-CMB-15 owns final suite acceptance, but each P0A task runs its own focused tests before the checkpoint. Keep every task `Todo` until implementation starts.
 
 ## 3. Detailed Tasks
+
+**User acceptance (2026-10-06):** the user reported testing and accepting T-CMB-05/06/07/11/21 after their recorded Windows build, automation and PIE evidence. These tasks are Done for the existing P0 actions. Future assist/lock-on/Parry debugger integration remains owned by T-CMB-20/10/09/15; this sign-off does not pass the P0A checkpoint or G0.
 
 ## P0 (P0A / P0B internal delivery slices)
 
@@ -207,7 +209,7 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Test Case** Hostile dummy; press Light 3 times in rhythm → damage 10, 10, 14 and chain index 0, 1, 2 in debug; wait 1 s, press Light → index 0.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-02 passes.
+- [x] AC-CMB-02 passes (user visual/input acceptance, 2026-10-06).
 - [x] Data validation catches a missing third entry.
 
 **Verification** PIE; `FT_LightChain` in T-CMB-15.
@@ -289,8 +291,8 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Test Case** `DebugHitHero 20 0.3 1`, start Dodge so the hit lands inside the i-frames → HP unchanged; land it after the window → HP −20. Stamina 15 (cost 20) → Dodge refused. Dodge during Light hit 1 (pressed early) → buffered and runs at the cancel window.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-06, AC-CMB-07 pass; AC-CMB-03 passes with Light → Dodge.
-- [ ] Two Dodge presses in a row produce one dodge, then the second only after recovery ends.
+- [x] AC-CMB-06, AC-CMB-07 pass; AC-CMB-03 passes with Light → Dodge (user acceptance, 2026-10-06; locked integration stays with T-CMB-10).
+- [x] Two Dodge presses in a row produce one dodge, then the second only after recovery ends (recorded tests and user acceptance).
 
 **Verification** PIE; `FT_DodgeIFrames` in T-CMB-15.
 
@@ -417,8 +419,8 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Test Case** During Light hit 1, `DebugHitHero 20 0 0` → swing stops, back reaction plays, no further hit from that swing. `KillHero` → `OnHeroDeath` count = 1, inputs ignored, respawn after 3 s with full HP and stamina.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-12 passes.
-- [ ] Blocked hits never play the hit reaction.
+- [x] AC-CMB-12 passes for the existing P0 actions (user acceptance, 2026-10-06; lock-on release stays with T-CMB-10).
+- [x] Blocked hits never play the hit reaction (recorded interception tests; full Block integration stays with T-CMB-08/15).
 
 **Verification** PIE; `FT_HeroDeath` in T-CMB-15.
 
@@ -577,6 +579,8 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 
 **Verification** Automation Spec and rendered PIE in `L_CombatSandbox`.
 
+**Review handoff (2026-10-06, Codex):** source implementation adds data bounds, an authored RotationAssist notify, entry-only overlap selection, live hostile/alive/cone/range revalidation, hero-clock yaw steps, interruption cleanup and debug target display. `create_hero_assets.py` adds missing assist windows to the actual Light/Heavy DA references without replacing authored windows. `AttackAssist.spec.cpp` covers bounds, dilation, wraparound, idempotence, candidate filtering, buffer ticking and Staggered cleanup. Unreal is unavailable on this macOS executor: these tests have NOT run and assets have NOT been saved. On Windows run `Tools/build.bat`, `Tools/create_hero_assets.bat`, `Tools/run_tests.bat`, then rendered `L_CombatSandbox` checks for AC-CMB-21 and the P0A checkpoint. Keep Review until those pass; T-CMB-08/10 remain waiting.
+
 ---
 
 ### T-CMB-21 — Combat timing/state debugger + trace visualization
@@ -601,7 +605,7 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Test Case** Rendered PIE: enable both CVars, attack overlapping dummies over several frames and under a low-FPS/hitch scenario; compare drawn hit set to one HP change per target. Interrupt montage → no stale window display.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-20 debug portion and AC-CMB-26 pass for P0A actions; T-CMB-09/15 finish Parry display/coverage.
+- [x] AC-CMB-20 debug portion and AC-CMB-26 pass for the existing P0A actions (user acceptance, 2026-10-06); T-CMB-20 adds assist and T-CMB-09/15 finish Parry display/coverage.
 - [x] Debugger disabled → no debug draw work; Shipping has no debugger.
 
 **Verification** Rendered PIE captures, Development/Shipping build checks when implemented; final P0B display checked by T-CMB-15.
