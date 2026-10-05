@@ -8,6 +8,7 @@
 #include "Combat/CombatStateComponent.h"
 #include "Combat/MeleeTraceComponent.h"
 #include "Core/GameTags.h"
+#include "Feedback/FeedbackTags.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 BEGIN_DEFINE_SPEC(FHeroHitReactionSpec, "CastleDefender.Combat.Hero.HitReaction", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
@@ -125,7 +126,7 @@ void FHeroHitReactionSpec::Define()
         TestEqual("One death", Listener->DeathCount, 1);
         TestEqual("Observers see committed Dead state", Listener->ActionStateAtDeath, EHeroActionState::Dead);
         TestEqual("One feedback", Listener->FeedbackCount, 1);
-        TestEqual("Death tag", Listener->LastFeedback, FGameplayTag(GameTags::Feedback_Hero_Death));
+        TestEqual("Death tag", Listener->LastFeedback, FGameplayTag(FeedbackTags::Hero_Death));
         TestFalse("No buffered action", Combat->HasBufferedInput());
         TestFalse("No new action", Combat->RequestAction(EHeroAction::Light));
         F.Hero->StartSprint();

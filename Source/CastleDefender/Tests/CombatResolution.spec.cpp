@@ -97,17 +97,19 @@ void FCombatResolutionSpec::Define()
 
 		It("applies poise damage and status effects to surviving targets", [this]()
 		{
-			UCombatStateComponent* StateComp = NewObject<UCombatStateComponent>(Defender);
-			Defender->AddInstanceComponent(StateComp);
+			// ATestDummy owns a UCombatStateComponent (T-SYN-01).
+			UCombatStateComponent* StateComp = Defender->GetCombatState();
 
 			FCombatHit StatusHit;
 			StatusHit.Damage = 20.f;
 			StatusHit.PoiseDamage = 15.f;
 			StatusHit.Instigator = Attacker;
 			StatusHit.AppliedStates.AddTag(GameTags::State_Combat_ArmorBroken);
+			StatusHit.StateDuration = 6.f;
 
 			TestEqual("Hit outcome", UCombatLibrary::DeliverHit(Defender, StatusHit), ECombatHitResult::Hit);
 			TestTrue("ArmorBroken state applied", StateComp->HasState(GameTags::State_Combat_ArmorBroken));
+			TestEqual("Hit duration used", StateComp->GetStateRemaining(GameTags::State_Combat_ArmorBroken), 6.f, 0.001f);
 		});
 	});
 

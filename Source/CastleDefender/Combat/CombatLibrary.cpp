@@ -95,7 +95,8 @@ ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hi
 			}
 			for (const FGameplayTag& StateTag : WorkingHit.AppliedStates)
 			{
-				CombatState->ApplyState(StateTag, 0.f, WorkingHit.Instigator.Get());
+				// R-SYN-08: the hit duration wins; 0 falls back to Game Tuning defaults.
+				CombatState->ApplyState(StateTag, WorkingHit.StateDuration, WorkingHit.Instigator.Get());
 			}
 		}
 	}

@@ -45,8 +45,6 @@ namespace GameTags
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Stat, "Stat", "Root: Stat.<Domain>.<Name>, perk and zone modifier targets.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Feedback, "Feedback", "Root: Feedback.<Event>, keys into DT_Feedback.");
-	UE_DEFINE_GAMEPLAY_TAG(Feedback_Hero_StaminaInsufficient, "Feedback.Hero.StaminaInsufficient");
-	UE_DEFINE_GAMEPLAY_TAG(Feedback_Hero_Death, "Feedback.Hero.Death");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Modifier_Encounter, "Modifier.Encounter", "Root: Director encounter modifiers.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Lane, "Lane", "Root: Lane.<Name>, lane identity for routes, spawners, forecast.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Resource, "Resource", "Root: Resource.<Name>, VS economy resources.");

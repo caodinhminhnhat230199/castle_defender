@@ -12,6 +12,7 @@
 #include "Core/GameLog.h"
 #include "Core/GameTags.h"
 #include "Core/GameDebug.h"
+#include "Feedback/FeedbackTags.h"
 #include "DrawDebugHelpers.h"
 
 AHeroCharacter::AHeroCharacter()
@@ -324,6 +325,6 @@ void AHeroCharacter::HandleDeath(const FCombatHit& KillingHit)
 	GetCharacterMovement()->DisableMovement();
 	CombatComponent->HandleOwnerDeath(KillingHit);
 	OnHeroDeath.Broadcast(KillingHit);
-	OnFeedbackRequested.Broadcast(GameTags::Feedback_Hero_Death, KillingHit);
+	OnFeedbackRequested.Broadcast(FeedbackTags::Hero_Death, KillingHit);
 	OnDeathPresentation(KillingHit);
 }
