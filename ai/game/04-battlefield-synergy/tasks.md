@@ -19,7 +19,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
-| T-SYN-01 | `UCombatStateComponent` logic: timed states + poise damage/regen + poise break → Staggered | GAMEPLAY | P0 | Must | T-FND-05, T-FND-07, T-FND-09, T-FND-10, T-UXF-01 | Todo |
+| T-SYN-01 | `UCombatStateComponent` logic: timed states + poise damage/regen + poise break → Staggered | GAMEPLAY | P0 | Must | T-FND-05, T-FND-07, T-FND-09, T-FND-10, T-UXF-01 | Review |
 | T-SYN-02 | Armor Broken from Warlord Heavy + armor reduction | GAMEPLAY | P1 | Must | T-SYN-01, T-CMB-06, T-ENM-01 | Todo |
 | T-SYN-03 | Marked state infrastructure (debug/perk source only, A-06) | GAMEPLAY | P1 | Must | T-SYN-01, T-FND-09 | Todo |
 | T-SYN-04 | State presentation contract via UXF | UI | P1 | Must | T-SYN-01, T-UXF-01 | Todo |
@@ -46,27 +46,29 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 **Dependencies** T-FND-05, T-FND-07, T-FND-09, T-FND-10, T-UXF-01
 
 **Implementation Notes**
-- [ ] `CombatStateTypes.h`: `FCombatStateConfig` (MaxPoise, PoiseRegenDelay, PoiseRegenRate, StaggerDuration), `FActiveCombatState` (tag, expiry, weak instigator), `FCombatStatePresentationRow` with P0 columns only (StateTag, AppliedFeedback, RemovedFeedback).
-- [ ] `FCombatStateModel` (plain struct, explicit `Now`): `GetPoise`, `ApplyPoiseDamage`, `ApplyState` (refresh to longer, no stacking), `RemoveState`, `RemoveExpired`, `ClearAll`, `NextExpiry` (technical-plan §4.3).
-- [ ] Fill the FND component: `Init(const FCombatStateConfig&)` called by the owner at BeginPlay; `ApplyPoiseDamage`, `ApplyState`, `RemoveState`, `ClearAllStates`, `HasState`, `GetStateRemaining`, `GetCurrentPoise`, `GetStateInstigator`; delegates `OnStateAdded(Tag, Instigator)` (new states only) and `OnStateRemoved(Tag)`.
-- [ ] One `FTimerHandle` set to the earliest expiry; on fire remove every expired state and reschedule. Game time via `GetWorld()->GetTimeSeconds()`.
-- [ ] Bind sibling `UHealthComponent::OnDeath` → `ClearAllStates`; clear the timer in `EndPlay`.
-- [ ] Duration resolution: hit duration > 0, else unit `StaggerDuration` for poise breaks, else `UGameTuningSettings.StateDefaultDurations[Tag]` (add the field, Staggered fallback 1.5 s); 0 → do not apply, warn.
-- [ ] `UGameTuningSettings.CombatStatePresentationTable` (soft ref); create `DT_CombatStatePresentation` with the Staggered row; on add/remove call `UFeedbackSubsystem::Play` with the row's tag (missing row → one warning, state still works).
-- [ ] `game.debug.CombatStates 1`: poise `cur/max` and active states with remaining seconds above each unit; Visual Logger entry on add/remove with instigator.
-- [ ] Cheats: `SetPoise <Value>`, `ApplyState <TagLeaf> [Duration]`, `ClearStates` on the crosshair (or lock-on) target.
-- [ ] Header comment: ENM/SQD/BOS definitions embed `FCombatStateConfig`; hero uses MaxPoise 0.
+- [x] `CombatStateTypes.h`: `FCombatStateConfig` (MaxPoise, PoiseRegenDelay, PoiseRegenRate, StaggerDuration), `FActiveCombatState` (tag, expiry, weak instigator), `FCombatStatePresentationRow` with P0 columns only (StateTag, AppliedFeedback, RemovedFeedback).
+- [x] `FCombatStateModel` (plain struct, explicit `Now`): `GetPoise`, `ApplyPoiseDamage`, `ApplyState` (refresh to longer, no stacking), `RemoveState`, `RemoveExpired`, `ClearAll`, `NextExpiry` (technical-plan §4.3).
+- [x] Fill the FND component: `Init(const FCombatStateConfig&)` called by the owner at BeginPlay; `ApplyPoiseDamage`, `ApplyState`, `RemoveState`, `ClearAllStates`, `HasState`, `GetStateRemaining`, `GetCurrentPoise`, `GetStateInstigator`; delegates `OnStateAdded(Tag, Instigator)` (new states only) and `OnStateRemoved(Tag)`.
+- [x] One `FTimerHandle` set to the earliest expiry; on fire remove every expired state and reschedule. Game time via `GetWorld()->GetTimeSeconds()`.
+- [x] Bind sibling `UHealthComponent::OnDeath` → `ClearAllStates`; clear the timer in `EndPlay`.
+- [x] Duration resolution: hit duration > 0, else unit `StaggerDuration` for poise breaks, else `UGameTuningSettings.StateDefaultDurations[Tag]` (add the field, Staggered fallback 1.5 s); 0 → do not apply, warn.
+- [x] `UGameTuningSettings.CombatStatePresentationTable` (soft ref); create `DT_CombatStatePresentation` with the Staggered row; on add/remove call `UFeedbackSubsystem::Play` with the row's tag (missing row → one warning, state still works).
+- [x] `game.debug.CombatStates 1`: poise `cur/max` and active states with remaining seconds above each unit; Visual Logger entry on add/remove with instigator.
+- [x] Cheats: `SetPoise <Value>`, `ApplyState <TagLeaf> [Duration]`, `ClearStates` on the crosshair (or lock-on) target.
+- [x] Header comment: ENM/SQD/BOS definitions embed `FCombatStateConfig`; hero uses MaxPoise 0.
 
 **Expected Files / Assets** `Source/<Game>/Combat/CombatStateComponent.h/.cpp`, `CombatStateModel.h/.cpp`, `CombatStateTypes.h`; `Source/<Game>/Tests/CombatState.spec.cpp`; `Content/<Game>/Feedback/DT_CombatStatePresentation`
 
 **Test Case** Spec, Max 50 / delay 2 / rate 25 / stagger 1.5: 40 poise damage at t=0 → poise 10; t=1 → 10; t=2.4 → 20; 20 damage at t=2.4 → 0 → Staggered until 3.9; 30 damage at t=3.0 → ignored; t=3.9 → Staggered removed, poise 50. Refresh: Marked 8 s at t=0, then 3 s at t=1 → expiry 8; then 10 s at t=1 → expiry 11; `OnStateAdded` fired once. Clear with two states → `OnStateRemoved` twice. MaxPoise 0: poise damage never staggers, direct `ApplyState(Staggered)` works.
 
 **Acceptance Criteria**
-- [ ] AC-SYN-01…AC-SYN-05 pass.
-- [ ] Component has Tick disabled; no timer active when no state is active.
-- [ ] Feedback for Staggered plays once per new Staggered.
+- [x] AC-SYN-01…AC-SYN-05 pass.
+- [x] Component has Tick disabled; no timer active when no state is active.
+- [x] Feedback for Staggered plays once per new Staggered.
 
 **Verification** Automation Spec `<Game>.Combat.States`; PIE with `game.debug.CombatStates 1` and the cheats on an FND test dummy.
+
+**Progress (2026-10-05, Claude Code, `feat/04-battlefield-synergy`)** Review. Built as listed: `CombatStateTypes.h`, `CombatStateModel.h/.cpp`, component logic, `StateDefaultDurations` (Staggered 1.5 s) and `CombatStatePresentationTable` in Game Tuning, `DT_CombatStatePresentation` (Staggered row, made by `Tools/create_feedback_assets.bat`), `game.debug.CombatStates` (canvas draw via `UDebugDrawService`, no Tick), Visual Logger add/remove, cheats `SetPoise` / `ApplyState` / `ClearStates` on the crosshair target. `ATestDummy` now has a `UCombatStateComponent` (MaxPoise 50, other values default 2 / 25 / 1.5). Existing API kept for CMB: `ApplyPoiseDamage`, `ApplyState`, `HasState`, `GetActiveStates` (now by value). Verified: editor and game builds; `Tools/run_tests.bat` 40/40 (`Combat.States` 11: the spec timeline, refresh, late timer, MaxPoise 0, Tick off and timer only while active, timer expiry over real frames, poise break on the dummy with one Staggered feedback, death clear, duration fallback, authored row and default); standalone `-game` on `L_Boot` with the cheats on a spawned dummy: `SetPoise 10` gives 10 / 50, `ApplyState Staggered` plays `Feedback.State.Staggered.Applied`, an unknown leaf warns, `ApplyState Marked` is refused (no default until T-SYN-03). Not seen yet: the `game.debug.CombatStates` overlay in rendered PIE.
 
 ---
 

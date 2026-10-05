@@ -16,6 +16,24 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-05: Claude Code: Combat states, poise and Staggered [T-SYN-01]
+- **Agent / branch:** Claude Code, `feat/04-battlefield-synergy` (new, from `feat/13-hud-feedback`, so it contains T-UXF-01); no other active agents, editor closed. Not pushed.
+- **Tasks:** T-SYN-01 Todo → Review. T-UXF-01 was accepted as Done by the user first.
+- **Changed:**
+  - C++: new `Combat/CombatStateTypes.h` (`FCombatStateConfig`, `FActiveCombatState`, `FCombatStatePresentationRow`), `Combat/CombatStateModel.h/.cpp`; `UCombatStateComponent` filled (Init, poise, states, one expiry timer, death clear, presentation feedback, Visual Logger, debug draw). `UGameTuningSettings` gains `StateDefaultDurations` (Staggered 1.5 s, set in the new `GameTuningSettings.cpp`) and `CombatStatePresentationTable`. `game.debug.CombatStates`. Cheats `SetPoise`, `ApplyState`, `ClearStates` (crosshair target). `ATestDummy` gets a `UCombatStateComponent` (MaxPoise 50).
+  - Tests: `CombatState.spec.cpp` (`CastleDefender.Combat.States`, 11 cases), `CombatStateTestListener.h`.
+  - Tools / Content / Config: `create_feedback_assets.py` also makes `Feedback/DT_CombatStatePresentation` (Staggered → `Feedback.State.Staggered.Applied/.Removed`); `DefaultGame.ini` points Game Tuning at it.
+  - Docs: SYN `tasks.md`, `technical-plan.md` (implementation notes), this log.
+- **Verified:**
+  - Editor build succeeds with no new warnings; game target succeeds with the T-CMB-13 `GameDefinition.spec.cpp` fix applied temporarily (reverted; same `main` issue as the T-UXF-01 entry).
+  - `Tools/run_tests.bat`: 40/40, editor exit 0 (`Saved/syn01-tests.log`). Two test fixes on the way: `UWorld::Tick` asserts in a `CreateWorld` world (no engine context), and a timer set before the timer manager's tick only activates on the next frame, so the expiry case is a latent test that ticks timers over real frames.
+  - Asset script exit 0; readback shows the Staggered row.
+  - Standalone `-game` on `L_Boot` (`Saved/syn01-cheats.log`): `SpawnTestDummy`, `SetPoise 10` → 10 / 50, `ApplyState Staggered` plays `Feedback.State.Staggered.Applied` (coverage drops it from the unplayed list), unknown leaf warns, `ApplyState Marked` is refused (no default until T-SYN-03).
+- **Not verified:** the `game.debug.CombatStates` overlay in rendered PIE (headless runs use `-nullrhi`).
+- **Merge notes for `feat/01-hero-combat`:** `DeliverHit` there calls `ApplyState(Tag, 0.f, …)`; pass `WorkingHit.StateDuration` after merging so hit durations win over defaults (R-SYN-08 resolution order). `GameCheatManager.*` and `TestDummy.*` changed on both branches: expect small conflicts. The T-UXF-01 merge notes still apply.
+- **Manual steps for the user:** play any map with the hero controller, `EnableCheats`, `SpawnTestDummy`, `game.debug.CombatStates 1`, aim at the dummy, then `SetPoise 10`, `ApplyState Staggered 2`, wait 2 s, `ClearStates`. The text above the dummy should show poise and the Staggered countdown.
+- **Next:** user sign-off for T-SYN-01; then merge `feat/04-battlefield-synergy` into `feat/01-hero-combat` and finish T-CMB-06 (poise break on Heavy) → T-CMB-20.
+
 ### 2026-10-05: Claude Code: Feedback subsystem, DT_Feedback, HUD layers [T-UXF-01]
 - **Agent / branch:** Claude Code, `feat/13-hud-feedback` (new, from `main`, as the user chose); no other active agents, editor closed. Not pushed. `feat/01-hero-combat` was committed first (see its own log).
 - **Tasks:** T-UXF-01 Todo → Review → Done (user accepted the evidence below, 2026-10-05).
