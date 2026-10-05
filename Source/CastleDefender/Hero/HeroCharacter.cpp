@@ -2,6 +2,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "EnhancedInputComponent.h"
 #include "Combat/HealthComponent.h"
 #include "Combat/CombatStateComponent.h"
@@ -23,7 +24,9 @@ AHeroCharacter::AHeroCharacter()
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	// Matches FHeroMovementData::bFaceCameraDirection's default; ApplyTuning applies the definition's value.
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
 	GetCharacterMovement()->MaxWalkSpeed = 450.f;
 
@@ -43,6 +46,22 @@ AHeroCharacter::AHeroCharacter()
 	CombatComponent = CreateDefaultSubobject<UHeroCombatComponent>(TEXT("CombatComponent"));
 	StaminaComponent = CreateDefaultSubobject<UStaminaComponent>(TEXT("StaminaComponent"));
 	MeleeTraceComponent = CreateDefaultSubobject<UMeleeTraceComponent>(TEXT("MeleeTraceComponent"));
+
+	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	WeaponMesh->SetupAttachment(GetMesh());
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponMesh->ComponentTags.Add(TEXT("Weapon"));
+}
+
+void AHeroCharacter::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	// Socket lookup on a mesh without an asset logs a warning, so only attach once the asset has the socket.
+	if (GetMesh()->GetSkeletalMeshAsset() && GetMesh()->DoesSocketExist(WeaponSocketName))
+	{
+		WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, WeaponSocketName);
+	}
 }
 
 void AHeroCharacter::BeginPlay()
@@ -50,6 +69,11 @@ void AHeroCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	ApplyTuning();
+
+	if (WeaponMesh->GetStaticMesh())
+	{
+		MeleeTraceComponent->SetTraceMesh(WeaponMesh);
+	}
 
 	if (Health)
 	{
@@ -131,6 +155,8 @@ void AHeroCharacter::ApplyTuning()
 	if (HeroClassDefinition)
 	{
 		GetCharacterMovement()->RotationRate = FRotator(0.f, HeroClassDefinition->Movement.RotationRateYaw, 0.f);
+		GetCharacterMovement()->bOrientRotationToMovement = !HeroClassDefinition->Movement.bFaceCameraDirection;
+		GetCharacterMovement()->bUseControllerDesiredRotation = HeroClassDefinition->Movement.bFaceCameraDirection;
 
 		if (CameraBoom)
 		{
@@ -211,6 +237,11 @@ FVector AHeroCharacter::GetMovementInputWorldDirection() const
 	const FRotator CameraYaw(0.f, Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw, 0.f);
 	return (FRotationMatrix(CameraYaw).GetUnitAxis(EAxis::X) * MovementInputAxes.Y
 		+ FRotationMatrix(CameraYaw).GetUnitAxis(EAxis::Y) * MovementInputAxes.X).GetSafeNormal2D();
+}
+
+bool AHeroCharacter::IsFacingCameraDirection() const
+{
+	return GetCharacterMovement()->bUseControllerDesiredRotation;
 }
 
 void AHeroCharacter::Look(const FInputActionValue& Value)

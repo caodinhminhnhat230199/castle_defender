@@ -58,89 +58,101 @@ if new_definition:
     da.set_editor_property("stamina", stamina)
     da.set_editor_property("heavy_stamina_cost", 25.0)
 
-# 2.1 Montages for Warlord Light Chain
-reg = unreal.AssetRegistryHelpers.get_asset_registry()
-reg.scan_paths_synchronous(["/Engine", "/Game"])
+# 2.1 Placeholder Mannequin content from the engine template (source/license: Placeholder/LICENSES.md).
+placeholder = runpy.run_path(str(Path(__file__).with_name("create_hero_placeholder_content.py")))
+placeholder["ensure_mannequin"]()
+anim = placeholder["anim"]
+skel = anim("Unarmed/MM_Idle").get_editor_property("skeleton")
 
-anim_path = "/Engine/Tutorial/SubEditors/TutorialAssets/Character/Tutorial_Idle"
-anim_seq = assets.load_asset(anim_path)
-skel = anim_seq.get_editor_property("skeleton") if anim_seq else None
+A = unreal.HeroAction
+LIGHT_CANCELS = [A.LIGHT, A.HEAVY, A.DODGE, A.BLOCK_START]
+DODGE_CANCELS = [A.LIGHT, A.HEAVY, A.BLOCK_START]
 
-light_montages = []
-for idx, m_name in enumerate(["AM_Warlord_Light_01", "AM_Warlord_Light_02", "AM_Warlord_Light_03"]):
-    m_path = f"{HERO_DIR}/{m_name}"
-    new_montage = not assets.does_asset_exist(m_path)
-    if new_montage:
-        montage_factory = unreal.AnimMontageFactory()
-        if skel:
-            montage_factory.set_editor_property("target_skeleton", skel)
-            montage_factory.set_editor_property("source_animation", anim_seq)
-        m = asset_tools.create_asset(m_name, HERO_DIR, unreal.AnimMontage, montage_factory)
-    else:
-        m = assets.load_asset(m_path)
 
-    if new_montage:
-        # Setup notifies: 1 hit window + cancel window
-        if idx < 2:
-            # Light 1 and 2: Hit 0.15s (0.2s duration), Cancel 0.35s (0.5s duration) allows Light, Heavy, Dodge, Block
-            unreal.HeroCombatLibrary.add_combat_hit_window_to_montage(m, 0.15, 0.2)
-            unreal.HeroCombatLibrary.add_cancel_window_to_montage(m, 0.35, 0.5, [
-                unreal.HeroAction.LIGHT,
-                unreal.HeroAction.HEAVY,
-                unreal.HeroAction.DODGE,
-                unreal.HeroAction.BLOCK_START
-            ])
-        else:
-            # Light 3: Hit 0.2s (0.25s duration), Cancel 0.45s (0.5s duration) allows Dodge, Block
-            unreal.HeroCombatLibrary.add_combat_hit_window_to_montage(m, 0.2, 0.25)
-            unreal.HeroCombatLibrary.add_cancel_window_to_montage(m, 0.45, 0.5, [
-                unreal.HeroAction.DODGE,
-                unreal.HeroAction.BLOCK_START
-            ])
+def author_montage(name, clip, clip_end, duration, windows, reversed_clip=False, clip_start=0.0):
+    """Creates the montage, or retargets a legacy Tutorial_Idle fixture to its Mannequin clip.
 
-    assets.save_loaded_asset(m, only_if_is_dirty=False)
-    light_montages.append(m)
-    unreal.log(f"Saved {m_name} at {m_path}")
-
-# Dodge timing fixtures. Actual root-motion dodge clips/ABP remain content integration work.
-dodge_data = da.get_editor_property("dodge")
-dodge_fields = [("F", "forward_montage"), ("B", "backward_montage"),
-                ("L", "left_montage"), ("R", "right_montage")]
-for suffix, field in dodge_fields:
-    name = f"AM_Warlord_Dodge_{suffix}"
+    Montages already on the Mannequin skeleton are left as authored. Returns (montage, changed).
+    windows: (kind, start, duration, allowed actions) in montage time.
+    """
     path = f"{HERO_DIR}/{name}"
-    if not assets.does_asset_exist(path):
+    if assets.does_asset_exist(path):
+        montage = assets.load_asset(path)
+        if montage.get_editor_property("skeleton") == skel:
+            return montage, False
+    else:
         factory = unreal.AnimMontageFactory()
         factory.set_editor_property("target_skeleton", skel)
-        factory.set_editor_property("source_animation", anim_seq)
+        factory.set_editor_property("source_animation", clip)
         montage = asset_tools.create_asset(name, HERO_DIR, unreal.AnimMontage, factory)
-        assert unreal.HeroCombatLibrary.set_single_segment_montage_duration(montage, 0.6)
-        assert unreal.HeroCombatLibrary.add_invulnerable_window_to_montage(montage, 0.10, 0.25)
-        assert unreal.HeroCombatLibrary.add_cancel_window_to_montage(montage, 0.4, 0.19,
-            [unreal.HeroAction.LIGHT, unreal.HeroAction.HEAVY, unreal.HeroAction.BLOCK_START])
-        assets.save_loaded_asset(montage, only_if_is_dirty=False)
-    else:
-        montage = assets.load_asset(path)
+    assert unreal.HeroCombatLibrary.set_single_segment_montage_source(montage, clip, clip_start, clip_end, duration, reversed_clip)
+    unreal.HeroCombatLibrary.clear_combat_notifies_from_montage(montage)
+    for kind, start, length, actions in windows:
+        if kind == "hit":
+            ok = unreal.HeroCombatLibrary.add_combat_hit_window_to_montage(montage, start, length)
+        elif kind == "iframe":
+            ok = unreal.HeroCombatLibrary.add_invulnerable_window_to_montage(montage, start, length)
+        else:
+            ok = unreal.HeroCombatLibrary.add_cancel_window_to_montage(montage, start, length, actions)
+        assert ok, f"{name}: {kind} window rejected"
+    assets.save_loaded_asset(montage, only_if_is_dirty=False)
+    unreal.log(f"Authored {name} from {clip.get_name()}")
+    return montage, True
+
+
+# Light chain: hit windows follow the measured strike of each clip, Recovery cancels after.
+light_specs = [
+    ("AM_Warlord_Light_01", "Unarmed/Attack/MM_Attack_01", [("hit", 0.28, 0.17, None), ("cancel", 0.45, 0.40, LIGHT_CANCELS)]),
+    ("AM_Warlord_Light_02", "Unarmed/Attack/MM_Attack_02", [("hit", 0.28, 0.18, None), ("cancel", 0.46, 0.39, LIGHT_CANCELS)]),
+    ("AM_Warlord_Light_03", "Unarmed/Attack/MM_Attack_03", [("hit", 0.25, 0.35, None), ("cancel", 1.20, 0.35, [A.DODGE, A.BLOCK_START])]),
+]
+light_montages = []
+for name, clip_path, windows in light_specs:
+    clip = anim(clip_path)
+    montage, _ = author_montage(name, clip, clip.get_play_length(), clip.get_play_length(), windows)
+    light_montages.append(montage)
+
+# Heavy: MM_ChargedAttack from 0.55 s (skips most of the 1 s hold) so the wind-up reads but stays ~0.5 s.
+# The punch lands during the 150 cm root-motion lunge (clip 1.0-1.22 s); late recovery cancels into Dodge only.
+charged = anim("Unarmed/Attack/MM_ChargedAttack")
+heavy_start = 0.55
+heavy_montage, _ = author_montage(
+    "AM_Warlord_Heavy", charged, charged.get_play_length(), charged.get_play_length() - heavy_start,
+    [("hit", 0.45, 0.22, None), ("cancel", 0.95, 0.30, [A.DODGE])], clip_start=heavy_start)
+heavy_data = da.get_editor_property("heavy")
+if not heavy_data.get_editor_property("montage"):
+    heavy_data.set_editor_property("montage", heavy_montage)
+    da.set_editor_property("heavy", heavy_data)
+
+# Dodge: MM_Dash (motion ends ~0.73 s) fitted to 0.6 s; B plays it reversed. The template has no side steps,
+# so L/R reuse F until directional clips exist (only lock-on, T-CMB-10, selects them).
+dash = anim("Unarmed/Jump/MM_Dash")
+dodge_windows = [("iframe", 0.10, 0.25, None), ("cancel", 0.40, 0.19, DODGE_CANCELS)]
+dodge_data = da.get_editor_property("dodge")
+dodge_changed = False
+for suffix, field in [("F", "forward_montage"), ("B", "backward_montage"), ("L", "left_montage"), ("R", "right_montage")]:
+    montage, changed = author_montage(f"AM_Warlord_Dodge_{suffix}", dash, 0.8, 0.6, dodge_windows, reversed_clip=(suffix == "B"))
+    dodge_changed |= changed
     if not dodge_data.get_editor_property(field):
         dodge_data.set_editor_property(field, montage)
+if dodge_changed:
+    dodge_data.set_editor_property("root_motion_scale", 0.4)  # [TUNABLE] ~350 cm from the 885 cm dash clip
+# L/R are the forward dash, so a camera-facing hero turns toward the input for side dodges.
+dodge_data.set_editor_property("side_clips_face_input", True)
 da.set_editor_property("dodge", dodge_data)
 
-# Directional hit/death timing fixtures; presentation clips are replaced by the content pass.
 react_data = da.get_editor_property("hit_react")
-for suffix, field in [("HitReact_F", "front_montage"), ("HitReact_B", "back_montage"), ("Death", "death_montage")]:
-    name = f"AM_Warlord_{suffix}"
-    path = f"{HERO_DIR}/{name}"
-    if not assets.does_asset_exist(path):
-        factory = unreal.AnimMontageFactory()
-        factory.set_editor_property("target_skeleton", skel)
-        factory.set_editor_property("source_animation", anim_seq)
-        montage = asset_tools.create_asset(name, HERO_DIR, unreal.AnimMontage, factory)
-        assert unreal.HeroCombatLibrary.set_single_segment_montage_duration(montage, 0.6)
-        if suffix != "Death":
-            assert unreal.HeroCombatLibrary.add_cancel_window_to_montage(montage, 0.4, 0.19, [unreal.HeroAction.DODGE])
+front = anim("Rifle/HitReact/MM_HitReact_Front_Med_01")
+back = anim("Rifle/HitReact/MM_HitReact_Back_Med_01")
+death = anim("Death/MM_Death_Front_01")
+for name, clip, windows, field in [
+        ("AM_Warlord_HitReact_F", front, [("cancel", 0.50, 0.25, [A.DODGE])], "front_montage"),
+        ("AM_Warlord_HitReact_B", back, [("cancel", 0.55, 0.30, [A.DODGE])], "back_montage"),
+        ("AM_Warlord_Death", death, [], "death_montage")]:
+    montage, changed = author_montage(name, clip, clip.get_play_length(), clip.get_play_length(), windows)
+    if changed and field == "death_montage":
+        montage.set_editor_property("enable_auto_blend_out", False)  # hold the final pose until respawn
         assets.save_loaded_asset(montage, only_if_is_dirty=False)
-    else:
-        montage = assets.load_asset(path)
     if not react_data.get_editor_property(field):
         react_data.set_editor_property(field, montage)
 da.set_editor_property("hit_react", react_data)
@@ -185,6 +197,65 @@ hero_cdo.set_editor_property("light_attack_action", ia_light)
 hero_cdo.set_editor_property("heavy_attack_action", ia_heavy)
 hero_cdo.set_editor_property("dodge_action", ia_dodge)
 hero_cdo.set_editor_property("block_action", ia_block)
+
+# 3.1 Visual assembly: Manny + ABP_Warlord (copy of the template ABP_Unarmed: locomotion + DefaultSlot), unarmed.
+abp_path = f"{HERO_DIR}/ABP_Warlord"
+if not assets.does_asset_exist(abp_path):
+    abp = assets.duplicate_asset(f"{placeholder['MANNEQUIN']}/Anims/Unarmed/ABP_Unarmed", abp_path)
+    unreal.get_default_object(abp.generated_class()).set_editor_property(
+        "root_motion_mode", unreal.RootMotionMode.ROOT_MOTION_FROM_MONTAGES_ONLY)
+    unreal.BlueprintEditorLibrary.compile_blueprint(abp)
+    assets.save_loaded_asset(abp, only_if_is_dirty=False)
+abp = assets.load_asset(abp_path)
+
+
+def wire_foot_ik_alpha(abp):
+    """Reparents to UHeroAnimInstance and drives the template foot IK Control Rig Alpha with FootIKAlpha.
+
+    The template applies CR_Mannequin_FootIK after DefaultSlot, which pins the feet of attack montages to the ground.
+    """
+    bel, pins = unreal.BlueprintEditorLibrary, unreal.BlueprintGraphPinLibrary
+    hero_anim = unreal.load_class(None, "/Script/CastleDefender.HeroAnimInstance")
+    changed = bel.get_blueprint_parent_class(abp) != hero_anim
+    if changed:
+        bel.reparent_blueprint(abp, hero_anim)
+    graph = unreal.BlueprintGraphEditor.get_graph_editor(bel.find_graph(abp, "AnimGraph"))
+    rigs = [n for n in graph.list_all_nodes() if n.get_class().get_name() == "AnimGraphNode_ControlRig"]
+    if len(rigs) != 1:
+        raise RuntimeError(f"ABP_Warlord: expected one foot IK Control Rig node, found {len(rigs)}")
+    alpha = bel.find_input_pin(rigs[0], "Alpha")
+    if not pins.is_valid(alpha):
+        raise RuntimeError("ABP_Warlord: Control Rig node has no Alpha pin")
+    if not pins.list_connected_pins(alpha):
+        get = graph.add_get_member_variable_node("FootIKAlpha")
+        if not get or not pins.try_create_connection(bel.find_output_pin(get, "FootIKAlpha"), alpha):
+            raise RuntimeError("ABP_Warlord: could not connect FootIKAlpha to the Control Rig Alpha")
+        rig_pos = bel.get_node_pos(rigs[0])
+        bel.set_node_pos(get, unreal.IntPoint(rig_pos.x - 250, rig_pos.y + 120))
+        changed = True
+    if changed:
+        if not bel.compile_blueprint(abp):
+            raise RuntimeError("ABP_Warlord failed to compile after wiring foot IK")
+        assets.save_loaded_asset(abp, only_if_is_dirty=False)
+
+
+wire_foot_ik_alpha(abp)
+
+mesh = hero_cdo.get_editor_property("mesh")
+if not mesh.get_skeletal_mesh_asset():
+    half_height = hero_cdo.get_editor_property("capsule_component").get_unscaled_capsule_half_height()
+    mesh.set_skeletal_mesh_asset(assets.load_asset(f"{placeholder['MANNEQUIN']}/Meshes/SKM_Manny_Simple"))
+    mesh.set_editor_property("relative_location", unreal.Vector(0.0, 0.0, -half_height))
+    mesh.set_editor_property("relative_rotation", unreal.Rotator(roll=0.0, pitch=0.0, yaw=-90.0))
+if not mesh.get_editor_property("anim_class"):
+    mesh.set_editor_property("anim_class", abp.generated_class())
+# Unarmed demo: no weapon mesh, so MeleeTraceComponent sweeps its fallback arc in front of the hero
+# and no bone sockets drive hits; the engine default tick option is enough.
+mesh.set_editor_property("visibility_based_anim_tick_option", unreal.VisibilityBasedAnimTickOption.ALWAYS_TICK_POSE)
+weapon = hero_cdo.get_editor_property("weapon_mesh")
+weapon.set_editor_property("static_mesh", None)
+weapon.set_editor_property("relative_location", unreal.Vector(0.0, 0.0, 0.0))
+weapon.set_editor_property("relative_scale3d", unreal.Vector(1.0, 1.0, 1.0))
 
 unreal.BlueprintEditorLibrary.compile_blueprint(hero_bp)
 assets.save_loaded_asset(hero_bp, only_if_is_dirty=False)

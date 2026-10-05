@@ -6,6 +6,7 @@
 #include "HeroCombatLibrary.generated.h"
 
 class UAnimMontage;
+class UAnimSequenceBase;
 
 /**
  * Blueprint and Python function library for Hero Combat setup and montage authoring (spec §4.4, technical-plan §3.5).
@@ -30,6 +31,11 @@ public:
 	/** Editor setup only: scales a single-segment timing fixture to its authored duration. */
 	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Montage")
 	static bool SetSingleSegmentMontageDuration(UAnimMontage* Montage, float Duration);
+
+	/** Editor setup only: points a single-segment montage at Sequence (and its skeleton), trims it to
+	 *  [AnimStartTime, AnimEndTime] and fits it to Duration, optionally reversed. Notifies are left untouched. */
+	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Montage")
+	static bool SetSingleSegmentMontageSource(UAnimMontage* Montage, UAnimSequenceBase* Sequence, float AnimStartTime, float AnimEndTime, float Duration, bool bPlayReversed);
 
 	/** Clears all combat hit and cancel window notify states from a montage to allow idempotent authoring. */
 	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Montage")

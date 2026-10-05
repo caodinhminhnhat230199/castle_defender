@@ -21,7 +21,7 @@ struct FHeroCombatFixture
 		Hero->SetHeroClassDefinition(DuplicateObject<UHeroClassDefinition>(
 			LoadObject<UHeroClassDefinition>(nullptr, TEXT("/Game/CastleDefender/Hero/DA_HeroClass_Warlord")), Hero));
 		Hero->GetMesh()->SetSkeletalMesh(LoadObject<USkeletalMesh>(nullptr,
-			TEXT("/Engine/Tutorial/SubEditors/TutorialAssets/Character/TutorialTPP")));
+			TEXT("/Game/CastleDefender/Placeholder/Mannequins/Meshes/SKM_Manny_Simple")));
 		Hero->GetMesh()->SetAnimInstanceClass(UAnimInstance::StaticClass());
 	}
 

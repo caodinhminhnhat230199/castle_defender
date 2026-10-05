@@ -61,3 +61,24 @@ bool UHeroCombatLibrary::SetSingleSegmentMontageDuration(UAnimMontage* Montage, 
 	return false;
 #endif
 }
+
+bool UHeroCombatLibrary::SetSingleSegmentMontageSource(UAnimMontage* Montage, UAnimSequenceBase* Sequence, float AnimStartTime, float AnimEndTime, float Duration, bool bPlayReversed)
+{
+#if WITH_EDITOR
+	if (!Montage || !Sequence || !Sequence->GetSkeleton() || Duration <= 0.f || AnimStartTime < 0.f
+		|| AnimEndTime <= AnimStartTime || AnimEndTime > Sequence->GetPlayLength() + KINDA_SMALL_NUMBER
+		|| Montage->SlotAnimTracks.Num() != 1 || Montage->SlotAnimTracks[0].AnimTrack.AnimSegments.Num() != 1) { return false; }
+	Montage->Modify();
+	Montage->SetSkeleton(Sequence->GetSkeleton());
+	FAnimSegment& Segment = Montage->SlotAnimTracks[0].AnimTrack.AnimSegments[0];
+	Segment.SetAnimReference(Sequence);
+	Segment.AnimStartTime = AnimStartTime;
+	Segment.AnimEndTime = AnimEndTime;
+	// A negative segment rate plays the clip (and its root motion) backwards.
+	Segment.AnimPlayRate = (AnimEndTime - AnimStartTime) / Duration * (bPlayReversed ? -1.f : 1.f);
+	Montage->SetCompositeLength(Montage->CalculateSequenceLength());
+	return true;
+#else
+	return false;
+#endif
+}

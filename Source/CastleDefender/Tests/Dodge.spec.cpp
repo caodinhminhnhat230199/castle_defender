@@ -7,19 +7,32 @@
 #include "Combat/CombatLibrary.h"
 #include "Combat/HealthComponent.h"
 #include "Hero/HeroCombatLibrary.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 BEGIN_DEFINE_SPEC(FDodgeSpec, "CastleDefender.Combat.Hero.Dodge", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
 END_DEFINE_SPEC(FDodgeSpec)
 
 void FDodgeSpec::Define()
 {
-    It("selects backward without input and facing-relative cardinal clips while locked", [this]()
+    It("selects backward without input and facing-relative cardinal clips while facing is fixed", [this]()
     {
         TestEqual("No input", FHeroDodgeData::SelectDirection(FVector::ZeroVector, FVector::ForwardVector, false), EHeroDodgeDirection::Backward);
-        TestEqual("Free camera uses forward clip after turning", FHeroDodgeData::SelectDirection(FVector::RightVector, FVector::ForwardVector, false), EHeroDodgeDirection::Forward);
-        TestEqual("Locked left", FHeroDodgeData::SelectDirection(-FVector::RightVector, FVector::ForwardVector, true), EHeroDodgeDirection::Left);
-        TestEqual("Locked back", FHeroDodgeData::SelectDirection(-FVector::ForwardVector, FVector::ForwardVector, true), EHeroDodgeDirection::Backward);
-        TestEqual("Locked right with rotated facing", FHeroDodgeData::SelectDirection(-FVector::ForwardVector, FVector::RightVector, true), EHeroDodgeDirection::Right);
+        TestEqual("Turn-to-movement uses forward clip after turning", FHeroDodgeData::SelectDirection(FVector::RightVector, FVector::ForwardVector, false), EHeroDodgeDirection::Forward);
+        TestEqual("Fixed facing left", FHeroDodgeData::SelectDirection(-FVector::RightVector, FVector::ForwardVector, true), EHeroDodgeDirection::Left);
+        TestEqual("Fixed facing back (S + Dodge)", FHeroDodgeData::SelectDirection(-FVector::ForwardVector, FVector::ForwardVector, true), EHeroDodgeDirection::Backward);
+        TestEqual("Fixed facing right with rotated facing", FHeroDodgeData::SelectDirection(-FVector::ForwardVector, FVector::RightVector, true), EHeroDodgeDirection::Right);
+    });
+
+    It("faces the camera direction by default and turns toward movement when the definition disables it", [this]()
+    {
+        FHeroCombatFixture Fixture;
+        Fixture.Hero->ApplyTuning();
+        TestTrue("Camera-facing by default", Fixture.Hero->IsFacingCameraDirection());
+        TestFalse("No orient-to-movement", Fixture.Hero->GetCharacterMovement()->bOrientRotationToMovement);
+        Fixture.Hero->GetHeroClassDefinition()->Movement.bFaceCameraDirection = false;
+        Fixture.Hero->ApplyTuning();
+        TestFalse("Turn-to-movement mode", Fixture.Hero->IsFacingCameraDirection());
+        TestTrue("Orients to movement", Fixture.Hero->GetCharacterMovement()->bOrientRotationToMovement);
     });
 
     It("spends cost once and restores prior root-motion scale after montage completion", [this]()

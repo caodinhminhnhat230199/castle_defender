@@ -17,6 +17,7 @@ class CASTLEDEFENDER_API UHeroClassDefinition : public UGameDefinition
 public:
 	/** Same action/data validation in editor and packaged runtime, before spending stamina. */
 	bool ValidateLightAttack(int32 ChainIndex, FString& OutError) const;
+	bool ValidateHeavyAttack(FString& OutError) const;
 	bool ValidateDodge(EHeroDodgeDirection Direction, FString& OutError) const;
 	bool ValidateHitReaction(bool bFromFront, FString& OutError) const;
 	UHeroClassDefinition();

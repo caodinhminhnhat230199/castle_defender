@@ -21,6 +21,7 @@ void FHeroClassDefinitionSpec::Define()
 			TEXT("/Game/CastleDefender/Hero/DA_HeroClass_Warlord")))
 		{
 			Definition->LightChain = Authored->LightChain;
+			Definition->Heavy = Authored->Heavy;
 			Definition->Dodge = Authored->Dodge;
 			Definition->HitReact = Authored->HitReact;
 		}

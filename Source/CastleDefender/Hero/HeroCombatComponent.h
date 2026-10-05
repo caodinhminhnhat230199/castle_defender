@@ -160,6 +160,8 @@ private:
 	void TryConsumeBuffer();
 	void BufferAction(EHeroAction Action);
 	bool IsSharedStaggered() const;
+	/** Loads the attack's hit payload into the melee trace for the montage's hit window. */
+	void ArmMeleeTrace(const FHeroAttackData& Attack, bool bHeavy) const;
 
 	UFUNCTION()
 	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -175,6 +177,7 @@ private:
 
 	FBufferedAction BufferedInput;
 	FString LastLightValidationError;
+	FString LastHeavyValidationError;
 	FString LastDodgeValidationError;
 	FString LastReactionValidationError;
 	EHeroDodgeDirection LastDodgeDirection = EHeroDodgeDirection::Backward;

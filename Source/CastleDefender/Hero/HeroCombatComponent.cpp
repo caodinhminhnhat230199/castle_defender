@@ -202,12 +202,31 @@ bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 			LastLightValidationError.Reset();
 		}
 
+		if (Action == EHeroAction::Heavy)
+		{
+			// R-CMB-45: an invalid Heavy refuses to start instead of entering a state no montage will end.
+			const UHeroClassDefinition* Definition = HeroOwner ? HeroOwner->GetHeroClassDefinition() : nullptr;
+			FString Error;
+			if (!Definition || !Definition->ValidateHeavyAttack(Error))
+			{
+				if (!Definition) { Error = TEXT("HeroClassDefinition is missing."); }
+				if (LastHeavyValidationError != Error)
+				{
+					UE_LOG(LogGameCombat, Error, TEXT("Heavy attack refused: %s"), *Error);
+					LastHeavyValidationError = Error;
+				}
+				return false;
+			}
+			LastHeavyValidationError.Reset();
+		}
+
 		if (Action == EHeroAction::Dodge)
 		{
 			const UHeroClassDefinition* Definition = HeroOwner ? HeroOwner->GetHeroClassDefinition() : nullptr;
 			const FVector Input = HeroOwner ? HeroOwner->GetMovementInputWorldDirection() : FVector::ZeroVector;
-			// T-CMB-10 integrates locked selection; free camera dodge rotates to current movement input.
-			LastDodgeDirection = FHeroDodgeData::SelectDirection(Input, HeroOwner ? HeroOwner->GetActorForwardVector() : FVector::ForwardVector, false);
+			// Camera-facing hero picks the clip relative to its facing (T-CMB-10 adds lock-on); otherwise it turns to the input.
+			LastDodgeDirection = FHeroDodgeData::SelectDirection(Input, HeroOwner ? HeroOwner->GetActorForwardVector() : FVector::ForwardVector,
+				HeroOwner && HeroOwner->IsFacingCameraDirection());
 			FString Error;
 			if (!Definition || !Definition->ValidateDodge(LastDodgeDirection, Error))
 			{
@@ -245,21 +264,7 @@ bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 			const FHeroAttackData* AttackData = GetAttackDataForAction(EHeroAction::Light, CurrentChainIndex);
 			if (AttackData && HeroOwner)
 			{
-				if (UMeleeTraceComponent* TraceComp = HeroOwner->GetMeleeTraceComponent())
-				{
-					FCombatHit PendingHit;
-					PendingHit.Damage = AttackData->Damage;
-					PendingHit.PoiseDamage = AttackData->PoiseDamage;
-					PendingHit.SourceLayer = ECombatLayer::Hero;
-					PendingHit.DamageType = GameTags::Damage_Physical;
-					PendingHit.bIsHeavy = false;
-					PendingHit.AppliedStates = AttackData->AppliedStates;
-					PendingHit.StateDuration = AttackData->StateDuration;
-					PendingHit.Instigator = HeroOwner;
-
-					TraceComp->SetPendingAttack(PendingHit, AttackData->TraceRadius,
-						FName(TEXT("Trace_Start")), FName(TEXT("Trace_End")));
-				}
+				ArmMeleeTrace(*AttackData, false);
 
 				if (AttackData->Montage)
 				{
@@ -272,14 +277,24 @@ bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 			break;
 		}
 		case EHeroAction::Heavy:
+		{
 			CurrentChainIndex = 0;
-			SetActionState(EHeroActionState::HeavyAttack);
+			const FHeroAttackData& Heavy = HeroOwner->GetHeroClassDefinition()->Heavy;
+			ArmMeleeTrace(Heavy, true);
+			if (!PlayActionMontage(Heavy.Montage, EHeroActionState::HeavyAttack))
+			{
+				return false;
+			}
 			break;
+		}
 		case EHeroAction::Dodge:
 		{
 			CurrentChainIndex = 0;
 			const FVector Input = HeroOwner->GetMovementInputWorldDirection();
-			if (!Input.IsNearlyZero()) { HeroOwner->SetActorRotation(Input.Rotation()); }
+			const bool bSideDodge = LastDodgeDirection == EHeroDodgeDirection::Left || LastDodgeDirection == EHeroDodgeDirection::Right;
+			const bool bTurnToInput = !HeroOwner->IsFacingCameraDirection()
+				|| (bSideDodge && HeroOwner->GetHeroClassDefinition()->Dodge.bSideClipsFaceInput);
+			if (bTurnToInput && !Input.IsNearlyZero()) { HeroOwner->SetActorRotation(Input.Rotation()); }
 			PreviousRootMotionScale = HeroOwner->GetAnimRootMotionTranslationScale();
 			bDodgeRootMotionScaleApplied = true;
 			HeroOwner->SetAnimRootMotionTranslationScale(HeroOwner->GetHeroClassDefinition()->Dodge.RootMotionScale);
@@ -501,6 +516,25 @@ void UHeroCombatComponent::TryConsumeBuffer()
 		// Buffer expired
 		ClearBuffer();
 	}
+}
+
+void UHeroCombatComponent::ArmMeleeTrace(const FHeroAttackData& Attack, bool bHeavy) const
+{
+	UMeleeTraceComponent* TraceComp = HeroOwner ? HeroOwner->GetMeleeTraceComponent() : nullptr;
+	if (!TraceComp)
+	{
+		return;
+	}
+	FCombatHit PendingHit;
+	PendingHit.Damage = Attack.Damage;
+	PendingHit.PoiseDamage = Attack.PoiseDamage;
+	PendingHit.SourceLayer = ECombatLayer::Hero;
+	PendingHit.DamageType = GameTags::Damage_Physical;
+	PendingHit.bIsHeavy = bHeavy;
+	PendingHit.AppliedStates = Attack.AppliedStates; // R-CMB-16: empty in P0, Armor Broken from P1
+	PendingHit.StateDuration = Attack.StateDuration;
+	PendingHit.Instigator = HeroOwner;
+	TraceComp->SetPendingAttack(PendingHit, Attack.TraceRadius, FName(TEXT("Trace_Start")), FName(TEXT("Trace_End")));
 }
 
 bool UHeroCombatComponent::PlayActionMontage(UAnimMontage* Montage, EHeroActionState NewState)

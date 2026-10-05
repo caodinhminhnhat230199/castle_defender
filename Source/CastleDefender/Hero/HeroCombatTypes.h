@@ -98,6 +98,9 @@ struct CASTLEDEFENDER_API FHeroDodgeData
 	TObjectPtr<UAnimMontage> LeftMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge")
 	TObjectPtr<UAnimMontage> RightMontage;
+	/** Left/Right montages are forward-moving placeholders: turn toward the input before playing them. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge")
+	bool bSideClipsFaceInput = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge", meta = (ClampMin = "0"))
 	float StaminaCost = 20.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge", meta = (ClampMin = "0.001"))
@@ -113,10 +116,12 @@ struct CASTLEDEFENDER_API FHeroDodgeData
 		default: return ForwardMontage;
 		}
 	}
-	static EHeroDodgeDirection SelectDirection(const FVector& WorldInput, const FVector& Facing, bool bLockedOn)
+	/** bFacingFixed: the hero keeps its facing (camera-facing or locked-on), so the clip follows input relative to it.
+	 *  Otherwise the hero turns toward the input and dodges forward. */
+	static EHeroDodgeDirection SelectDirection(const FVector& WorldInput, const FVector& Facing, bool bFacingFixed)
 	{
 		if (WorldInput.IsNearlyZero()) { return EHeroDodgeDirection::Backward; }
-		if (!bLockedOn) { return EHeroDodgeDirection::Forward; }
+		if (!bFacingFixed) { return EHeroDodgeDirection::Forward; }
 		const FVector Forward = Facing.GetSafeNormal2D();
 		const FVector Right = FVector::CrossProduct(FVector::UpVector, Forward);
 		const float F = FVector::DotProduct(WorldInput, Forward);
@@ -141,6 +146,10 @@ struct FHeroMovementData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (ClampMin = "0.0"))
 	float RotationRateYaw = 720.f;
+
+	/** True: the hero turns toward the camera yaw and strafes/backpedals. False: it turns toward its movement. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	bool bFaceCameraDirection = true;
 };
 
 /** Orbit camera tunables for hero classes (spec §4.4). */

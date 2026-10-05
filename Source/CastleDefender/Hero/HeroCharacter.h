@@ -15,6 +15,7 @@ class UCombatStateComponent;
 class UHeroCombatComponent;
 class UStaminaComponent;
 class UMeleeTraceComponent;
+class UStaticMeshComponent;
 class UInputAction;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHeroDeathSignature, const FCombatHit&, KillingHit);
@@ -32,6 +33,7 @@ class CASTLEDEFENDER_API AHeroCharacter : public ACharacter, public IGenericTeam
 public:
 	AHeroCharacter();
 
+	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -58,6 +60,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Hero")
 	FVector GetMovementInputWorldDirection() const;
 
+	/** True when the hero keeps facing the camera yaw instead of turning toward its movement. */
+	UFUNCTION(BlueprintPure, Category = "Hero")
+	bool IsFacingCameraDirection() const;
+
 	UFUNCTION(BlueprintPure, Category = "Hero")
 	UHeroClassDefinition* GetHeroClassDefinition() const { return HeroClassDefinition; }
 
@@ -78,6 +84,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Hero")
 	UMeleeTraceComponent* GetMeleeTraceComponent() const { return MeleeTraceComponent; }
+
+	UFUNCTION(BlueprintPure, Category = "Hero")
+	UStaticMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 
 	UFUNCTION(BlueprintPure, Category = "Hero")
 	USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -115,6 +124,14 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<UMeleeTraceComponent> MeleeTraceComponent;
+
+	/** Weapon tagged `Weapon`; its `Trace_Start`/`Trace_End` sockets drive the melee trace. Blueprint sets the mesh. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<UStaticMeshComponent> WeaponMesh;
+
+	/** Character mesh socket or bone that holds WeaponMesh. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+	FName WeaponSocketName = TEXT("hand_r");
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hero")
 	TObjectPtr<UHeroClassDefinition> HeroClassDefinition;

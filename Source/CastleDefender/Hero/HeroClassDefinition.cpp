@@ -82,6 +82,44 @@ bool UHeroClassDefinition::ValidateLightAttack(int32 ChainIndex, FString& OutErr
 	return true;
 }
 
+bool UHeroClassDefinition::ValidateHeavyAttack(FString& OutError) const
+{
+	OutError.Reset();
+	FCombatActionTiming Timing;
+	if (!FCombatActionTiming::InspectMontage(Heavy.Montage, Timing, &OutError))
+	{
+		OutError = FString::Printf(TEXT("Heavy montage: %s"), *OutError);
+		return false;
+	}
+	if (!FMath::IsFinite(Heavy.Damage) || Heavy.Damage <= 0.f
+		|| !FMath::IsFinite(Heavy.PoiseDamage) || Heavy.PoiseDamage < 0.f
+		|| !FMath::IsFinite(Heavy.TraceRadius) || Heavy.TraceRadius <= 0.f
+		|| !FMath::IsFinite(Heavy.StateDuration) || Heavy.StateDuration < 0.f
+		|| !FMath::IsFinite(HeavyStaminaCost) || HeavyStaminaCost < 0.f)
+	{
+		OutError = TEXT("Heavy: invalid damage, poise, trace radius, state duration or stamina cost.");
+		return false;
+	}
+	for (int32 Index = 0; Index < LightChain.Num(); ++Index)
+	{
+		if (Heavy.Damage <= LightChain[Index].Damage || Heavy.PoiseDamage <= LightChain[Index].PoiseDamage
+			|| LightChain[Index].StaminaCost >= HeavyStaminaCost)
+		{
+			OutError = FString::Printf(TEXT("Heavy must out-damage, out-poise and out-cost LightChain[%d]."), Index);
+			return false;
+		}
+	}
+	// R-CMB-15: readable startup before the hit; recovery only cancels late, into Dodge.
+	if (Timing.HitWindowCount != 1 || Timing.HitWindowStart <= 0.f || !Timing.bHasCancelWindow
+		|| Timing.CancelWindowStart + KINDA_SMALL_NUMBER < Timing.HitWindowEnd
+		|| Timing.AllowedCancelActions.Num() != 1 || !Timing.AllowedCancelActions.Contains(EHeroAction::Dodge))
+	{
+		OutError = TEXT("Heavy requires a startup, one hit window and a later Dodge-only cancel window.");
+		return false;
+	}
+	return true;
+}
+
 bool UHeroClassDefinition::ValidateDodge(EHeroDodgeDirection Direction, FString& OutError) const
 {
 	FCombatActionTiming Timing;
@@ -202,6 +240,15 @@ EDataValidationResult UHeroClassDefinition::IsDataValid(FDataValidationContext& 
 	{
 		FString Error;
 		if (!ValidateLightAttack(Index, Error))
+		{
+			Context.AddError(FText::FromString(Error));
+			Result = EDataValidationResult::Invalid;
+		}
+	}
+
+	{
+		FString Error;
+		if (!ValidateHeavyAttack(Error))
 		{
 			Context.AddError(FText::FromString(Error));
 			Result = EDataValidationResult::Invalid;

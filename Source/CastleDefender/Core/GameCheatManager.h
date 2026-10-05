@@ -15,7 +15,7 @@ class CASTLEDEFENDER_API UGameCheatManager : public UCheatManager
 	GENERATED_BODY()
 
 public:
-	/** Spawns an ATestDummy in front of the view (default 400 cm). */
+	/** Spawns an ATestDummy in front of the pawn, along the view yaw (default 400 cm). */
 	UFUNCTION(Exec)
 	void SpawnTestDummy(float Distance);
 

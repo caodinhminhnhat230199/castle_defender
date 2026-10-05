@@ -26,10 +26,14 @@ void UGameCheatManager::SpawnTestDummy(float Distance)
 	FRotator ViewRotation;
 	PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
 
+	// Measure from the pawn, not the camera: the third-person camera sits a boom length behind the hero,
+	// so a camera-relative spawn lands on top of the hero.
+	const APawn* Pawn = PC->GetPawn();
+	const FVector Origin = Pawn ? Pawn->GetActorLocation() : ViewLocation;
 	const FRotator Facing(0.f, ViewRotation.Yaw, 0.f);
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	const ATestDummy* Dummy = GetWorld()->SpawnActor<ATestDummy>(ViewLocation + Facing.Vector() * Distance, Facing.GetInverse(), Params);
+	const ATestDummy* Dummy = GetWorld()->SpawnActor<ATestDummy>(Origin + Facing.Vector() * Distance, Facing.GetInverse(), Params);
 	UE_LOG(LogGameCombat, Log, TEXT("SpawnTestDummy: %s"), Dummy ? *Dummy->GetName() : TEXT("failed"));
 #endif
 }
