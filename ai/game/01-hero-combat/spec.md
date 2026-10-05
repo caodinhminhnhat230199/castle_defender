@@ -58,7 +58,7 @@ P0A may use placeholder animation/audio/VFX and a minimal hostile as long as tim
 - R-CMB-02 (§2.1, §32 P0) [LOCKED]: Combat must be fun with all RTS/TD layers removed from the test screen. This is the G0 hypothesis.
 
 **Movement and camera**
-- R-CMB-03 (§9.1) [LOCKED]: Move is camera-relative third-person movement. Speeds and turn rate are [TUNABLE] data.
+- R-CMB-03 (§9.1) [LOCKED]: Move is camera-relative third-person movement. Speeds and turn rate are [TUNABLE] data. Facing (user decision, 2026-10-05): the hero always faces the camera yaw and strafes or backpedals, like God of War. S moves backward without turning. Data: `Movement.bFaceCameraDirection` (default true).
 - R-CMB-04 (§9.1, A-02) [LOCKED]: Sprint is held to move faster. Starting any combat action ends sprint. Sprint speed is [TUNABLE].
 - R-CMB-05 (§9.6) [TUNABLE]: Sprint stamina drain is a data field, default 0 (Assumption, NEW-CMB-02).
 - R-CMB-06 (§9.1, §28.1): The third-person camera orbits freely and keeps the hero readable; arm length, lag and lock-on framing are [TUNABLE].
@@ -97,7 +97,7 @@ P0A may use placeholder animation/audio/VFX and a minimal hostile as long as tim
 **Dodge**
 - R-CMB-19 (§9.4) [LOCKED]: Dodge consumes stamina and has an invulnerability (i-frame) window. Exact i-frame timing is [TUNABLE] and authored as a notify window in the dodge montage.
 - R-CMB-20 (§9.4) [LOCKED]: Dodge cannot be spammed indefinitely: each dodge costs stamina and has a recovery before the next dodge is allowed.
-- R-CMB-21 (§9.4) [LOCKED]: Dodge direction follows movement input relative to the camera. With no input the hero dodges backward relative to its facing.
+- R-CMB-21 (§9.4) [LOCKED]: Dodge direction follows movement input relative to the camera. With no input the hero dodges backward relative to its facing. With camera facing (R-CMB-03), the hero keeps its facing and plays the F/B/L/R clip closest to the input (S + Dodge = backward clip).
 
 **Block**
 - R-CMB-22 (§9.5) [LOCKED]: While Block is held, hits arriving inside the front block arc lose `BlockDamageReduction` of their damage. The blocked force becomes stamina damage (`Damage × BlockStaminaPerDamage`). Hits from outside the arc are not blocked. Arc width is [TUNABLE] (Assumption, NEW-CMB-03).

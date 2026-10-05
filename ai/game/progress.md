@@ -16,6 +16,148 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-05: Claude Code: Commit Hero Combat work, split branches for UXF/SYN
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents, editor closed. No push.
+- **Decision (user):** commit the open Hero Combat work, then do T-UXF-01 on `feat/13-hud-feedback` and T-SYN-01 on `feat/04-battlefield-synergy`, both from `main` (SYN merges UXF first). Merge `feat/04-battlefield-synergy` into `feat/01-hero-combat` when T-SYN-01 is Done, to finish T-CMB-06.
+- **Tasks:** no status change (T-CMB-05/07/11/21 Review, T-CMB-06 In Progress).
+- **Changed:** commits on `feat/01-hero-combat`: placeholder Mannequin content, then hero code/assets (placeholder montages, foot IK, camera facing, Heavy), then docs. `CMB/WIP.md` refreshed (task counts, T-CMB-06 status, branch plan, verification).
+- **Left uncommitted on purpose:** `.claude/settings.json` (key reorder only, author unknown), `Config/DefaultEditor.ini` (editor-saved preview scene profile), `Placeholder/Weapons/SM_Placeholder_Blade` (unused; delete waits on user OK).
+- **Verified:** `Tools/build.bat` succeeds; `Tools/run_tests.bat` 79/79, editor exit 0 (`Saved/wip-tests.log`).
+- **Manual steps for the user:** rendered PIE sign-off for T-CMB-05/07/11 (see "Mannequin placeholder" entry below, manual step 1).
+- **Next:** T-UXF-01 on `feat/13-hud-feedback`.
+
+### 2026-10-05: Claude Code: Heavy attack, and fix for Heavy blocking Light
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents, editor closed. No commit or push.
+- **Request (user):** create the heavy attack. Pressing Heavy did nothing, and afterwards Light could not be pressed.
+- **Cause:** `RequestAction(Heavy)` called `SetActionState(HeavyAttack)` without a montage (T-CMB-06 not started). No montage end ever returned the hero to Idle, so every later action was refused (breaks R-CMB-45).
+- **Dependency note:** T-CMB-06 depends on T-SYN-01 (Todo). At the user's request the hero side was built now. T-CMB-06 is **In Progress**: the poise-break / Staggered, Armor Broken hook and AC-CMB-25 checks wait for T-SYN-01.
+- **Changed:**
+  - C++:
+    - `UHeroClassDefinition::ValidateHeavyAttack`: valid montage, one hit window after a startup, later Dodge-only cancel, Heavy out-damages / out-poises / out-costs every Light. Also called from `IsDataValid`.
+    - `UHeroCombatComponent`: Heavy validates before stamina is spent, arms the trace with `bIsHeavy` and `AppliedStates`, and plays `Heavy.Montage`. The trace payload code is shared with Light in `ArmMeleeTrace`.
+  - Tests: new `HeavyAttack.spec.cpp`. `HeroClassDefinition.spec.cpp` now copies the authored Heavy into its fixture (it failed once without it).
+  - Tools / Content: `create_hero_assets.py` authors `AM_Warlord_Heavy` from `MM_ChargedAttack`. Clip from 0.55 s (skips most of the 1 s hold); hit 0.45–0.67 s, matching the measured strike at clip 1.0–1.22 s and the 150 cm lunge; Dodge cancel 0.95–1.25 s. It fills `DA_HeroClass_Warlord.Heavy.Montage`, and `author_montage` gains `clip_start`.
+  - Docs: CMB `tasks.md` (T-CMB-06 In Progress, 4 notes + 1 criterion ticked, progress note), this log.
+- **Verified:**
+  - Editor and game Development builds succeed. Asset script exit 0.
+  - `Tools/run_tests.bat`: 79/79, runner exit 0.
+  - Rendered PIE on `L_CombatSandbox` with injected `IA_HeavyAttack` then `IA_LightAttack` (`Saved/heavy-pie.json`, `Saved/Logs/heavy-pie-engine.log`, no new warnings):
+    - Heavy accepted, stamina 100→75, hit window at about 0.45 s, dummy 100→70, lunge 150 cm, Idle at 1.3 s.
+    - Light afterwards accepted, dummy 70→60.
+    - Screenshots: `Saved/Screenshots/WindowsEditor/heavy_windup.png`, `heavy_strike.png`.
+- **Manual steps for the user:** play `L_CombatSandbox`. Press Heavy (right mouse) near a dummy, then Light. Try Light → Heavy from the Light 1/2 cancel window, and Dodge out of the Heavy recovery.
+- **Open questions / blockers:** T-SYN-01 (poise / Staggered) is needed to finish T-CMB-06. Wind-up length (about 0.45 s to the hit) is a placeholder tune for G0.
+- **Next:** user sign-off for T-CMB-05/07/11 and the Heavy feel; then T-UXF-01 → T-SYN-01 → finish T-CMB-06 → T-CMB-20.
+
+### 2026-10-05: Claude Code: Camera-facing hero (God of War style), S+Space plays Dodge B
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents. The user closed the editor before the build. No commit or push.
+- **Request / decision (user):** the hero must not turn around. It always faces forward like God of War: S only moves backward, and S + Space plays Dodge B exactly. Recorded in spec R-CMB-03 / R-CMB-21 (both still hold: movement and dodge stay camera-relative) and in T-CMB-01 / T-CMB-07 notes.
+- **Tasks:** T-CMB-05/07/11 stay Review.
+- **Changed:**
+  - C++:
+    - `FHeroMovementData::bFaceCameraDirection` (default true). `AHeroCharacter::ApplyTuning` sets `bUseControllerDesiredRotation` / `bOrientRotationToMovement` from it, and the constructor default matches. New `IsFacingCameraDirection()`.
+    - `FHeroDodgeData::bSideClipsFaceInput` (default false). The `SelectDirection` parameter is renamed to `bFacingFixed`.
+    - `UHeroCombatComponent`: a camera-facing hero picks F/B/L/R relative to its facing and does not turn. It turns toward the input only in turn-to-movement mode, or for side dodges while `bSideClipsFaceInput` is set.
+    - Engine check: `CharacterMovementComponent.cpp:3044` skips physics rotation during anim root motion, so dodges and attacks travel straight and the hero turns back to the camera afterwards.
+  - Tests: `Dodge.spec.cpp` (relabelled selection cases; new facing-mode tuning case).
+  - Tools / Content: `create_hero_assets.py` sets `Dodge.bSideClipsFaceInput = true` on `DA_HeroClass_Warlord` (L/R are forward-dash placeholders). The template `ABP_Warlord` already computes `Direction` when orient-to-movement is off and feeds the 8-way walk/jog blendspace. No ABP change.
+  - Docs: CMB `spec.md`, `tasks.md`, `WIP.md`, this log.
+- **Verified:**
+  - Editor and game Development builds succeed. An earlier attempt failed because the editor was open with Live Coding; it was rerun after the user closed it.
+  - Asset script exit 0.
+  - `Tools/run_tests.bat`: 76/76, runner exit 0.
+  - Rendered PIE on `L_CombatSandbox` with injected Enhanced Input (`IA_Move`, `IA_Dodge`) (`Saved/facing-pie.json`, `Saved/Logs/facing-pie-engine.log`, no new warnings):
+    - Hold S: yaw stays 0°, velocity -450 cm/s backward, ABP `Direction` 180°.
+    - S+Space: `AM_Warlord_Dodge_B` with yaw unchanged, about 365 cm backward.
+    - A+Space: `AM_Warlord_Dodge_L`, yaw -90° during the dash, about 330 cm left, then back to 0°.
+    - Screenshots: `Saved/Screenshots/WindowsEditor/facing_backpedal.png`, `facing_dodge_b_mid.png`.
+- **Manual steps for the user:** play `L_CombatSandbox`. Hold S (backpedal), then S+Space (Dodge B), W/A/D + Space, and turn the camera while moving.
+- **Open questions / blockers:** side dodges still turn the hero because the template has no side-step clips. Real side-step clips (and `bSideClipsFaceInput = false`) belong with T-CMB-10 or a Fab animation pack. Unused `SM_Placeholder_Blade` still waits on the user's OK to delete.
+- **Next:** user rendered PIE sign-off for T-CMB-05/07/11, then T-UXF-01 → T-SYN-01 → T-CMB-06 → T-CMB-20.
+
+### 2026-10-05: Claude Code: Foot IK no longer pins montage legs
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents, editor closed. No commit or push.
+- **Request (user):** during the light combo, especially Light 3, the legs stick to the ground and do not follow the montage.
+- **Cause:** `ABP_Warlord` is a copy of the template `ABP_Unarmed`. Its AnimGraph is `Slot 'DefaultSlot'` → Control Rig `CR_Mannequin_FootIK` (`ShouldDoIKTrace = NOT IsFalling`, Alpha 1) → Output Pose. Foot IK ran on top of every montage and pulled the raised knee and stepping feet onto the traced ground.
+- **Tasks:** T-CMB-05/07/11 stay Review.
+- **Changed:**
+  - C++: new `Hero/HeroAnimInstance.h/.cpp` (`UHeroAnimInstance`). `FootIKAlpha` targets 0 while `GetCurrentActiveMontage()` is set and 1 otherwise, fading over `FootIKBlendTime` (0.15 s, editable in the ABP defaults). Montages that are blending out do not count as active, so IK returns as the pose blends back to locomotion. `IsAnyMontagePlaying()` was rejected: it also counts stopped instances, and the new spec caught that.
+  - Tests: new `HeroAnimInstance.spec.cpp` (`CastleDefender.Combat.Hero.AnimInstance`).
+  - Tools: `create_hero_assets.py` reparents `ABP_Warlord` to `UHeroAnimInstance` and connects `Get FootIKAlpha` → Control Rig `Alpha`. This uses the UE 5.8 `BlueprintGraphEditor` / `BlueprintGraphPinLibrary` editor scripting APIs (checked against the engine headers). A rerun leaves the ABP byte-identical.
+  - Content: `Hero/ABP_Warlord` (parent class, one new variable-get node and link). Root motion mode stays `RootMotionFromMontagesOnly`.
+  - Docs: CMB `tasks.md`, `WIP.md`, `technical-plan.md` (file layout lists `HeroAnimInstance`), this log.
+- **Verified:**
+  - Editor and game Development builds succeed (only the existing engine deprecation warning).
+  - Asset script exit 0, and the rerun is unchanged. A graph dump shows the parent is `HeroAnimInstance` and `Alpha` is linked to `FootIKAlpha`.
+  - `Tools/run_tests.bat`: 75/75, runner exit 0. The first run failed the new spec (alpha stayed 0 after `Montage_Stop`); fixed by switching to `GetCurrentActiveMontage()`.
+  - Rendered scripted PIE on `L_CombatSandbox`: `FootIKAlpha` fades 1→0 in about 0.15 s at Light 1, stays 0 through Light 1→2→3, and returns to 1 after the chain. Dummy 100→90→80→66. No new log warnings.
+  - Light 3 screenshots (`Saved/Screenshots/WindowsEditor/unarmed_light3{,b,c}.png`) show the knee raised, the step-in and the wide landing stance, with no feet pinned. Evidence: `Saved/unarmed-pie.json`, `Saved/Logs/footik-pie-engine.log`, `Saved/footik-*.log`.
+- **Manual steps for the user:** in the editor, play `L_CombatSandbox`, press Light ×3 and watch the legs on Light 3. Also check that locomotion on uneven ground still uses foot IK, and dodge/hit react look right.
+- **Open questions / blockers:** unchanged (unused `SM_Placeholder_Blade` waits on the user's OK to delete).
+- **Next:** user rendered PIE sign-off for T-CMB-05/07/11, then T-UXF-01 → T-SYN-01 → T-CMB-06 → T-CMB-20.
+
+### 2026-10-05: Claude Code: Unarmed Warlord demo and SpawnTestDummy placement fix
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents. The user closed the editor before the build. No commit or push.
+- **Request (user):** the light combo looked like it broke the mesh. Use Light 1/2/3 as an unarmed combo with no sword for the demo. `SpawnTestDummy` placed the dummy on top of the hero, so the hero could not move.
+- **Causes:**
+  - The "broken mesh" was the placeholder blade: an engine cube stretched to 75 × 5 × 2 cm along the forearm. The clips themselves play cleanly on Manny.
+  - `SpawnTestDummy` measured 400 cm from the camera. The camera boom is 400 cm, so the dummy landed on the hero, and spawn collision handling pushed it up on top of him.
+- **Tasks:** T-CMB-05/07/11 stay Review. T-CMB-01's "sword + shield" checkbox now carries a note that the P0 demo is unarmed, at the user's request.
+- **Changed:**
+  - C++: `UGameCheatManager::SpawnTestDummy` spawns from the pawn location (falls back to the view location when there is no pawn), along the view yaw.
+  - Tools: `create_hero_assets.py` clears `WeaponMesh` (no mesh, identity transform) and sets the mesh tick option back to the engine default `AlwaysTickPose`. `create_hero_placeholder_content.py` no longer creates the blade.
+  - Content: `BP_Hero_Warlord` resaved without the blade. Hits use `UMeleeTraceComponent`'s existing fallback arc (50–180 cm in front of the hero).
+  - Docs: CMB `tasks.md`, `WIP.md`, `Placeholder/LICENSES.md` (blade marked unused), this log.
+- **Verified:**
+  - Editor and game Development builds succeed, with only the existing engine `GetMovementBase` deprecation warning. Logs: `Saved/unarmed-editor-build.log`, `unarmed-game-build.log`.
+  - `Tools/create_hero_assets.bat` exits 0 (`Saved/unarmed-assets.log`).
+  - `Tools/run_tests.bat`: 74/74 pass, runner exit 0 (`Saved/unarmed-tests.log`).
+  - Rendered scripted PIE on `L_CombatSandbox` (`Saved/unarmed-pie.json`, `Saved/Logs/unarmed-pie-engine5.log`):
+    - Saved hero has no weapon mesh.
+    - Default `SpawnTestDummy` puts the dummy 400 cm in front at the hero's height (dz 0).
+    - The hero then moves 175 cm with movement input.
+    - Light chain 0→1→2 through real sweeps: dummy 100→90→80→66, then Idle.
+    - Screenshots of each swing are in `Saved/Screenshots/WindowsEditor/unarmed_light{1,2,3}.png`. The poses are normal unarmed punches with no stretched geometry.
+  - One `FindTeleportSpot` warning came from the script's second `SpawnTestDummy 150`, which overlapped the first dummy after the hero walked toward it. It is a test-setup artifact; the default spawn logs nothing.
+- **Manual steps for the user:** in the editor, play `L_CombatSandbox`, run `SpawnTestDummy`, walk up to it and press Light ×3, then repeat after a pause. Continue the rest of manual step 1 from the "Mannequin placeholder" entry below.
+- **Open questions / blockers:** `Placeholder/Weapons/SM_Placeholder_Blade` is untracked and unreferenced. Deleting it is waiting on the user's OK.
+- **Next:** user rendered PIE sign-off for T-CMB-05/07/11, then T-UXF-01 → T-SYN-01 → T-CMB-06 → T-CMB-20.
+
+### 2026-10-05: Claude Code: Partial rendered PIE check of the Warlord placeholder
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents. Documentation only. No commit or push.
+- **Tasks:** T-CMB-05, T-CMB-07 and T-CMB-11 stay Review. The user's PIE run covers only part of manual step 1 in the entry below.
+- **Changed:** this log. The other uncommitted files are from the entry below. The `.claude/settings.json` diff only reorders and reformats the plugin keys, and its author is unknown. Left untouched.
+- **Verified (from `Saved/Logs/CastleDefender.log`, user's editor session 18:07–18:20, rendered PIE on `L_CombatSandbox` 18:10:52–18:12:24):**
+  - Mode stack starts in Combat (`IMC_Combat`).
+  - Light chain with real input: 0→1→2, then a pause, then 0→1→2 again. The chain resets after the gap. One Dodge was accepted (action 1, state 2).
+  - No `LogGame*` warnings or errors. The only warnings come from the engine or this machine: the audio sample rate differs (48000 vs 44100), and `LogCrowdFollowing` reports no RecastNavMesh during PIE teardown (the sandbox has no navmesh).
+  - The log cannot show visual quality, how the swings look or which way the dodge went.
+- **Not yet checked in rendered PIE:** `game.debug.Combat` / `CombatTrace` draw, `SpawnTestDummy` hits and damage, dodge with input vs. without input, `DebugHitHero`, `KillHero` and respawn.
+- **Manual steps for the user:** finish manual step 1 of the entry below (debug draw, dummy hits, both dodge cases, hit react, death and respawn). Tell the agent what you saw so it can move T-CMB-05/07/11 to Done.
+- **Open questions / blockers:** unchanged from the entry below. The Aura entry is no longer in `CastleDefender.uproject` and does not appear in today's log.
+- **Next:** finish the rendered PIE sign-off for T-CMB-05/07/11, then T-UXF-01 → T-SYN-01 → T-CMB-06 → T-CMB-20.
+
+### 2026-10-05: Claude Code: Mannequin placeholder mesh/animation for the Warlord
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents. The user closed the editor before the build and asset writes. No commit or push.
+- **Tasks:** T-CMB-05, T-CMB-07 and T-CMB-11 stay Review. Their placeholder content is assembled and verified headless; rendered PIE with real input is still pending. Ticked T-CMB-05 "montage windows" and T-CMB-07 "distance via root motion". No phase or gate change.
+- **Source:** the Fab library cache on this PC is empty (`VaultCache/FabLibrary/listings_v1.db` has 0 listings), so the only Epic sample content available is the UE 5.8 Third Person template's Mannequin pack. Recorded in `Placeholder/LICENSES.md`.
+- **Changed:**
+  - C++: `AHeroCharacter` gains a `WeaponMesh` component (tag `Weapon`, no collision). `OnConstruction` attaches it to `WeaponSocketName` (default `hand_r`) only when the mesh has that socket, which avoids socket warnings on bare native spawns. `BeginPlay` hands it to `MeleeTraceComponent::SetTraceMesh`. New editor helper `UHeroCombatLibrary::SetSingleSegmentMontageSource` (sequence + skeleton, trim, fit duration, optional reverse). The test fixture uses `SKM_Manny_Simple`.
+  - Tools: new `create_hero_placeholder_content.py` copies the template subset, moves it to `Placeholder/Mannequins` with references fixed and builds `SM_Placeholder_Blade`. `create_hero_assets.py` retargets legacy Tutorial_Idle montages in place (DA references kept), authors windows from the measured clips, builds `ABP_Warlord` and assembles the hero. Reruns change nothing.
+  - Content: `Placeholder/Mannequins/` (68 assets), `Placeholder/Weapons/SM_Placeholder_Blade`, `Hero/ABP_Warlord`, 10 `AM_Warlord_*` montages, `DA_HeroClass_Warlord` (`Dodge.RootMotionScale` 0.4), `BP_Hero_Warlord` (mesh, ABP, blade, bone refresh when unrendered), `BP_SandboxGameMode` (resaved by the script).
+  - Docs: CMB `tasks.md` evidence and remaining steps, `WIP.md`, `LICENSES.md`, this log.
+- **Design notes:** the template only has unarmed punches and a kick, so a handheld sword would point up during punches and miss. The placeholder is a 75 cm blade along the forearm (`hand_r` -X; `weapon_r` is keyed inconsistently between clips). HitReact clips are rifle-pose. Dodge B is the dash played reversed. L/R reuse the forward dash because there is no side-step clip; only lock-on (T-CMB-10) selects them.
+- **Verified:**
+  - Editor and game Development builds succeed. Only the existing engine `GetMovementBase` deprecation warnings appear. Logs: `Saved/placeholder-editor-build3.log`, `placeholder-game-build.log`.
+  - `Tools/run_tests.bat`: 74/74 pass, 0 warnings, runner exit 0. A later rerun was also 74/74, but two tests caught `LogHttp` warnings from the Aura plugin, so the runner exited 1 (see blockers).
+  - Saved asset readback: Manny mesh, ABP class, blade on `hand_r` with tag and sockets, `RootMotionFromMontagesOnly`, montage skeletons and lengths, death auto blend-out off.
+  - Scripted headless PIE on `L_CombatSandbox` (saved `BP_Hero_Warlord`, real sweeps, no direct `TryHitTarget`): chain 0→1→2, dummy 100→90→80→66. Zero-input Dodge moves 225 cm backward. `DebugHitHero 20 0 1` gives HitReact_F, HP 180, then Idle. `KillHero` gives Dead with the death montage held; respawn after 3 s at HP 200. Evidence: `Saved/placeholder-pie.json`, `placeholder-pie-engine.log`. The first PIE run showed static sockets because the default tick option does not refresh bones when unrendered; that is now fixed in the BP.
+- **Manual steps for the user:**
+  1. Open `L_CombatSandbox` and play with keyboard/mouse. Run `game.debug.Combat 1` and `game.debug.CombatTrace 1`, then `SpawnTestDummy`. Light ×3 should show readable swings and blade sweeps; wait, then Light again should restart at hit 1. Dodge with input should go in the input direction and without input go backward. Check `DebugHitHero 20 0 1`, `KillHero` and the respawn. Confirm the Output Log has no new warnings, then move T-CMB-05/07/11 to Done if the acceptance criteria hold.
+  2. Optional: replace the unarmed placeholders with sword clips from a free Fab pack (e.g. Paragon Greystone or Kwang) by retargeting them to Manny, and add side-step clips for Dodge L/R before T-CMB-10.
+- **Open questions / blockers:** the editor session enabled the **Aura** plugin in `CastleDefender.uproject` (uncommitted, not by this agent). It adds two `GameFeatureData` asset-manager errors, so `create_hero_assets.bat` exits 1 even though the script succeeds. Its HTTP calls to `127.0.0.1:41200` intermittently add warnings to automation tests, which makes the gate flaky. At the user's request, the Aura entry was then removed by restoring `CastleDefender.uproject` to its committed version. Restart the editor for this to take effect. If Aura comes back, add a `GameFeatureData` asset-manager rule.
+- **Next:** rendered PIE sign-off for T-CMB-05/07/11, then T-UXF-01 → T-SYN-01 → T-CMB-06 → T-CMB-20.
+
 ### 2026-10-04: Codex: Saved remaining Hero Combat work as a teammate handoff
 - **Agent / branch:** Codex, `feat/01-hero-combat`; preserved the existing empty, untracked `01-hero-combat/WIP.md` by filling the file requested by the user. No gameplay implementation or binary assets changed.
 - **Tasks:** no status changes; Hero Combat remains 5 Done, 4 Review and 12 Todo. This documentation-only handoff covers all 16 incomplete tasks.

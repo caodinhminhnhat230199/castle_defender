@@ -121,7 +121,8 @@ FND combat contract and team interface, Enhanced Input base and `AHeroPlayerCont
 ```text
 Source/<Game>/Hero/        HeroCharacter.h/.cpp, HeroClassDefinition.h/.cpp, HeroCombatTypes.h (EHeroAction, EHeroActionState, FHero*Data),
                            HeroCombatComponent.h/.cpp, StaminaComponent.h/.cpp (+ FStaminaState), LockOnComponent.h/.cpp,
-                           InteractionComponent.h/.cpp (P2)
+                           InteractionComponent.h/.cpp (P2), HeroAnimInstance.h/.cpp (ABP_Warlord parent; foot IK weight
+                           off while a montage is active, added 2026-10-05)
 Source/<Game>/Combat/      CombatLibrary.h/.cpp, CombatHitInterceptor.h, MeleeTraceComponent.h/.cpp, CombatActionTiming.h/.cpp,
                            CombatTypes.h (extend existing FCombatHit with interrupt metadata and FCombatResolutionEvent),
                            AnimNotifyState_CombatHitWindow / _CancelWindow / _Invulnerable / _ParryWindow (.h/.cpp),
