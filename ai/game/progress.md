@@ -16,6 +16,23 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-06: Claude Code: Tripo3D/AccuRig hero model replaces Manny on the Warlord [T-CMB-05]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents, editor closed for every import. Not pushed.
+- **Request (user):** replace the hero mesh with their own model (`SourceModels/Hero/`), scaled to Manny's height. License confirmed clear by the user.
+- **Tasks:** no status change (T-CMB-05/06/07/11/21 Review). Content-only change on the hero.
+- **History:** the first two Tripo exports used Mixamo and then UE4 Mannequin hierarchies (`spine_03` → `neck_01`, no metacarpals). Neither can share the UE5 `SK_Mannequin`, so the script refused to assign them. The third export (AccuRig) has every UE5 Manny bone with Manny's parents, plus 47 `cc_base_*` bones.
+- **Changed:**
+  - Tools: new `Tools/import_hero_model.{bat,ps1,py}`. It reimports the single FBX in `SourceModels/Hero/` onto `SK_Mannequin`, rescales to Manny's height when off by more than 3%, refuses missing or reparented Manny bones, saves `SK_Mannequin` with the extra bones, builds `M_Warlord` (`Texture.jpg`, Used with Skeletal Mesh) and sets `BP_Hero_Warlord`'s mesh plus an override material.
+  - Content: `Placeholder/Characters/Warlord/` (SKM_Warlord, M_Warlord, T_Warlord_BaseColor); `SK_Mannequin` (+47 bones); `BP_Hero_Warlord` (mesh, override material). Source files in `SourceModels/Hero/`.
+  - Repo: `.gitattributes` tracks `*.jpg` / `*.jpeg` with LFS; `Placeholder/LICENSES.md` row; CMB `WIP.md`.
+- **Verified:**
+  - Import script exit 0 and rerunnable. SKM_Warlord: 118 bones, 180.8 cm (Manny 180.5).
+  - `Tools/run_tests.bat`: 107/107, editor exit 0 (the specs use `SKM_Manny_Simple`, so they cover the shared skeleton, not the new look).
+  - Scripted rendered PIE on `L_CombatSandbox` (`Saved/Logs/hero-model-pie.log`, screenshots `Saved/Screenshots/WindowsEditor/hero_model_*.png`): the hero spawns with SKM_Warlord and M_Warlord; idle, Light and Heavy play on the new mesh; no `LogGame*`, material or skeletal mesh warnings after the usage-flag fix.
+  - Import warning (FBX side, not runtime): "Imported skeleton has some invalid bind poses; skinning rebound using the time-zero pose".
+- **Manual steps for the user:** play `L_CombatSandbox` and judge the look: deformation at shoulders, elbows and knees during Light ×3 / Heavy / Dodge / hit react / death, foot contact (foot IK), and texture colour under the sandbox lighting. If the bind-pose warning shows as skin distortion, re-export from AccuRig in its bind pose.
+- **Next:** unchanged: user sign-off for T-CMB-05/06/07/11, then T-CMB-20.
+
 ### 2026-10-05: Claude Code: Merge UXF/SYN into Hero Combat, finish Heavy poise [T-CMB-06]
 - **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents. The editor was still open at the first merge attempt (it locked the two DataTables), so the merge waited until the user closed it. Not pushed.
 - **Tasks:** T-SYN-01 Review → Done (user's rendered PIE check). T-CMB-06 In Progress → Review.
