@@ -16,14 +16,14 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
-### 2026-10-06: Codex: commit P0 source and prepare branch delivery to the Windows PC
+### 2026-10-06: Codex: publish P0 source and handoff to the Windows PC
 - **Agent / branch:** Codex, `feat/01-hero-combat`; user explicitly requested committing/pushing the current work for PC continuation.
 - **Tasks:** T-CMB-20 and T-ENM-01 remain Review; no Unreal verification or task completion inferred from delivery.
 - **Changed:** committed rotation assist as `b0c6057`, enemy lifecycle as `22eaaf1`; this handoff, CMB task acceptance/WIP and the earlier AGENTS progress-update rule are included in the documentation commit.
-- **Verified:** source commits created successfully; `git diff --check` passed before committing. Remote push verification follows this entry.
+- **Verified:** source commits created successfully; `git diff --check` passed before committing. Pushed `b0c6057`, `22eaaf1` and handoff commit `9f531ca`; `git ls-remote` confirmed GitHub's branch tip at `9f531ca65ea61a6e6b2d3b225783e4d18ef1542e`. Working tree was clean and upstream tracking set. This delivery record is committed and pushed as a follow-up.
 - **Manual steps for the user:** on the PC, fetch the remote and checkout `feat/01-hero-combat`. Follow the Windows build, asset-generation, Automation and PIE steps in the next entry before starting dependent tasks. Commit or stash existing PC edits before switching branches.
 - **Open questions / blockers:** source and new Specs still need UE 5.8 verification; no binary assets were created on Mac.
-- **Next:** publish the branch, verify the remote tip, then resume T-CMB-20/T-ENM-01 verification on Windows.
+- **Next:** resume T-CMB-20/T-ENM-01 verification on Windows, then continue dependent P0 tasks.
 
 ### 2026-10-06: Codex: enemy lifecycle source ready; Windows verification blocks dependent tasks [T-ENM-01]
 - **Agent / branch:** Codex, `feat/01-hero-combat`; no commit/push. Earlier `AGENTS.md` and progress edits retained.
