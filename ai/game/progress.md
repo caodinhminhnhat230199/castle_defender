@@ -16,6 +16,25 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-05: Claude Code: Feedback subsystem, DT_Feedback, HUD layers [T-UXF-01]
+- **Agent / branch:** Claude Code, `feat/13-hud-feedback` (new, from `main`, as the user chose); no other active agents, editor closed. Not pushed. `feat/01-hero-combat` was committed first (see its own log).
+- **Tasks:** T-UXF-01 Todo → Review.
+- **User approvals:** module dependency `Niagara`. `PhysicsCore` (engine core module) was also needed: `EPhysicalSurface` in a UPROPERTY does not link without it.
+- **Changed:**
+  - C++: new `Feedback/FeedbackTypes.h/.cpp` (`FFeedbackRow`, `FFeedbackEventContext`, `EHUDLayer`, `FFeedbackThrottle`, `FFeedbackRowIndex`), `Feedback/FeedbackTags.h/.cpp` (16 P0 leaves), `Feedback/FeedbackSubsystem.h/.cpp`. `UGameTuningSettings` gains `FeedbackTable`, `DefaultBurstLimit` 4, `DefaultBurstWindow` 0.25 s. `LogGameFeedback`, `game.debug.Feedback`, `game.feedback.Coverage` (not in Shipping). `Build.cs` adds `Niagara`, `PhysicsCore`.
+  - Tests: `FeedbackThrottle.spec.cpp`, `FeedbackVariant.spec.cpp`, `FeedbackTestListener.h`.
+  - Tools / Content / Config: `Tools/create_feedback_assets.{bat,ps1,py}` creates `Feedback/DT_Feedback` (16 rows; non-hit rows use the engine `1kSineTonePing` placeholder, hit rows empty for T-UXF-03). `DefaultGame.ini` points `FeedbackTable` at it and always-cooks `/Game/CastleDefender/Feedback`.
+  - Docs: `FFeedbackContext` renamed to `FFeedbackEventContext` everywhere (engine already has `FFeedbackContext`; main plan §8a, foundation plan, UXF spec/plan/tasks, spec-audit). UXF technical plan §5.2 implementation notes; spec §12 NEW-UXF-11 (throttle in real time); foundation plan CVar list.
+- **Verified:**
+  - Editor build succeeds with no new warnings (Niagara engine-header C4996 suppressed at the include). Game target build succeeds with the T-CMB-13 `GameDefinition.spec.cpp` fix applied temporarily: `main` itself fails the game build on that existing spec (`GetSectionText` is editor-only). Fix reverted; it arrives when branches merge.
+  - `Tools/run_tests.bat`: 29/29, editor exit 0 (`Saved/uxf01-tests.log`).
+  - `create_feedback_assets.bat` exit 0; rerun reports nothing changed. Readback: 16 rows, tag = row name, placeholder sounds set.
+  - Standalone `-game` on `L_Boot` (`Saved/uxf01-coverage.log`): table loaded with no warning; `game.feedback.Coverage` lists all 16 P0 tags.
+- **Not verified:** the `game.debug.Feedback` overlay and missing-row on-screen text in rendered PIE; nothing calls `Play` yet.
+- **Merge notes for `feat/01-hero-combat`:** `GameTags` there declares `Feedback.Hero.StaminaInsufficient` and `Feedback.Hero.Death`; after merging, delete those two and use `FeedbackTags::Hero_*`. Expect conflicts at the top of `progress.md` (keep both entries).
+- **Manual steps for the user:** decide whether T-UXF-01 can move to Done on this evidence (blocks T-SYN-01).
+- **Next:** T-SYN-01 on `feat/04-battlefield-synergy` (merge `feat/13-hud-feedback` into it first).
+
 ### 2026-10-04: Claude Code: merged Codex's Foundation commits with ours
 - **Branch:** `task/T-FND-foundation`. Merged `origin/task/T-FND-foundation` (Codex: 80cf798…1b3e72b) into the local branch (Claude Code: aceaedf, 24f32fd, 4713275). Merge commit, no history rewritten.
 - **Decisions (user, this session):** reference PC = i5-14600KF / RTX 5060 / 16 GB (Codex side; closer to a typical player PC than the i5-14500 / RTX 4070 Ti SUPER dev PC). `BP_FT_Smoke` = the scripted Codex version (spawn-validity guard, rebuildable by `Tools/create_foundation_assets.py`); the hand-wired one is backed up outside the repo.

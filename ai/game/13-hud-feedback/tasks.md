@@ -10,7 +10,7 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
-| T-UXF-01 | `UFeedbackSubsystem` + `DT_Feedback` + row struct (variants, throttle, HUD layers, coverage) | GAMEPLAY | P0 | Blocker | T-FND-04, T-FND-07, T-FND-09 | Todo |
+| T-UXF-01 | `UFeedbackSubsystem` + `DT_Feedback` + row struct (variants, throttle, HUD layers, coverage) | GAMEPLAY | P0 | Blocker | T-FND-04, T-FND-07, T-FND-09 | Review |
 | T-UXF-02 | `WBP_GameHUD` shell + Hero HP/stamina + pawn rebinding | UI | P0 | Blocker | T-UXF-01, T-FND-06, T-CMB-01, T-CMB-03 | Todo |
 | T-UXF-03 | Hit stop, camera shake, impact SFX/VFX per material and hit type | GAMEPLAY | P0 | Blocker | T-UXF-01, T-CMB-04, T-CMB-08, T-CMB-09, T-SYN-01 | Todo |
 | T-UXF-08 | Playtest telemetry log per session/run + generic `LogEvent` | TOOLS | P0 | High | T-UXF-01, T-FND-09 | Todo |
@@ -45,25 +45,27 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 **Dependencies** T-FND-04 (tag root), T-FND-07 (settings), T-FND-09 (CVars)
 
 **Implementation Notes**
-- [ ] `Feedback/FeedbackTypes.h`: `FFeedbackRow` (technical plan §5.1), `FFeedbackContext` (§5.2: Instigator, Target, `bIsHeavy`, `bTargetArmored`, Surface, Variant, Lane, Magnitude, Detail, Location, Direction).
-- [ ] `Feedback/FeedbackTags.h/.cpp`: native P0 leaves (`Feedback.Combat.Hit.Light/.Heavy` + `.Armored` variants, `Feedback.Combat.Block/BlockBreak/Parry`, `Feedback.Hero.Damaged/Death/StaminaInsufficient/LowHealth`, `Feedback.Enemy.Telegraph/.Telegraph.Heavy/Death`, `Feedback.State.Staggered.Applied/.Removed`). Later phases add their leaves in their own tasks.
-- [ ] `UFeedbackSubsystem` (`UWorldSubsystem`, `ShouldCreateSubsystem` = game/PIE worlds): load `UGameTuningSettings.FeedbackTable` at init; build tag → row and (tag, variant) → row maps; warn when row name ≠ tag.
-- [ ] `Play(Tag, Ctx)` per technical plan §4.1 (sound 2D/at location with surface map, Niagara at location/attached, cooldown, burst limit, `OnFeedbackPlayed`). Hit stop and shake fields are wired in T-UXF-03.
-- [ ] HUD layers: `EHUDLayer` flags, `SetHUDLayerActive(Layer, bool)`, `GetHUDLayers()`, `IsTacticalDisplay()`, `OnHUDLayersChanged`.
-- [ ] Missing row: dev on-screen + `UE_LOG` Warning once per tag; Shipping log once.
-- [ ] `game.debug.Feedback 1`: last 10 played tags on screen. Console `game.feedback.Coverage`: declared `Feedback.*` leaves not played in this world.
-- [ ] Create `DT_Feedback` with P0 rows (placeholder assets; T-UXF-03 completes hit rows).
+- [x] `Feedback/FeedbackTypes.h`: `FFeedbackRow` (technical plan §5.1), `FFeedbackEventContext` (§5.2: Instigator, Target, `bIsHeavy`, `bTargetArmored`, Surface, Variant, Lane, Magnitude, Detail, Location, Direction).
+- [x] `Feedback/FeedbackTags.h/.cpp`: native P0 leaves (`Feedback.Combat.Hit.Light/.Heavy` + `.Armored` variants, `Feedback.Combat.Block/BlockBreak/Parry`, `Feedback.Hero.Damaged/Death/StaminaInsufficient/LowHealth`, `Feedback.Enemy.Telegraph/.Telegraph.Heavy/Death`, `Feedback.State.Staggered.Applied/.Removed`). Later phases add their leaves in their own tasks.
+- [x] `UFeedbackSubsystem` (`UWorldSubsystem`, `ShouldCreateSubsystem` = game/PIE worlds): load `UGameTuningSettings.FeedbackTable` at init; build tag → row and (tag, variant) → row maps; warn when row name ≠ tag.
+- [x] `Play(Tag, Ctx)` per technical plan §4.1 (sound 2D/at location with surface map, Niagara at location/attached, cooldown, burst limit, `OnFeedbackPlayed`). Hit stop and shake fields are wired in T-UXF-03.
+- [x] HUD layers: `EHUDLayer` flags, `SetHUDLayerActive(Layer, bool)`, `GetHUDLayers()`, `IsTacticalDisplay()`, `OnHUDLayersChanged`.
+- [x] Missing row: dev on-screen + `UE_LOG` Warning once per tag; Shipping log once.
+- [x] `game.debug.Feedback 1`: last 10 played tags on screen. Console `game.feedback.Coverage`: declared `Feedback.*` leaves not played in this world.
+- [x] Create `DT_Feedback` with P0 rows (placeholder assets; T-UXF-03 completes hit rows).
 
 **Expected Files / Assets** `Source/<Game>/Feedback/FeedbackTypes.h`, `FeedbackTags.h/.cpp`, `FeedbackSubsystem.h/.cpp`; `Source/<Game>/Tests/FeedbackThrottle.spec.cpp`, `FeedbackVariant.spec.cpp`; `Content/<Game>/Feedback/DT_Feedback`
 
 **Test Case** Spec: cooldown 1 s → second play at 0.5 s rejected, at 1.1 s accepted; per-actor cooldown → two actors both play; burst limit 4 / 0.25 s → 20 calls in one frame play 4. Variant: `Hit.Light` with `bTargetArmored` → `.Armored` row; variant missing → base row. PIE: `Play` unknown tag → one warning, no crash; `SetHUDLayerActive(TacticalFocus, true)` → `OnHUDLayersChanged` fires once.
 
 **Acceptance Criteria**
-- [ ] Spec cases pass.
-- [ ] No gameplay code needed to change a sound/VFX (data only).
-- [ ] Coverage command lists unplayed tags.
+- [x] Spec cases pass.
+- [x] No gameplay code needed to change a sound/VFX (data only).
+- [x] Coverage command lists unplayed tags.
 
 **Verification** Automation Specs `<Game>.Feedback.Throttle`, `<Game>.Feedback.Variant`; PIE checks above.
+
+**Progress (2026-10-05, Claude Code, `feat/13-hud-feedback`)** Review. Built as listed; `FFeedbackContext` is named `FFeedbackEventContext` because the engine owns the old name (technical plan §5.2, §8a updated). Placeholder: non-hit rows play the engine `1kSineTonePing`; hit rows are empty for T-UXF-03. `DT_Feedback` is made by `Tools/create_feedback_assets.bat` (idempotent). Verified: editor and game builds, `Tools/run_tests.bat` 29/29 (Throttle 9, Variant 5); the PIE cases ran in a real game `UWorld` inside `Feedback.Throttle`; a standalone `-game` session on `L_Boot` loaded the table and `game.feedback.Coverage` listed all 16 P0 tags. Not seen on screen yet: the `game.debug.Feedback` overlay and the missing-row on-screen message, because nothing calls `Play` in PIE until CMB/SYN integration.
 
 ---
 

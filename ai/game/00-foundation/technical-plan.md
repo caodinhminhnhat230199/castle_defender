@@ -183,7 +183,7 @@ All definitions derive from `UGameDefinition` (T-FND-07). Primary Asset Type nam
 
 - Owner → owned: direct calls.
 - State change → observers: dynamic multicast delegates on the owning component/actor (`OnDamaged`, `OnStateAdded`, `OnSquadStateChanged`, `OnRunPhaseChanged`, `OnRouteInvalidated`).
-- Gameplay → presentation: `UFeedbackSubsystem::Play(FGameplayTag FeedbackTag, const FFeedbackContext&)`. Rows in `DT_Feedback` map tag → sound, Niagara system, camera shake, hit stop duration, UI toast. One place to audit the §34.5 feedback contract.
+- Gameplay → presentation: `UFeedbackSubsystem::Play(FGameplayTag FeedbackTag, const FFeedbackEventContext&)`. Rows in `DT_Feedback` map tag → sound, Niagara system, camera shake, hit stop duration, UI toast. One place to audit the §34.5 feedback contract.
 - No global event bus, no "manager of managers".
 
 ## 11. AI / Navigation
@@ -235,7 +235,7 @@ All definitions derive from `UGameDefinition` (T-FND-07). Primary Asset Type nam
 - Functional Tests (`AFunctionalTest` Blueprint actors in `Content/<Game>/Maps/Test/`, maps named `FT_<Feature>_<Case>`) for scenario checks. They run as `Project.Functional Tests.CastleDefender.Maps.Test.<Map>.<ActorLabel>`. Blueprint only: `FunctionalTesting` is a Developer module, so a C++ `AFunctionalTest` subclass would break Shipping builds of the single runtime module (D-01).
 - CLI: `Tools/run_tests.ps1` runs both groups headless (`-NullRHI`) and reads `Saved/Automation/CLI/index.json`, because the editor exit code does not reflect test results.
 - Visual Logger for AI decisions and paths. Convention: the VLog category is the domain log category (`LogGameAI`, `LogGameArmy`, ...), and every AI decision logs its state name: `UE_VLOG(this, LogGameAI, Log, TEXT("State %s -> %s"), ...)`.
-- CVars under `game.debug.*` (`Combat`, `AI`, `Army`, `Lanes`, `Director`; declared in `Core/GameDebug.h`, flagged cheat) toggling debug draw.
+- CVars under `game.debug.*` (`Combat`, `AI`, `Army`, `Lanes`, `Director`, `Feedback` (added by T-UXF-01); declared in `Core/GameDebug.h`, flagged cheat) toggling debug draw.
 - `UGameCheatManager` commands: spawn enemy/squad/wave, set stamina infinite, kill hero, damage Core, skip phase.
 
 ## 17. Source Control

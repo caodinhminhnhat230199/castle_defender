@@ -475,7 +475,7 @@ Agreements between features that one feature defines and another consumes. When 
 | `UStatModifierSubsystem` (`AddModifier`, `RemoveModifier`, `GetStatFor`), `Stat.*` tags | T-PRK-02 | T-ZON-04, perks, T-CNV-* |
 | `IGameplayTagAssetInterface` on `AStructureBase`, `ASquad` | T-DEF-02, T-SQD-01 (added by T-PRK-10/11) | Perk filters |
 | Perk pawn-side effects re-apply on pawn change | T-PRK-01 | T-CSM-03 respawn |
-| `FFeedbackContext` (Instigator, Target, `bIsHeavy`, `bTargetArmored`, Variant, Lane), per-row cooldown/burst limit | T-UXF-01 | All features playing `Feedback.*` |
+| `FFeedbackEventContext` (Instigator, Target, `bIsHeavy`, `bTargetArmored`, Variant, Lane), per-row cooldown/burst limit | T-UXF-01 | All features playing `Feedback.*` |
 | Hit stop uses per-actor time dilation only | T-UXF-03 | Protects T-TFM-01 global dilation (D-13) |
 | HUD rebinds on pawn change; tactical display mode for markers | T-UXF-02, T-UXF-04 | T-CSM-03, T-TFM-03 |
 | `ULaneDangerSubsystem` (`GetLaneDanger`, `PulseLane`, `OnLaneDangerChanged`) | T-UXF-07 | DEF (path opened, Core attacked), T-DIR (lane incoming), T-BOS-03, T-TFM-03 |
