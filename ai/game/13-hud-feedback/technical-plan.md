@@ -52,7 +52,7 @@ Engine features reused instead of custom code: Sound Classes, Sound Concurrency,
 | Type | Kind | Folder |
 |---|---|---|
 | `FFeedbackRow` | `FTableRowBase` | `Feedback/` |
-| `FFeedbackContext` | USTRUCT | `Feedback/` |
+| `FFeedbackEventContext` | USTRUCT | `Feedback/` |
 | `FeedbackTags` | native tags (leaves added per phase) | `Feedback/` |
 | `UFeedbackSubsystem`, `EHUDLayer` (bit flags) | `UWorldSubsystem`, enum | `Feedback/` |
 | `UCombatStatePresenterComponent` | `UActorComponent` | `Feedback/` |
@@ -239,9 +239,17 @@ GetLaneDanger(Lane) -> level, score
 | `CooldownSeconds`, `bCooldownPerActor` | float, bool | Spam guard |
 | `BurstLimit`, `BurstWindow` | int32, float | 0 = settings default |
 
-### 5.2 `FFeedbackContext`
+### 5.2 `FFeedbackEventContext`
 
 `Location`, `Direction`, `Instigator` (weak), `Target` (weak), `Surface` (`EPhysicalSurface`), `bIsHeavy`, `bTargetArmored`, `Variant` (FName), `Lane` (FName), `Magnitude` (default 1), `Detail` (FName: squad type, perk asset name, wave index).
+
+Named `FFeedbackEventContext`, not `FFeedbackContext`: the engine already has a core class `FFeedbackContext` (`Misc/FeedbackContext.h`), and the duplicate name does not compile (renamed in T-UXF-01, §8a updated).
+
+Implementation notes (T-UXF-01):
+- Variant rows are rows whose tag is a child of the base tag; the last segment is the variant name (`Hit.Light.Armored` = variant `Armored` of `Hit.Light`). Empty `Variant` + `bTargetArmored` asks for `Armored`.
+- Throttle key is the requested tag (base and variant rows share it). Per-actor cooldown keys on `Target`, else `Instigator`. Cooldown and burst use world real time (NEW-UXF-11).
+- `OnFeedbackPlayed` carries the resolved row tag, so listeners can tell the armored variant apart.
+- Module dependencies: `Niagara` (row VFX) and `PhysicsCore` (`EPhysicalSurface` reflection).
 
 ### 5.3 HUD layout and layer matrix
 

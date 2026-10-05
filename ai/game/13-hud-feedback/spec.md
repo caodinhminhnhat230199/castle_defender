@@ -206,6 +206,7 @@ Feedback subsystem + table + tags + variants + cooldown/burst throttle; HUD laye
 | NEW-UXF-8 | Floating damage numbers | OUT OF SCOPE | Debug only |
 | NEW-UXF-9 | Pass bars for blind sound tests and §28.1 quiz | TUNABLE | 8/10 hit types, 9/10 §28.3 events, 8/10 quiz frames |
 | NEW-UXF-10 | `Feedback.Combat.Hit.StateBonus` needs `DeliverHit` to flag hits whose state multiplier > 1 (SYN `T-SYN-07`) | IMPROVEMENT | Requested; row skipped if the flag never comes |
+| NEW-UXF-11 | Row cooldown and burst window (R-UXF-03) measured in real time or game time under Focus | REQUIRED | Real time, like hit stop (NEW-UXF-7): spam is heard in real time |
 | Q-13 | Art direction | Master plan | Placeholder; R-UXF-15..18 hold for any art |
 | Q-16 | Leaving Siege Site boundary | Master plan | RUN rows FC-49 |
 
@@ -218,7 +219,7 @@ Feedback subsystem + table + tags + variants + cooldown/burst throttle; HUD laye
 | Outputs | Sounds, Niagara, camera shakes, per-actor hit stop, toasts, `OnFeedbackPlayed`, `OnHUDLayersChanged`, `OnLaneDangerChanged`, lane danger values, telemetry lines |
 | State | Tag → row (+ variants) map; cooldown and burst counters; active hit stops; played-tag set; HUD layer flags; lane danger levels + pulses; telemetry file + summary aggregates. All world lifetime, presentation only |
 | Events | `OnFeedbackPlayed(Tag, Context)`, `OnHUDLayersChanged(Flags)`, `OnLaneDangerChanged(Lane, Level)` |
-| Data model | `FFeedbackRow`: tag, sound (+ per-surface map, 2D flag, alert class), Niagara (attach flag), camera shake class + scale + radii, hit stop seconds, hero-only flag, toast text/icon, cooldown (+ per-actor), burst limit/window. `FFeedbackContext`: location, direction, instigator, target, surface, `bIsHeavy`, `bTargetArmored`, variant, lane, magnitude, detail. Marker component: kind, icon, normal visibility rule, max distance, show health. Telemetry schema: technical plan §5.4 |
+| Data model | `FFeedbackRow`: tag, sound (+ per-surface map, 2D flag, alert class), Niagara (attach flag), camera shake class + scale + radii, hit stop seconds, hero-only flag, toast text/icon, cooldown (+ per-actor), burst limit/window. `FFeedbackEventContext`: location, direction, instigator, target, surface, `bIsHeavy`, `bTargetArmored`, variant, lane, magnitude, detail. Marker component: kind, icon, normal visibility rule, max distance, show health. Telemetry schema: technical plan §5.4 |
 | Failure cases | Missing table/row/asset (R-UXF-06); spam bursts (R-UXF-03); destroyed actors in hit stop/state VFX; time dilation interplay (R-UXF-08); telemetry write failure; pawn change (R-UXF-13); §34.4 cases (R-UXF-26) |
 | Performance | Event-driven. Per-frame work allowed only for the stamina bar interpolation. Lane danger 2 Hz; marker visibility 4 Hz. Concurrency + Niagara budgets + burst limit for crowds. Expected markers ≤ ~30 |
 

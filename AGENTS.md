@@ -121,8 +121,9 @@ If you cannot run Unreal in your environment (for example as a cloud agent), say
 ## 8. Source Control
 
 - Git with Git LFS (set up in T-FND-02). Never commit `Binaries/`, `Intermediate/`, `Saved/`, `DerivedDataCache/`, `.codegraph/`, secrets or license keys.
-- One task per commit where possible: `<type>(<feature>): <summary> [T-XXX-NN]`, for example `feat(cmb): light attack 3-hit chain [T-CMB-05]`. Types: `feat fix test perf refactor docs chore`.
-- One branch per task or small task group, e.g. `task/T-CMB-05-light-chain`.
+- Keep commits small and scoped to one task where possible; a task may have multiple commits. Format: `<type>(<feature>): <summary> [T-XXX-NN]`, for example `feat(cmb): light attack 3-hit chain [T-CMB-05]`. Types: `feat fix test perf refactor docs chore`.
+- Work on one branch: the active feature branch, named `feat/<NN-feature>`, for example `feat/01-hero-combat`. Every task goes onto it as multiple small commits, including dependency tasks owned by another feature (e.g. T-UXF-01 or T-SYN-01 needed by Hero Combat); their commits keep that feature's type and task ID. Do not create per-task branches, separate branches for dependency features, or commit feature work directly on `main`.
+- Create a PR from the feature branch into `main` only after all feature tasks are Done and their required verification is recorded. Keep phase/dependency gates in force while completing the feature. Merge only when the user's workflow authorizes it.
 - Commit or push only when the user's workflow allows it. Never rewrite history or delete branches without asking.
 
 ## 9. Docs and Handoff
@@ -148,6 +149,6 @@ If you cannot run Unreal in your environment (for example as a cloud agent), say
 - When switching tools, use `ai/game/progress.md`, task status and the current Git diff as the handoff. Record approved decisions there; chat history or local agent memory alone is not a shared handoff.
 - Before editing, inspect staged and unstaged changes. Preserve existing work from the user or another agent; never reset, overwrite or include unrelated changes in a commit.
 - If agents work concurrently, record each active agent's task and intended files in `progress.md` before editing. Work on separate tasks and files; coordinate with the user before editing a file another active agent owns. This log is a coordination aid, not a file lock.
-- Before changing branch or worktree, check for other active agents in the same checkout. Do not switch their branch underneath them. A separate worktree is preferred for concurrent implementation; each agent must record its branch/worktree in the handoff.
+- Coordinate implementation sequentially on the shared feature branch. Before changing branch/worktree, check for other active agents and do not switch their branch underneath them. Do not create per-task branches/worktrees; additional worktrees require an explicit user exception. Record the feature branch/worktree in the handoff.
 - A handoff must distinguish completed work from unverified work and include task status, files changed, verification evidence, manual steps, blockers and the next action. Identify the agent as Codex, Antigravity or Claude Code.
 - The agent accepting a handoff checks the diff and recorded evidence against the task's acceptance criteria. A claim from another agent is not sufficient to mark a task `Done`.

@@ -3,8 +3,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GenericTeamAgentInterface.h"
+#include "Combat/CombatStateTypes.h"
 #include "TestDummy.generated.h"
 
+class UCombatStateComponent;
 class UHealthComponent;
 class UStaticMeshComponent;
 struct FCombatHit;
@@ -19,6 +21,7 @@ public:
 	ATestDummy();
 
 	virtual FGenericTeamId GetGenericTeamId() const override { return TeamId; }
+	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamId) override { TeamId = NewTeamId; }
 	virtual void Tick(float DeltaSeconds) override;
 
 	/** Test entry point. Switch to UCombatLibrary::DeliverHit when T-CMB-04 lands. */
@@ -28,6 +31,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Debug")
 	UHealthComponent* GetHealth() const { return Health; }
 
+	UFUNCTION(BlueprintPure, Category = "Debug")
+	UCombatStateComponent* GetCombatState() const { return CombatState; }
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -36,6 +42,13 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Debug")
 	TObjectPtr<UHealthComponent> Health;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Debug")
+	TObjectPtr<UCombatStateComponent> CombatState;
+
+	/** Poise for poise/Staggered checks (T-SYN-01); matches the CombatState spec values. */
+	UPROPERTY(EditAnywhere, Category = "Debug")
+	FCombatStateConfig CombatStateConfig;
 
 	UPROPERTY(EditAnywhere, Category = "Debug")
 	FGenericTeamId TeamId;

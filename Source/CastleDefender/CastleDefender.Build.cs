@@ -12,6 +12,6 @@ public class CastleDefender : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "GameplayTags", "AIModule", "DeveloperSettings" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "NavigationSystem", "UMG", "Slate", "SlateCore" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "NavigationSystem", "UMG", "Slate", "SlateCore", "Niagara", "PhysicsCore" });
 	}
 }

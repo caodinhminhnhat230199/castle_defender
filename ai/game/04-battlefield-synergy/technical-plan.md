@@ -229,6 +229,13 @@ stateDiagram-v2
 
 Time base: `UWorld::GetTimeSeconds()` (game time). Timers via `FTimerManager`, so global time dilation (TFM, D-13) slows states with the world; confirm in UE docs that world timers follow global time dilation for the pinned version.
 
+Implementation notes (T-SYN-01):
+- Warnings use `LogGameCombat` (project convention `LogGame<Domain>`), not a separate `LogCombatStates`.
+- `game.debug.CombatStates` draws through `UDebugDrawService` ("Game" flag) and returns at once while the CVar is 0, so the component keeps Tick off.
+- Presentation rows are looked up by row name = state tag (`FindRow`), so no separate cache is kept.
+- `GetActiveStates()` returns a tag container by value (built from the state array) for existing CMB callers; `HasPendingExpiry()` exposes the timer for tests.
+- `ATestDummy` carries a `UCombatStateComponent` (MaxPoise 50) so the cheats and specs have a poise target before ENM lands.
+
 ## 6. Main Implementation Areas
 
 | Area | Tasks |

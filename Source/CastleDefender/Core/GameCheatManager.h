@@ -15,7 +15,7 @@ class CASTLEDEFENDER_API UGameCheatManager : public UCheatManager
 	GENERATED_BODY()
 
 public:
-	/** Spawns an ATestDummy in front of the view (default 400 cm). */
+	/** Spawns an ATestDummy in front of the pawn, along the view yaw (default 400 cm). */
 	UFUNCTION(Exec)
 	void SpawnTestDummy(float Distance);
 
@@ -29,4 +29,35 @@ public:
 
 	UFUNCTION(Exec)
 	void DebugPopMode(FName Reason);
+
+	/** Reloads hero tuning from its class definition asset. */
+	UFUNCTION(Exec)
+	void ReloadHeroTuning();
+
+	/** Toggles infinite stamina cheat on the controlled hero. */
+	UFUNCTION(Exec)
+	void InfiniteStamina();
+	UFUNCTION(Exec)
+	void KillHero();
+	UFUNCTION(Exec)
+	void ReportHeroWindows();
+
+	/** Dispatches a synthetic FCombatHit against the controlled hero via DeliverHit. */
+	UFUNCTION(Exec)
+	void DebugHitHero(float Damage = 25.f, float Delay = 0.f, bool bFromFront = true);
+	/** Sets current poise on the crosshair target (T-SYN-01). */
+	UFUNCTION(Exec)
+	void SetPoise(float Value);
+
+	/** Applies State.Combat.<TagLeaf> on the crosshair target; Duration 0 = Game Tuning default. */
+	UFUNCTION(Exec)
+	void ApplyState(const FString& TagLeaf, float Duration);
+
+	/** Clears every combat state on the crosshair target. */
+	UFUNCTION(Exec)
+	void ClearStates();
+
+private:
+	/** First actor with a UCombatStateComponent under the crosshair (lock-on target once T-CMB-10 lands). */
+	class UCombatStateComponent* FindCrosshairCombatState() const;
 };

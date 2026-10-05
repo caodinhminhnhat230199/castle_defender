@@ -1,6 +1,8 @@
 #include "Combat/TestDummy.h"
 
+#include "Combat/CombatStateComponent.h"
 #include "Combat/HealthComponent.h"
+#include "Combat/CombatLibrary.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/GameDebug.h"
 #include "Core/GameLog.h"
@@ -21,13 +23,15 @@ ATestDummy::ATestDummy()
 	RootComponent = Mesh;
 
 	Health = CreateDefaultSubobject<UHealthComponent>(TEXT("Health"));
+	CombatState = CreateDefaultSubobject<UCombatStateComponent>(TEXT("CombatState"));
+	CombatStateConfig.MaxPoise = 50.f;
 }
 
 void ATestDummy::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-#if ENABLE_DRAW_DEBUG
+#if ENABLE_DRAW_DEBUG && !UE_BUILD_SHIPPING
 	if (GameDebug::CVarCombat.GetValueOnGameThread() > 0)
 	{
 		const FVector Top = GetActorLocation() + FVector(0.f, 0.f, 130.f);
@@ -45,13 +49,14 @@ void ATestDummy::ApplyDebugHit(float Damage)
 	Hit.DamageType = GameTags::Damage_Physical;
 	Hit.SourceLayer = ECombatLayer::Environment;
 	Hit.HitLocation = GetActorLocation();
-	Health->ApplyHit(Hit);
+	UCombatLibrary::DeliverHit(this, Hit);
 }
 
 void ATestDummy::BeginPlay()
 {
 	Super::BeginPlay();
 	Health->OnDeath.AddDynamic(this, &ATestDummy::HandleDeath);
+	CombatState->Init(CombatStateConfig);
 }
 
 void ATestDummy::HandleDeath(const FCombatHit& KillingHit)

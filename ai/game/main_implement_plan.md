@@ -452,6 +452,9 @@ Agreements between features that one feature defines and another consumes. When 
 |---|---|---|
 | `AHeroPlayerController::PushMode(EPlayerMode, Reason)` / `PopMode(Reason)`, `OnPlayerModeChanged(Old, New)`; per-mode contexts in `BP_HeroPlayerController.ModeInput`; key map `00-foundation/input-keymap.md` (D-19) | T-FND-06 | T-SQD (Wheel), T-DEF-07 (Build), T-TFM-01 (Focus), T-CSM (Spirit), UXF/PRK modals, HUD listeners |
 | `UCombatLibrary::DeliverHit` is the only way to apply a hit | T-CMB-04 | T-ENM-03, T-SQD-07/10, T-DEF-09, BOS attacks, T-SYN-07 (multipliers) |
+| `FCombatResolutionEvent` / `OnCombatResolved` (spec v2, proposed): one resolution ID/context/result per hit attempt, participant roles; separate from conditional UXF feedback, no global bus | T-CMB-04 | CMB debugger T-CMB-21, T-UXF-08 telemetry, ENM/SQD/DEF/BOS hit producers; T-CMB-15 verifies counts |
+| `FCombatHit` interrupt strength/category + per-action authored resistance (spec v2, proposed); resistance defaults off, damage still applies, SYN Staggered remains authoritative | T-CMB-04 (hit data), T-CMB-06/11 (hero consumer) | ENM/SQD/DEF/BOS attack data, T-CMB-15 threshold tests |
+| `FCombatHit.bWasBlocked` resolved metadata (overwritten by DeliverHit before OnDamaged); `AHeroCharacter.OnFeedbackRequested(Tag, Hit)` for non-hit death presentation | T-CMB-04/11 | Hero hit-reaction suppression; UXF death feedback consumer (T-UXF-01/03). Never replay hit feedback from OnDamaged. OnHeroDeath observers see committed Dead state. |
 | `UMeleeTraceComponent`, `ICombatHitInterceptor` | T-CMB-04 | T-ENM-03, soldier melee (T-SQD-10), boss |
 | `ACombatProjectile` base | T-SQD-10 | T-DEF-09 tower projectiles; pierce extension for T-PRK-11 / T-CNV-* |
 | `FCombatStateConfig` + `BaseArmor` in every combatant definition | T-SYN-01 | T-ENM-01, T-SQD-01, T-BOS-01, hero class data |
@@ -475,7 +478,7 @@ Agreements between features that one feature defines and another consumes. When 
 | `UStatModifierSubsystem` (`AddModifier`, `RemoveModifier`, `GetStatFor`), `Stat.*` tags | T-PRK-02 | T-ZON-04, perks, T-CNV-* |
 | `IGameplayTagAssetInterface` on `AStructureBase`, `ASquad` | T-DEF-02, T-SQD-01 (added by T-PRK-10/11) | Perk filters |
 | Perk pawn-side effects re-apply on pawn change | T-PRK-01 | T-CSM-03 respawn |
-| `FFeedbackContext` (Instigator, Target, `bIsHeavy`, `bTargetArmored`, Variant, Lane), per-row cooldown/burst limit | T-UXF-01 | All features playing `Feedback.*` |
+| `FFeedbackEventContext` (Instigator, Target, `bIsHeavy`, `bTargetArmored`, Variant, Lane), per-row cooldown/burst limit | T-UXF-01 | All features playing `Feedback.*` |
 | Hit stop uses per-actor time dilation only | T-UXF-03 | Protects T-TFM-01 global dilation (D-13) |
 | HUD rebinds on pawn change; tactical display mode for markers | T-UXF-02, T-UXF-04 | T-CSM-03, T-TFM-03 |
 | `ULaneDangerSubsystem` (`GetLaneDanger`, `PulseLane`, `OnLaneDangerChanged`) | T-UXF-07 | DEF (path opened, Core attacked), T-DIR (lane incoming), T-BOS-03, T-TFM-03 |
