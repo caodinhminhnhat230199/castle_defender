@@ -16,6 +16,43 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-05: Claude Code: Combat states, poise and Staggered [T-SYN-01]
+- **Agent / branch:** Claude Code, `feat/04-battlefield-synergy` (new, from `feat/13-hud-feedback`, so it contains T-UXF-01); no other active agents, editor closed. Not pushed.
+- **Tasks:** T-SYN-01 Todo → Review → Done (user passed the rendered PIE check, 2026-10-05). T-UXF-01 was accepted as Done by the user first.
+- **Changed:**
+  - C++: new `Combat/CombatStateTypes.h` (`FCombatStateConfig`, `FActiveCombatState`, `FCombatStatePresentationRow`), `Combat/CombatStateModel.h/.cpp`; `UCombatStateComponent` filled (Init, poise, states, one expiry timer, death clear, presentation feedback, Visual Logger, debug draw). `UGameTuningSettings` gains `StateDefaultDurations` (Staggered 1.5 s, set in the new `GameTuningSettings.cpp`) and `CombatStatePresentationTable`. `game.debug.CombatStates`. Cheats `SetPoise`, `ApplyState`, `ClearStates` (crosshair target). `ATestDummy` gets a `UCombatStateComponent` (MaxPoise 50).
+  - Tests: `CombatState.spec.cpp` (`CastleDefender.Combat.States`, 11 cases), `CombatStateTestListener.h`.
+  - Tools / Content / Config: `create_feedback_assets.py` also makes `Feedback/DT_CombatStatePresentation` (Staggered → `Feedback.State.Staggered.Applied/.Removed`); `DefaultGame.ini` points Game Tuning at it.
+  - Docs: SYN `tasks.md`, `technical-plan.md` (implementation notes), this log.
+- **Verified:**
+  - Editor build succeeds with no new warnings; game target succeeds with the T-CMB-13 `GameDefinition.spec.cpp` fix applied temporarily (reverted; same `main` issue as the T-UXF-01 entry).
+  - `Tools/run_tests.bat`: 40/40, editor exit 0 (`Saved/syn01-tests.log`). Two test fixes on the way: `UWorld::Tick` asserts in a `CreateWorld` world (no engine context), and a timer set before the timer manager's tick only activates on the next frame, so the expiry case is a latent test that ticks timers over real frames.
+  - Asset script exit 0; readback shows the Staggered row.
+  - Standalone `-game` on `L_Boot` (`Saved/syn01-cheats.log`): `SpawnTestDummy`, `SetPoise 10` → 10 / 50, `ApplyState Staggered` plays `Feedback.State.Staggered.Applied` (coverage drops it from the unplayed list), unknown leaf warns, `ApplyState Marked` is refused (no default until T-SYN-03).
+- **Rendered PIE (user, 2026-10-05):** overlay and cheats pass.
+- **Merge notes for `feat/01-hero-combat`:** `DeliverHit` there calls `ApplyState(Tag, 0.f, …)`; pass `WorkingHit.StateDuration` after merging so hit durations win over defaults (R-SYN-08 resolution order). `GameCheatManager.*` and `TestDummy.*` changed on both branches: expect small conflicts. The T-UXF-01 merge notes still apply.
+- **Manual steps for the user:** play any map with the hero controller, `EnableCheats`, `SpawnTestDummy`, `game.debug.CombatStates 1`, aim at the dummy, then `SetPoise 10`, `ApplyState Staggered 2`, wait 2 s, `ClearStates`. The text above the dummy should show poise and the Staggered countdown.
+- **Next:** user sign-off for T-SYN-01; then merge `feat/04-battlefield-synergy` into `feat/01-hero-combat` and finish T-CMB-06 (poise break on Heavy) → T-CMB-20.
+
+### 2026-10-05: Claude Code: Feedback subsystem, DT_Feedback, HUD layers [T-UXF-01]
+- **Agent / branch:** Claude Code, `feat/13-hud-feedback` (new, from `main`, as the user chose); no other active agents, editor closed. Not pushed. `feat/01-hero-combat` was committed first (see its own log).
+- **Tasks:** T-UXF-01 Todo → Review → Done (user accepted the evidence below, 2026-10-05).
+- **User approvals:** module dependency `Niagara`. `PhysicsCore` (engine core module) was also needed: `EPhysicalSurface` in a UPROPERTY does not link without it.
+- **Changed:**
+  - C++: new `Feedback/FeedbackTypes.h/.cpp` (`FFeedbackRow`, `FFeedbackEventContext`, `EHUDLayer`, `FFeedbackThrottle`, `FFeedbackRowIndex`), `Feedback/FeedbackTags.h/.cpp` (16 P0 leaves), `Feedback/FeedbackSubsystem.h/.cpp`. `UGameTuningSettings` gains `FeedbackTable`, `DefaultBurstLimit` 4, `DefaultBurstWindow` 0.25 s. `LogGameFeedback`, `game.debug.Feedback`, `game.feedback.Coverage` (not in Shipping). `Build.cs` adds `Niagara`, `PhysicsCore`.
+  - Tests: `FeedbackThrottle.spec.cpp`, `FeedbackVariant.spec.cpp`, `FeedbackTestListener.h`.
+  - Tools / Content / Config: `Tools/create_feedback_assets.{bat,ps1,py}` creates `Feedback/DT_Feedback` (16 rows; non-hit rows use the engine `1kSineTonePing` placeholder, hit rows empty for T-UXF-03). `DefaultGame.ini` points `FeedbackTable` at it and always-cooks `/Game/CastleDefender/Feedback`.
+  - Docs: `FFeedbackContext` renamed to `FFeedbackEventContext` everywhere (engine already has `FFeedbackContext`; main plan §8a, foundation plan, UXF spec/plan/tasks, spec-audit). UXF technical plan §5.2 implementation notes; spec §12 NEW-UXF-11 (throttle in real time); foundation plan CVar list.
+- **Verified:**
+  - Editor build succeeds with no new warnings (Niagara engine-header C4996 suppressed at the include). Game target build succeeds with the T-CMB-13 `GameDefinition.spec.cpp` fix applied temporarily: `main` itself fails the game build on that existing spec (`GetSectionText` is editor-only). Fix reverted; it arrives when branches merge.
+  - `Tools/run_tests.bat`: 29/29, editor exit 0 (`Saved/uxf01-tests.log`).
+  - `create_feedback_assets.bat` exit 0; rerun reports nothing changed. Readback: 16 rows, tag = row name, placeholder sounds set.
+  - Standalone `-game` on `L_Boot` (`Saved/uxf01-coverage.log`): table loaded with no warning; `game.feedback.Coverage` lists all 16 P0 tags.
+- **Not verified:** the `game.debug.Feedback` overlay and missing-row on-screen text in rendered PIE; nothing calls `Play` yet.
+- **Merge notes for `feat/01-hero-combat`:** `GameTags` there declares `Feedback.Hero.StaminaInsufficient` and `Feedback.Hero.Death`; after merging, delete those two and use `FeedbackTags::Hero_*`. Expect conflicts at the top of `progress.md` (keep both entries).
+- **Manual steps for the user:** none for this task; the overlay is rechecked with T-SYN-01.
+- **Next:** T-SYN-01 on `feat/04-battlefield-synergy` (merge `feat/13-hud-feedback` into it first).
+
 ### 2026-10-05: Claude Code: Commit Hero Combat work, split branches for UXF/SYN
 - **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents, editor closed. No push.
 - **Decision (user):** commit the open Hero Combat work, then do T-UXF-01 on `feat/13-hud-feedback` and T-SYN-01 on `feat/04-battlefield-synergy`, both from `main` (SYN merges UXF first). Merge `feat/04-battlefield-synergy` into `feat/01-hero-combat` when T-SYN-01 is Done, to finish T-CMB-06.

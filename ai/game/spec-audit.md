@@ -52,7 +52,7 @@
 
 ### Before P0 / G0
 - **Parry:** the first success stops the montage, so a second attacker a few frames later is not parried. Keep a parry-success window on a timer, or define the rule as same-frame only. (T-CMB-09)
-- **§9.8 impact sound per armor/material needs a surface value.** Add `Surface` to `FCombatHit`, filled by the trace or projectile, and to the §8a `FFeedbackContext`. (CMB, UXF)
+- **§9.8 impact sound per armor/material needs a surface value.** Add `Surface` to `FCombatHit`, filled by the trace or projectile, and to the §8a `FFeedbackEventContext`. (CMB, UXF)
 - **AC-UXF-03** (VFX differ by hit type) is only tested with eyes closed. Add a sound-off visual identification trial. (UXF)
 - **G0/G1 hypotheses have no numeric KEEP / CHANGE / DELETE bars, and "time to kill" cannot be computed.** Write the pass bars into T-CMB-16 and T-SQD-16, and log enemy spawn and kill events. (workflow ref 06)
 - **Command Wheel default keys (LMB / RMB / mouse wheel) collide with combat keys** (R-CMB-36). Either allow per-mode reuse with a written priority, or move the wheel keys. Keep one key map in `00-foundation/input-keymap.md`.

@@ -45,4 +45,19 @@ public:
 	/** Dispatches a synthetic FCombatHit against the controlled hero via DeliverHit. */
 	UFUNCTION(Exec)
 	void DebugHitHero(float Damage = 25.f, float Delay = 0.f, bool bFromFront = true);
+	/** Sets current poise on the crosshair target (T-SYN-01). */
+	UFUNCTION(Exec)
+	void SetPoise(float Value);
+
+	/** Applies State.Combat.<TagLeaf> on the crosshair target; Duration 0 = Game Tuning default. */
+	UFUNCTION(Exec)
+	void ApplyState(const FString& TagLeaf, float Duration);
+
+	/** Clears every combat state on the crosshair target. */
+	UFUNCTION(Exec)
+	void ClearStates();
+
+private:
+	/** First actor with a UCombatStateComponent under the crosshair (lock-on target once T-CMB-10 lands). */
+	class UCombatStateComponent* FindCrosshairCombatState() const;
 };

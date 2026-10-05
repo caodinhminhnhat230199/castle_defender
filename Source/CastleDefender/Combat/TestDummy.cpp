@@ -1,5 +1,6 @@
 #include "Combat/TestDummy.h"
 
+#include "Combat/CombatStateComponent.h"
 #include "Combat/HealthComponent.h"
 #include "Combat/CombatLibrary.h"
 #include "Components/StaticMeshComponent.h"
@@ -22,6 +23,8 @@ ATestDummy::ATestDummy()
 	RootComponent = Mesh;
 
 	Health = CreateDefaultSubobject<UHealthComponent>(TEXT("Health"));
+	CombatState = CreateDefaultSubobject<UCombatStateComponent>(TEXT("CombatState"));
+	CombatStateConfig.MaxPoise = 50.f;
 }
 
 void ATestDummy::Tick(float DeltaSeconds)
@@ -53,6 +56,7 @@ void ATestDummy::BeginPlay()
 {
 	Super::BeginPlay();
 	Health->OnDeath.AddDynamic(this, &ATestDummy::HandleDeath);
+	CombatState->Init(CombatStateConfig);
 }
 
 void ATestDummy::HandleDeath(const FCombatHit& KillingHit)
