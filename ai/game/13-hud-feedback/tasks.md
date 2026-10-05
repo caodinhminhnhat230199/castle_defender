@@ -10,7 +10,7 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
-| T-UXF-01 | `UFeedbackSubsystem` + `DT_Feedback` + row struct (variants, throttle, HUD layers, coverage) | GAMEPLAY | P0 | Blocker | T-FND-04, T-FND-07, T-FND-09 | Review |
+| T-UXF-01 | `UFeedbackSubsystem` + `DT_Feedback` + row struct (variants, throttle, HUD layers, coverage) | GAMEPLAY | P0 | Blocker | T-FND-04, T-FND-07, T-FND-09 | Done |
 | T-UXF-02 | `WBP_GameHUD` shell + Hero HP/stamina + pawn rebinding | UI | P0 | Blocker | T-UXF-01, T-FND-06, T-CMB-01, T-CMB-03 | Todo |
 | T-UXF-03 | Hit stop, camera shake, impact SFX/VFX per material and hit type | GAMEPLAY | P0 | Blocker | T-UXF-01, T-CMB-04, T-CMB-08, T-CMB-09, T-SYN-01 | Todo |
 | T-UXF-08 | Playtest telemetry log per session/run + generic `LogEvent` | TOOLS | P0 | High | T-UXF-01, T-FND-09 | Todo |
@@ -65,7 +65,7 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 
 **Verification** Automation Specs `<Game>.Feedback.Throttle`, `<Game>.Feedback.Variant`; PIE checks above.
 
-**Progress (2026-10-05, Claude Code, `feat/13-hud-feedback`)** Review. Built as listed; `FFeedbackContext` is named `FFeedbackEventContext` because the engine owns the old name (technical plan §5.2, §8a updated). Placeholder: non-hit rows play the engine `1kSineTonePing`; hit rows are empty for T-UXF-03. `DT_Feedback` is made by `Tools/create_feedback_assets.bat` (idempotent). Verified: editor and game builds, `Tools/run_tests.bat` 29/29 (Throttle 9, Variant 5); the PIE cases ran in a real game `UWorld` inside `Feedback.Throttle`; a standalone `-game` session on `L_Boot` loaded the table and `game.feedback.Coverage` listed all 16 P0 tags. Not seen on screen yet: the `game.debug.Feedback` overlay and the missing-row on-screen message, because nothing calls `Play` in PIE until CMB/SYN integration.
+**Progress (2026-10-05, Claude Code, `feat/13-hud-feedback`)** Done (user accepted this evidence 2026-10-05; the overlay is rechecked when T-SYN-01 plays Staggered feedback). Built as listed; `FFeedbackContext` is named `FFeedbackEventContext` because the engine owns the old name (technical plan §5.2, §8a updated). Placeholder: non-hit rows play the engine `1kSineTonePing`; hit rows are empty for T-UXF-03. `DT_Feedback` is made by `Tools/create_feedback_assets.bat` (idempotent). Verified: editor and game builds, `Tools/run_tests.bat` 29/29 (Throttle 9, Variant 5); the PIE cases ran in a real game `UWorld` inside `Feedback.Throttle`; a standalone `-game` session on `L_Boot` loaded the table and `game.feedback.Coverage` listed all 16 P0 tags. Not seen on screen yet: the `game.debug.Feedback` overlay and the missing-row on-screen message, because nothing calls `Play` in PIE until CMB/SYN integration.
 
 ---
 

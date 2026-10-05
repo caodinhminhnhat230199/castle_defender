@@ -18,7 +18,7 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ### 2026-10-05: Claude Code: Feedback subsystem, DT_Feedback, HUD layers [T-UXF-01]
 - **Agent / branch:** Claude Code, `feat/13-hud-feedback` (new, from `main`, as the user chose); no other active agents, editor closed. Not pushed. `feat/01-hero-combat` was committed first (see its own log).
-- **Tasks:** T-UXF-01 Todo → Review.
+- **Tasks:** T-UXF-01 Todo → Review → Done (user accepted the evidence below, 2026-10-05).
 - **User approvals:** module dependency `Niagara`. `PhysicsCore` (engine core module) was also needed: `EPhysicalSurface` in a UPROPERTY does not link without it.
 - **Changed:**
   - C++: new `Feedback/FeedbackTypes.h/.cpp` (`FFeedbackRow`, `FFeedbackEventContext`, `EHUDLayer`, `FFeedbackThrottle`, `FFeedbackRowIndex`), `Feedback/FeedbackTags.h/.cpp` (16 P0 leaves), `Feedback/FeedbackSubsystem.h/.cpp`. `UGameTuningSettings` gains `FeedbackTable`, `DefaultBurstLimit` 4, `DefaultBurstWindow` 0.25 s. `LogGameFeedback`, `game.debug.Feedback`, `game.feedback.Coverage` (not in Shipping). `Build.cs` adds `Niagara`, `PhysicsCore`.
@@ -32,7 +32,7 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
   - Standalone `-game` on `L_Boot` (`Saved/uxf01-coverage.log`): table loaded with no warning; `game.feedback.Coverage` lists all 16 P0 tags.
 - **Not verified:** the `game.debug.Feedback` overlay and missing-row on-screen text in rendered PIE; nothing calls `Play` yet.
 - **Merge notes for `feat/01-hero-combat`:** `GameTags` there declares `Feedback.Hero.StaminaInsufficient` and `Feedback.Hero.Death`; after merging, delete those two and use `FeedbackTags::Hero_*`. Expect conflicts at the top of `progress.md` (keep both entries).
-- **Manual steps for the user:** decide whether T-UXF-01 can move to Done on this evidence (blocks T-SYN-01).
+- **Manual steps for the user:** none for this task; the overlay is rechecked with T-SYN-01.
 - **Next:** T-SYN-01 on `feat/04-battlefield-synergy` (merge `feat/13-hud-feedback` into it first).
 
 ### 2026-10-04: Claude Code: merged Codex's Foundation commits with ours
