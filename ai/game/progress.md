@@ -16,6 +16,14 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-06: Claude Code: One branch for all work, dependency features included
+- **Decision (user):** too many branches; use one branch with multiple commits. Dependency tasks from other features (UXF, SYN, …) are now committed on the active feature branch `feat/01-hero-combat`, not on their own `feat/<NN>` branches. Supersedes the 2026-10-05 dependency-branch plan.
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents.
+- **Tasks:** none (workflow only).
+- **Changed:** `AGENTS.md` §8, foundation technical plan §17, CMB `WIP.md` workflow line. Deleted local branches `feat/04-battlefield-synergy` and `feat/13-hud-feedback` (`git branch -d`; both fully merged into `feat/01-hero-combat`, never pushed). Left `task/T-FND-foundation` (merged into `main`, also on `origin`) for the user to decide.
+- **Verified:** `git branch --merged feat/01-hero-combat` listed both deleted branches before deletion.
+- **Next:** unchanged: user sign-off for T-CMB-05/06/07/11, then T-CMB-20.
+
 ### 2026-10-06: Claude Code: Tripo3D/AccuRig hero model replaces Manny on the Warlord [T-CMB-05]
 - **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents, editor closed for every import. Not pushed.
 - **Request (user):** replace the hero mesh with their own model (`SourceModels/Hero/`), scaled to Manny's height. License confirmed clear by the user.

@@ -122,7 +122,7 @@ If you cannot run Unreal in your environment (for example as a cloud agent), say
 
 - Git with Git LFS (set up in T-FND-02). Never commit `Binaries/`, `Intermediate/`, `Saved/`, `DerivedDataCache/`, `.codegraph/`, secrets or license keys.
 - Keep commits small and scoped to one task where possible; a task may have multiple commits. Format: `<type>(<feature>): <summary> [T-XXX-NN]`, for example `feat(cmb): light attack 3-hit chain [T-CMB-05]`. Types: `feat fix test perf refactor docs chore`.
-- Use one shared branch per feature, named `feat/<NN-feature>`, for example `feat/01-hero-combat`. Reuse it for every task and commit in that feature; do not create per-task branches or commit feature work directly on `main`.
+- Work on one branch: the active feature branch, named `feat/<NN-feature>`, for example `feat/01-hero-combat`. Every task goes onto it as multiple small commits, including dependency tasks owned by another feature (e.g. T-UXF-01 or T-SYN-01 needed by Hero Combat); their commits keep that feature's type and task ID. Do not create per-task branches, separate branches for dependency features, or commit feature work directly on `main`.
 - Create a PR from the feature branch into `main` only after all feature tasks are Done and their required verification is recorded. Keep phase/dependency gates in force while completing the feature. Merge only when the user's workflow authorizes it.
 - Commit or push only when the user's workflow allows it. Never rewrite history or delete branches without asking.
 

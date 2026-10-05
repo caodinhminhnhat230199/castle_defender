@@ -9,7 +9,7 @@ Tài liệu này lưu danh sách công việc còn lại và lý do chưa hoàn 
 - Mọi task Hero Combat dùng chung branch `feat/01-hero-combat`, chia thành nhiều commit nhỏ theo task. Không tạo branch riêng cho từng task và không commit feature trực tiếp vào `main`.
 - Chỉ tạo PR vào `main` khi tất cả task của feature đã Done và có kết quả kiểm chứng được ghi lại. Vẫn tuân thủ gate pha và dependency; không làm trước task của pha chưa mở.
 - Khi lưu handoff này, feature đang ở P0; chưa tạo PR hoặc push. Phần mesh/animation, foot IK, hướng camera và Heavy đã được commit trên `feat/01-hero-combat` (2026-10-05, user đồng ý).
-- Dependency thuộc feature khác làm trên branch của feature đó, tạo từ `main`: T-UXF-01 trên `feat/13-hud-feedback`, T-SYN-01 trên `feat/04-battlefield-synergy` (merge `feat/13-hud-feedback` vào trước). Khi T-SYN-01 xong, merge `feat/04-battlefield-synergy` vào `feat/01-hero-combat` để hoàn tất T-CMB-06 (user chọn 2026-10-05).
+- Chỉ dùng 1 branch `feat/01-hero-combat`, nhiều commit (user chọn 2026-10-06). Dependency thuộc feature khác (UXF, SYN, …) cũng commit thẳng trên branch này, không tạo branch riêng. T-UXF-01 và T-SYN-01 trước đây làm trên `feat/13-hud-feedback` / `feat/04-battlefield-synergy`; cả hai đã merge vào `feat/01-hero-combat` và đã xoá.
 
 ## Tình trạng tổng thể
 
