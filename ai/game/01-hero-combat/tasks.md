@@ -22,7 +22,7 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-03 | `UStaminaComponent` + stamina rules | GAMEPLAY | P0A | Must | T-CMB-01, T-FND-10 | Done |
 | T-CMB-04 | Melee hit detection → `FCombatHit` dispatch (`DeliverHit`, interceptor, one hit per target per swing) | GAMEPLAY | P0A | Must | T-CMB-02, T-FND-05, T-UXF-01 | Done |
 | T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Review |
-| T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04, T-SYN-01 | In Progress |
+| T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04, T-SYN-01 | Review |
 | T-CMB-07 | Dodge with i-frames | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Review |
 | T-CMB-08 | Block + block break | GAMEPLAY | P0B | Must | T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Todo |
 | T-CMB-09 | Parry + counter / vulnerability window | GAMEPLAY | P0B | Must | T-CMB-08, T-SYN-01 | Todo |
@@ -235,17 +235,17 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 - [x] `AM_Warlord_Heavy`: authored readable Startup/Active/Recovery (provisional wind-up ~0.3 s, tune in the montage; no hard-coded minimum) (check with `ReportHeroWindows`), one hit window, late cancel window allowing Dodge.
 - [x] `RequestAction(Heavy)`: `TrySpend` → play; `bIsHeavy = true`; copy `AppliedStates` and `StateDuration` into `FCombatHit`.
 - [x] `IsDataValid`: Heavy damage and poise damage greater than every Light entry; every Light stamina cost < Heavy stamina cost.
-- [ ] Per-action interrupt-resistance config defaults disabled. An authored committed window may enable it in a test-only DA; compare incoming hit strength/category without suppressing damage or overriding shared Staggered/Dead. G0 decides whether production Heavy enables it.
-- [ ] Hook check: in a test copy of the DA set `AppliedStates = {State.Combat.ArmorBroken}`; after a Heavy hit the target's `UCombatStateComponent::HasState` returns true (state effect itself is T-SYN-02).
+- [x] Per-action interrupt-resistance config defaults disabled. An authored committed window may enable it in a test-only DA; compare incoming hit strength/category without suppressing damage or overriding shared Staggered/Dead. G0 decides whether production Heavy enables it.
+- [x] Hook check: in a test copy of the DA set `AppliedStates = {State.Combat.ArmorBroken}`; after a Heavy hit the target's `UCombatStateComponent::HasState` returns true (state effect itself is T-SYN-02).
 
 **Expected Files / Assets** `HeroCombatComponent.cpp`; `Content/<Game>/Hero/AM_Warlord_Heavy`; `DA_HeroClass_Warlord` (Heavy entry)
 
 **Test Case** Dummy with MaxPoise 50 (`FCombatStateConfig`): Heavy → poise 10 (`game.debug.CombatStates`), Light → 5, Light → Staggered applied. Stamina 20 → Heavy refused with the insufficient cue.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-05 passes.
-- [ ] Hook check passes.
-- [ ] AC-CMB-25 integrated with T-CMB-11/15: default Heavy interrupts; test-only resistance lets a below-threshold hit damage without HitReact and an above-threshold hit interrupt.
+- [x] AC-CMB-05 passes.
+- [x] Hook check passes.
+- [x] AC-CMB-25 integrated with T-CMB-11/15: default Heavy interrupts; test-only resistance lets a below-threshold hit damage without HitReact and an above-threshold hit interrupt.
 - [x] Data validation catches a Heavy weaker than a Light.
 
 **Verification** PIE with `game.debug.CombatStates 1`; T-CMB-15.
@@ -255,7 +255,14 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 - **Content:** `AM_Warlord_Heavy` plays the template's `MM_ChargedAttack` from 0.55 s (1.28 s total). Hit window 0.45–0.67 s during the 150 cm root-motion lunge; Dodge-only cancel 0.95–1.25 s. Authored by `Tools/create_hero_assets.bat`.
 - **Tests:** `CastleDefender.Combat.Hero.Heavy` (3 specs).
 - **Rendered PIE with injected `IA_HeavyAttack`:** stamina 100→75, dummy 100→70, Idle at 1.3 s; Light afterwards hits (70→60).
-- **Open until T-SYN-01:** poise break / Staggered (AC-CMB-05 "staggers the P0 melee enemy"), the Armor Broken hook check, and AC-CMB-25 integration. Interrupt resistance stays off by default.
+- **Open until T-SYN-01 (now closed, see below).**
+
+**Progress (2026-10-05, Claude Code, after merging T-SYN-01 into `feat/01-hero-combat`):** Review.
+- `DeliverHit` now passes `FCombatHit.StateDuration` to `ApplyState` (R-SYN-08), so an authored Heavy state uses its hit duration.
+- New `Combat.Hero.Heavy` cases: Heavy then Light payloads break a MaxPoise 50 `ATestDummy` in exactly the number of Lights the DA implies, with the hero as Staggered instigator (AC-CMB-05; the dummy stands in for the P0 melee enemy until T-ENM-01/03); a test copy of the DA with `AppliedStates = {ArmorBroken}` puts Armor Broken on the target for the hit duration (hook check); Heavy at 20 stamina is refused, stays Idle, spends nothing and fires `OnStaminaSpendFailed` once.
+- Interrupt resistance (AC-CMB-25) was already data-driven and off by default; `HeroHitReaction` covers default-off interrupt, a below-threshold resisted hit that still deals damage, and an equal-threshold interrupt, now on the real Heavy montage. T-CMB-15 adds the final integrated coverage.
+- Verified: editor and game builds; `Tools/run_tests.bat` 107/107, editor exit 0 (`Saved/cmb06-tests.log`).
+- Left for the user: rendered PIE on `L_CombatSandbox` with `game.debug.CombatStates 1`: `SpawnTestDummy`, Heavy (poise 50 → 10), Light, Light → Staggered.
 
 ---
 

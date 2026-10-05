@@ -13,11 +13,11 @@ Tài liệu này lưu danh sách công việc còn lại và lý do chưa hoàn 
 
 ## Tình trạng tổng thể
 
-Theo [tasks.md](tasks.md), feature có **21 task: 5 Done, 4 Review, 1 In Progress, 11 Todo**. Như vậy còn **16 task chưa hoàn tất**.
+Theo [tasks.md](tasks.md), feature có **21 task: 5 Done, 5 Review, 11 Todo**. Như vậy còn **16 task chưa hoàn tất**.
 
 Các task Done: **T-CMB-01, 02, 03, 04, 13**.
 
-## 4 task đã có code và kiểm thử, nhưng còn thiếu nội dung hoặc tích hợp để đạt Done
+## 5 task đã có code và kiểm thử, nhưng còn thiếu nội dung hoặc tích hợp để đạt Done
 
 | Task | Nội dung | Vì sao chưa hoàn tất |
 |---|---|---|
@@ -28,11 +28,11 @@ Các task Done: **T-CMB-01, 02, 03, 04, 13**.
 
 Các thiếu sót này được ghi cụ thể trong [handoff và kết quả kiểm chứng](../progress.md).
 
-## 1 task In Progress và 7 task Todo thuộc pha P0 hiện tại
+## 7 task Todo thuộc pha P0 hiện tại (T-CMB-06 đã lên Review)
 
 | Task | Nội dung | Vì sao chưa hoàn tất |
 |---|---|---|
-| **T-CMB-06** | Đánh mạnh, sát thương poise cao | **In Progress.** Phần hero đã xong theo yêu cầu user: validate, trace payload `bIsHeavy`, `AM_Warlord_Heavy`, test `HeavyAttack.spec`. Còn chờ **T-SYN-01** cho poise break → Staggered, hook Armor Broken và AC-CMB-25. |
+| **T-CMB-06** | Đánh mạnh, sát thương poise cao | **Review (2026-10-05).** T-UXF-01 và T-SYN-01 đã Done và đã merge vào branch này. Test: Heavy + Light làm vỡ poise của dummy đúng số đòn theo DA, hook Armor Broken, từ chối khi thiếu stamina; 107/107 test. Còn chờ: chơi thử có hình ảnh với `game.debug.CombatStates 1` (Heavy → Light → Light → Staggered). |
 | **T-CMB-20** | Hỗ trợ xoay hướng khi đánh | Phụ thuộc **T-CMB-05 và 06** hoàn tất, để tích hợp và kiểm chứng trên cả Light/Heavy. |
 | **T-CMB-08** | Đỡ đòn và vỡ thế đỡ | Chờ **SYN-01**, cùng **CMB-07/11/20/21** đạt Done. Thuộc phần P0B, sau checkpoint P0A. |
 | **T-CMB-09** | Parry và cửa sổ phản công | Chờ **CMB-08** và **SYN-01**, vì dùng chung xử lý phòng thủ và poise của đối phương. |
@@ -59,7 +59,7 @@ Các task này chưa được phép triển khai ở P0.
 1. Đọc root `AGENTS.md`, handoff mới nhất trong `progress.md`, kiểm tra `git status` và diff. Tiếp tục trên `feat/01-hero-combat`, giữ nguyên công việc đang có của teammate.
 2. **Đã xong (2026-10-05):** content placeholder cho **T-CMB-05/07/11**, lấy từ bộ Mannequin có sẵn trong template Third Person của UE 5.8. Fab library trên máy trống, nên không có pack Epic nào khác. Xem mục "Content placeholder" bên dưới. Việc tiếp theo: mở `L_CombatSandbox`, chơi thử có hình ảnh với input thật (Light ×3, chờ reset, Dodge có và không có input, `DebugHitHero 20 0 1`, `KillHero`) cùng `game.debug.Combat 1` / `game.debug.CombatTrace 1`. Nếu đạt và log không có warning mới thì nâng task lên Done.
 3. Chạy build, automation và PIE có hình ảnh để kiểm chứng input, chuyển động, hit trace, phản ứng/chết/respawn. Chỉ nâng từng task lên Done khi đủ acceptance criteria; cập nhật `tasks.md` và `progress.md`.
-4. Xử lý chuỗi dependency **T-UXF-01 → T-SYN-01 → T-CMB-06 → T-CMB-20**; hoàn tất phần kiểm chứng còn thiếu của **T-CMB-21** và ghi checkpoint P0A.
+4. **Đã xong (2026-10-05):** T-UXF-01 và T-SYN-01 Done, đã merge vào `feat/01-hero-combat`, T-CMB-06 lên Review. Còn lại: **T-CMB-20** (cần T-CMB-05 và 06 Done); hoàn tất phần kiểm chứng còn thiếu của **T-CMB-21** và ghi checkpoint P0A.
 5. Tiếp tục **T-CMB-08/10 → 09/14 → 15 → 16** khi dependency tương ứng đã Done. T-CMB-14 cần enemy provider; G0 cần các task ENM/SYN/UXF liên quan hoàn tất.
 6. **T-CMB-12/17/18/19** tiếp tục chờ pha tương ứng mở. Feature này trải qua **P0, P2 và VS**, nên “xong tất cả task” còn bao gồm công việc ở những pha chưa mở.
 

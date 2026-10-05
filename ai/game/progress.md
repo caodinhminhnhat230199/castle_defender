@@ -16,6 +16,16 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-05: Claude Code: Merge UXF/SYN into Hero Combat, finish Heavy poise [T-CMB-06]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents. The editor was still open at the first merge attempt (it locked the two DataTables), so the merge waited until the user closed it. Not pushed.
+- **Tasks:** T-SYN-01 Review → Done (user's rendered PIE check). T-CMB-06 In Progress → Review.
+- **Merge:** `feat/04-battlefield-synergy` (with T-UXF-01) into `feat/01-hero-combat`. Conflicts: `GameCheatManager.h/.cpp` (kept the hero cheats and the state cheats), `progress.md` (kept both entry sets, newest first). Leftover untracked copies of `DT_Feedback` / `DT_CombatStatePresentation` were byte-identical to the committed ones and were deleted before merging.
+- **Integration fixes:** `DeliverHit` passes `StateDuration` to `ApplyState`; the duplicate `Feedback.Hero.*` tags in `GameTags` are gone and hero death uses `FeedbackTags::Hero_Death`; `CombatResolution` spec uses the dummy's own `UCombatStateComponent` (the dummy now owns one) and a hit duration.
+- **T-CMB-06:** new `Combat.Hero.Heavy` cases (poise break as the DA implies, Armor Broken hook on a DA copy, refusal at 20 stamina with the failure cue producer). Interrupt resistance was already covered by `HeroHitReaction`.
+- **Verified:** editor and game builds; `Tools/run_tests.bat` 107/107, editor exit 0 (`Saved/cmb06-tests.log`). The first post-merge run had one failure (the duplicate state component in `CombatResolution`), fixed above.
+- **Manual steps for the user:** `L_CombatSandbox`, `game.debug.CombatStates 1`, `SpawnTestDummy`, Heavy (poise 50 → 10), Light, Light → Staggered; also the still-pending visual sign-off for T-CMB-05/07/11.
+- **Next:** T-CMB-20 (rotation assist) needs T-CMB-05 and T-CMB-06 Done, so it waits on that sign-off.
+
 ### 2026-10-05: Claude Code: Combat states, poise and Staggered [T-SYN-01]
 - **Agent / branch:** Claude Code, `feat/04-battlefield-synergy` (new, from `feat/13-hud-feedback`, so it contains T-UXF-01); no other active agents, editor closed. Not pushed.
 - **Tasks:** T-SYN-01 Todo → Review → Done (user passed the rendered PIE check, 2026-10-05). T-UXF-01 was accepted as Done by the user first.
