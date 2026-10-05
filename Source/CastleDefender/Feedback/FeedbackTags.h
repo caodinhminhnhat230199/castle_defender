@@ -1,0 +1,29 @@
+#pragma once
+
+#include "NativeGameplayTags.h"
+
+// Feedback.* leaves: row names in DT_Feedback (D-10). The Feedback root lives in Core/GameTags.
+// P0 leaves only; later phases add theirs in their own feedback tasks.
+// A child such as Hit.Light.Armored is a variant row of its parent, picked from FFeedbackEventContext.
+namespace FeedbackTags
+{
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_Hit_Light);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_Hit_Light_Armored);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_Hit_Heavy);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_Hit_Heavy_Armored);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_Block);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_BlockBreak);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_Parry);
+
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Hero_Damaged);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Hero_Death);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Hero_StaminaInsufficient);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Hero_LowHealth);
+
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Enemy_Telegraph);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Enemy_Telegraph_Heavy);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Enemy_Death);
+
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Staggered_Applied);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Staggered_Removed);
+}
