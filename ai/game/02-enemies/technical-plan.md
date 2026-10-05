@@ -5,9 +5,11 @@
 | Spec | [spec.md](spec.md) |
 | Architecture baseline | [00-foundation/technical-plan.md](../00-foundation/technical-plan.md), decisions D-01..D-18 in [main_implement_plan.md §7](../main_implement_plan.md#7-architecture-baseline) |
 | Phases | P0 → P1 → P2 |
-| Status | Draft v1. All paths and class names are proposals (no UE project exists yet). |
+| Status | P0 in progress. UE project exists; T-ENM-01 C++ lifecycle source is ready for Windows/editor review. Other ENM paths remain proposals. |
 
 ## 1. Technical Overview
+
+**T-ENM-01 source handoff (2026-10-06, Codex):** EnemyCharacter and EnemyArchetypeDefinition now implement P0 data copies, health/poise initialization, stock AI possession, guarded removal, death presentation/feedback and lifespan. `Unit.Enemy.Melee/Elite` are added in Core/GameTags; `Feedback.Enemy.Death` already exists in FeedbackTags and DT_Feedback and is reused. The native Primary Asset Type is registered. Enemy Lifecycle Specs are authored but unrun. Brain/attack execution and P1/P2 spawn fields remain with their tasks. Values without a spec default remain unset in the definition and fail validation until content tuning. No binary enemy content has been authored on this macOS executor.
 
 One C++ character class (`AEnemyCharacter`) plus one C++ brain component (`UEnemyBrainComponent`) drive every enemy. Archetypes (melee, Swarm, Armored, Giant/Siege) are Data Assets + thin Blueprint children; no archetype has its own C++ class.
 

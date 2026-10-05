@@ -468,7 +468,8 @@ Agreements between features that one feature defines and another consumes. When 
 | Lane route result: ordered obstacles with distance along route, end target = Core | T-DEF-05 | T-ENM-07, T-ENM-09 |
 | `OnRouteInvalidated(Lane, bOpened)` per lane; `Structure` collision channel | T-DEF-06, T-DEF-02 | T-ENM-07/08/09 |
 | Build-mode exit restores previous input mode (incl. Commander Spirit) | T-DEF-07 | T-CSM-05 |
-| `TrySpawnEnemy` (null when cap full), `RequestScriptedSpawn` (queues), `InitFromSpawn`, `OnEnemyRemoved` | T-DIR-01 | T-BOS-03 summons, T-RUN-04 kill rewards |
+| `TrySpawnEnemy` (null when cap full), `RequestScriptedSpawn` (queues) | T-DIR-01 | T-BOS-03 summons, T-RUN-04 kill rewards |
+| `AEnemyCharacter::InitFromSpawn(UEnemyArchetypeDefinition*, FEnemySpawnParams)` before BeginPlay; `OnEnemyRemoved(Enemy, EEnemyRemovedReason)` exactly once for Killed/Despawned/OutOfWorld | T-ENM-01 | T-CMB-14 sandbox respawner, T-DIR-01 spawn/alive counts, T-RUN-04 kill rewards, T-BOS-03 summons |
 | `OnWaveEnemyRemoved(enemy, archetype, lane, cause)` | T-DIR-02 | T-RUN-04, T-UXF-08 |
 | `CounterTags` field on `UEnemyArchetypeDefinition` | T-ENM-01 (field), T-DIR-04 (use) | T-DIR-04 |
 | `MaxConcurrentEnemies` from benchmark | T-DEF-12 | T-DIR-04; update Q-04 |

@@ -12,7 +12,7 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
-| T-ENM-01 | `AEnemyCharacter` + `UEnemyArchetypeDefinition` + health/combat-state wiring + team + death/despawn | GAMEPLAY | P0 | Must | T-FND-04, T-FND-05, T-FND-07 | Todo |
+| T-ENM-01 | `AEnemyCharacter` + `UEnemyArchetypeDefinition` + health/combat-state wiring + team + death/despawn | GAMEPLAY | P0 | Must | T-FND-04, T-FND-05, T-FND-07 | Review |
 | T-ENM-02 | `UEnemyBrainComponent` FSM skeleton with timer-driven decision tick | AI | P0 | Must | T-ENM-01, T-FND-09 | Todo |
 | T-ENM-03 | Melee attack with telegraph | GAMEPLAY | P0 | Must | T-ENM-02, T-CMB-04, T-UXF-01 | Todo |
 | T-ENM-04 | Hit reaction + Staggered behavior | GAMEPLAY | P0 | Must | T-ENM-03, T-SYN-01, T-UXF-01 | Todo |
@@ -63,6 +63,8 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 - [ ] DA with no attacks fails `IsDataValid`.
 
 **Verification:** Automation Spec `Enemy.Lifecycle` (spawn, damage, death report count); PIE check in `L_Test_EnemyCombat`.
+
+**Review handoff (2026-10-06, Codex):** native body/data/lifecycle code, unit leaf tags, Asset Manager registration, removal contract and `CastleDefender.Enemy.Lifecycle` Specs are authored. `FeedbackTags::Enemy_Death` and its existing row are reused. No Blueprint/Data Asset/test-map content has been created; no Unreal build or Spec run was possible on this macOS executor. Windows/editor steps are in the latest `progress.md` entry. Keep Review until compiled, integrated with `BP_Enemy_Base`/`DA_Enemy_Test` and verified. T-ENM-02 remains Todo until this task is Done.
 
 ### T-ENM-02 — Brain FSM skeleton with timer-driven decision tick
 
