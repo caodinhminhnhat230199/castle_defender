@@ -1,6 +1,6 @@
 """Creates enemy content and tests.
 
-T-ENM-01: BP_Enemy_Base, DA_Enemy_Test and its placeholder attack montage.
+T-ENM-01/03: BP_Enemy_Base, DA_Enemy_Test and the placeholder AM_Enemy_Melee_Light/Heavy attack montages.
 T-ENM-02: BP_FT_EnemyAggroChase and the FT_Enemy_AggroChase map (functional tests are Blueprint, foundation §16).
 Idempotent: existing assets and their edits are kept; only missing assets are created.
 DA_Enemy_Test numbers are fixture values from the T-ENM-01 test case, not tuning (that is T-ENM-11).
@@ -22,19 +22,47 @@ if not assets.does_directory_exist(ENEMY_DIR):
 placeholder = runpy.run_path(str(Path(__file__).with_name("create_hero_placeholder_content.py")))
 placeholder["ensure_mannequin"]()
 MANNEQUIN = placeholder["MANNEQUIN"]
-clip = placeholder["anim"]("Unarmed/Attack/MM_Attack_01")
 
-# 1. Placeholder attack montage. Telegraph and hit windows are authored by T-ENM-03.
-montage_path = f"{ENEMY_DIR}/AM_Enemy_Test_Attack"
-if assets.does_asset_exist(montage_path):
-    montage = assets.load_asset(montage_path)
-else:
+# 1. Placeholder attack montages (T-ENM-03). Wind-ups are user-approved placeholders (2026-10-06): Light 0.5 s,
+#    Heavy 0.8 s, both above the 0.4 s minimum telegraph. Clips are stretched/trimmed so the strike lands in the window.
+def attack_montage(name, clip_path, clip_start, strike_in_clip, wind_up, hit_length):
+    path = f"{ENEMY_DIR}/{name}"
+    if assets.does_asset_exist(path):
+        return assets.load_asset(path)
+    source = placeholder["anim"](clip_path)
     factory = unreal.AnimMontageFactory()
-    factory.set_editor_property("target_skeleton", clip.get_editor_property("skeleton"))
-    factory.set_editor_property("source_animation", clip)
-    montage = asset_tools.create_asset("AM_Enemy_Test_Attack", ENEMY_DIR, unreal.AnimMontage, factory)
+    factory.set_editor_property("target_skeleton", source.get_editor_property("skeleton"))
+    factory.set_editor_property("source_animation", source)
+    montage = asset_tools.create_asset(name, ENEMY_DIR, unreal.AnimMontage, factory)
+    scale = wind_up / (strike_in_clip - clip_start)
+    duration = (source.get_play_length() - clip_start) * scale
+    assert unreal.HeroCombatLibrary.set_single_segment_montage_source(montage, source, clip_start, source.get_play_length(), duration, False)
+    unreal.HeroCombatLibrary.clear_combat_notifies_from_montage(montage)
+    assert unreal.HeroCombatLibrary.add_combat_hit_window_to_montage(montage, wind_up, hit_length), f"{name}: hit window rejected"
     assets.save_loaded_asset(montage, only_if_is_dirty=False)
-    unreal.log(f"Created {montage_path}")
+    unreal.log(f"Created {path}")
+    return montage
+
+
+# Strike times measured for the hero (create_hero_assets.py): MM_Attack_01 at 0.28 s, MM_ChargedAttack at 1.0 s.
+light = attack_montage("AM_Enemy_Melee_Light", "Unarmed/Attack/MM_Attack_01", 0.0, 0.28, 0.5, 0.2)
+heavy = attack_montage("AM_Enemy_Melee_Heavy", "Unarmed/Attack/MM_ChargedAttack", 0.2, 1.0, 0.8, 0.22)
+
+
+def attack(montage, damage, poise, heavy_flag, cooldown, weight):
+    """Fixture numbers for DA_Enemy_Test, not tuning (T-ENM-11 authors DA_Enemy_Melee)."""
+    result = unreal.EnemyAttackDefinition()
+    result.set_editor_property("montage", montage)
+    result.set_editor_property("range", 150.0)
+    result.set_editor_property("damage", damage)
+    result.set_editor_property("poise_damage", poise)
+    result.set_editor_property("is_heavy", heavy_flag)
+    result.set_editor_property("cooldown", cooldown)
+    result.set_editor_property("weight", weight)
+    return result
+
+
+TEST_ATTACKS = [attack(light, 10.0, 10.0, False, 0.0, 2.0), attack(heavy, 20.0, 25.0, True, 3.0, 1.0)]
 
 # 2. BP_Enemy_Base. Archetype stays unset to avoid a DA/BP reference cycle; level instances set it.
 bp_path = f"{ENEMY_DIR}/BP_Enemy_Base"
@@ -70,15 +98,13 @@ if not assets.does_asset_exist(da_path):
     combat_state = da.get_editor_property("combat_state")
     combat_state.set_editor_property("max_poise", 50.0)
     da.set_editor_property("combat_state", combat_state)
-    attack = unreal.EnemyAttackDefinition()
-    attack.set_editor_property("montage", montage)
-    attack.set_editor_property("range", 150.0)
-    attack.set_editor_property("damage", 10.0)
-    da.set_editor_property("attacks", [attack])
+    da.set_editor_property("attacks", TEST_ATTACKS)
+    da.set_editor_property("wind_up_turn_rate", 360.0)
+    da.set_editor_property("min_time_between_attacks", 1.0)
     assets.save_loaded_asset(da, only_if_is_dirty=False)
     unreal.log(f"Created {da_path}")
 
-# 4. T-ENM-02 functional test: hero outside the aggro radius → Idle; hero inside → Engage and moving.
+# 4. T-ENM-02 functional test: hero outside the aggro radius → Idle; hero inside → targeted and approached.
 TEST_MAPS = "/Game/CastleDefender/Maps/Test"
 HERO_CLASS = "/Game/CastleDefender/Hero/BP_Hero_Warlord.BP_Hero_Warlord_C"
 ft_path = f"{TEST_MAPS}/BP_FT_EnemyAggroChase"
@@ -183,7 +209,15 @@ def wire_aggro_chase(bp):
     link(gap.find_result_pin(), moving.find_input_pin("A"))
     value(moving.find_input_pin("B"), "280")
     both = call("/Script/Engine.KismetMathLibrary.BooleanAND", 2700, 300)
-    link(state_is(enemy_ref, "2", 2000, 300), both.find_input_pin("A"))  # EEnemyBrainState::Engage
+    # Engaged = the brain targets the hero (it may already be Attacking once in range, T-ENM-03).
+    brain = call("/Script/CastleDefender.EnemyCharacter.GetBrainComponent", 2000, 300)
+    link(enemy_ref, brain.find_self_pin())
+    target = call("/Script/CastleDefender.EnemyBrainComponent.GetTarget", 2250, 300)
+    link(brain.find_result_pin(), target.find_self_pin())
+    same = call("/Script/Engine.KismetMathLibrary.EqualEqual_ObjectObject", 2450, 300)
+    link(target.find_result_pin(), same.find_input_pin("A"))
+    link(hero.find_result_pin(), same.find_input_pin("B"))
+    link(same.find_result_pin(), both.find_input_pin("A"))
     link(moving.find_result_pin(), both.find_input_pin("B"))
     engaged = editor.add_branch_node()
     engaged.set_node_pos(unreal.IntPoint(2900, 0))
