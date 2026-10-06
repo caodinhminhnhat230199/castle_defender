@@ -10,6 +10,7 @@
 class UHealthComponent;
 class UCombatStateComponent;
 class UEnemyBrainComponent;
+class UMeleeTraceComponent;
 
 UENUM(BlueprintType)
 enum class EEnemyRemovedReason : uint8 { Killed, Despawned, OutOfWorld };
@@ -45,6 +46,7 @@ public:
 	UCombatStateComponent* GetCombatStateComponent() const { return CombatState; }
 	UFUNCTION(BlueprintPure, Category = "Enemy")
 	UEnemyBrainComponent* GetBrainComponent() const { return Brain; }
+	UMeleeTraceComponent* GetMeleeTraceComponent() const { return MeleeTrace; }
 	const FEnemyRuntimeParams& GetRuntimeParams() const { return RuntimeParams; }
 	bool HasReportedRemoval() const { return bRemovalReported; }
 	UFUNCTION(BlueprintPure, Category = "Enemy")
@@ -64,6 +66,8 @@ protected:
 	TObjectPtr<UCombatStateComponent> CombatState;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
 	TObjectPtr<UEnemyBrainComponent> Brain;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<UMeleeTraceComponent> MeleeTrace;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Enemy")
 	FEnemyRuntimeParams RuntimeParams;
 

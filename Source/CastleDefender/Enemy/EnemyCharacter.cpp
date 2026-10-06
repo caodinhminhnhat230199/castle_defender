@@ -16,6 +16,13 @@ AEnemyCharacter::AEnemyCharacter()
 	Health = CreateDefaultSubobject<UHealthComponent>(TEXT("Health"));
 	CombatState = CreateDefaultSubobject<UCombatStateComponent>(TEXT("CombatState"));
 	Brain = CreateDefaultSubobject<UEnemyBrainComponent>(TEXT("Brain"));
+	MeleeTrace = CreateDefaultSubobject<UMeleeTraceComponent>(TEXT("MeleeTrace"));
+	// Turn toward the AI focus at the archetype turn rate; the brain sets and clears that focus (R-ENM-05).
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	// Attack montages carry root motion; keep turning during the wind-up anyway.
+	GetCharacterMovement()->bAllowPhysicsRotationDuringAnimRootMotion = true;
 	AIControllerClass = AAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
@@ -59,7 +66,7 @@ void AEnemyCharacter::StopActing()
 		AI->ClearFocus(EAIFocusPriority::Gameplay);
 	}
 	StopAnimMontage();
-	if (UMeleeTraceComponent* Trace = FindComponentByClass<UMeleeTraceComponent>()) { Trace->EndHitWindow(); }
+	MeleeTrace->EndHitWindow();
 	GetCharacterMovement()->StopMovementImmediately();
 	GetCharacterMovement()->DisableMovement();
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);

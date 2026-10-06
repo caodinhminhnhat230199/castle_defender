@@ -455,7 +455,7 @@ Agreements between features that one feature defines and another consumes. When 
 | `FCombatResolutionEvent` / `OnCombatResolved` (spec v2, proposed): one resolution ID/context/result per hit attempt, participant roles; separate from conditional UXF feedback, no global bus | T-CMB-04 | CMB debugger T-CMB-21, T-UXF-08 telemetry, ENM/SQD/DEF/BOS hit producers; T-CMB-15 verifies counts |
 | `FCombatHit` interrupt strength/category + per-action authored resistance (spec v2, proposed); resistance defaults off, damage still applies, SYN Staggered remains authoritative | T-CMB-04 (hit data), T-CMB-06/11 (hero consumer) | ENM/SQD/DEF/BOS attack data, T-CMB-15 threshold tests |
 | `FCombatHit.bWasBlocked` resolved metadata (overwritten by DeliverHit before OnDamaged); `AHeroCharacter.OnFeedbackRequested(Tag, Hit)` for non-hit death presentation | T-CMB-04/11 | Hero hit-reaction suppression; UXF death feedback consumer (T-UXF-01/03). Never replay hit feedback from OnDamaged. OnHeroDeath observers see committed Dead state. |
-| `UMeleeTraceComponent`, `ICombatHitInterceptor` | T-CMB-04 | T-ENM-03, soldier melee (T-SQD-10), boss |
+| `UMeleeTraceComponent` (+ native `OnHitWindowBegin`, T-ENM-03), `ICombatHitInterceptor` | T-CMB-04 | T-ENM-03, soldier melee (T-SQD-10), boss |
 | `ACombatProjectile` base | T-SQD-10 | T-DEF-09 tower projectiles; pierce extension for T-PRK-11 / T-CNV-* |
 | `FCombatStateConfig` + `BaseArmor` in every combatant definition | T-SYN-01 | T-ENM-01, T-SQD-01, T-BOS-01, hero class data |
 | `DT_CombatStatePresentation` + `OnStateAdded/Removed` | T-SYN-01, T-SYN-04 | T-UXF-05, T-PRK-03 |

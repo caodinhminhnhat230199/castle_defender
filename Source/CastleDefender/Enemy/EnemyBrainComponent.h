@@ -6,8 +6,9 @@
 #include "EnemyBrainComponent.generated.h"
 
 class AEnemyCharacter;
+class UAnimMontage;
 
-/** P0 uses Idle, Engage, Paused and Dead; Attacking/Staggered land with T-ENM-03/04, route states in P1/P2. */
+/** P0 uses Idle, Engage, Attacking, Paused and Dead; Staggered lands with T-ENM-04, route states in P1/P2. */
 UENUM(BlueprintType)
 enum class EEnemyBrainState : uint8 { Idle, FollowRoute, Engage, Attacking, Staggered, ReturnToRoute, Paused, Dead };
 
@@ -54,6 +55,10 @@ private:
 	bool IsValidTarget(const AActor* Candidate) const;
 	AActor* ScanForTarget() const;
 	void ChaseTarget(AActor* Goal);
+	/** Starts an attack in range and off cooldown; false leaves the caller chasing. */
+	bool TryStartAttack(AActor& Goal);
+	void HandleHitWindowBegin();
+	void HandleAttackEnded(UAnimMontage* Montage, bool bInterrupted);
 	void StopMoving();
 	void DrawDebug() const;
 	UFUNCTION()
@@ -70,4 +75,10 @@ private:
 	TWeakObjectPtr<AActor> LastAttacker;
 	double LastAttackedTime = -1.0;
 	int32 DecisionCount = 0;
+	/** Per attack: game time its cooldown ends. */
+	TArray<double> AttackReadyTimes;
+	double NextAttackTime = 0.0;
+	int32 ActiveAttack = INDEX_NONE;
+	UPROPERTY()
+	TObjectPtr<UAnimMontage> ActiveMontage;
 };

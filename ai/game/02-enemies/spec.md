@@ -250,7 +250,7 @@ Depended on by: CMB (target to hit), SQD (enemies to fight), DEF (enemies that b
 | Body despawn delay | P0 | ~3 s | [TUNABLE] |
 | Local avoidance on/off | P2 | from T-ENM-16 result | Perf setting |
 
-Global enemy tunables in `UGameTuningSettings`: stuck check time, max stuck attempts, obstacle queue radius, route rejoin distance, minimum telegraph time (validation).
+Global enemy tunables in `UGameTuningSettings`: stuck check time, max stuck attempts, obstacle queue radius, route rejoin distance, minimum telegraph time (validation; `MinEnemyTelegraphTime`, default 0.4 s chosen by the user 2026-10-06). Placeholder wind-ups for the P0 test attacks: Light 0.5 s, Heavy 0.8 s (user, 2026-10-06; T-ENM-11 tunes).
 
 ### Difficulty hooks (§25.1, §25.2): data only, no code in prototype
 

@@ -2,6 +2,8 @@
 #include "Enemy/EnemyCharacter.h"
 #if WITH_EDITOR
 #include "Misc/DataValidation.h"
+#include "Combat/CombatActionTiming.h"
+#include "Core/GameTuningSettings.h"
 #endif
 
 bool UEnemyArchetypeDefinition::ValidateDefinition(FString& OutError) const
@@ -61,6 +63,22 @@ EDataValidationResult UEnemyArchetypeDefinition::IsDataValid(FDataValidationCont
 	{
 		Context.AddError(FText::FromString(Error));
 		return EDataValidationResult::Invalid;
+	}
+	// R-ENM-05 / AC-ENM-02: warn when an attack's wind-up (montage start → first hit window) is below the global minimum.
+	const float MinTelegraph = UGameTuningSettings::Get()->MinEnemyTelegraphTime;
+	for (const FEnemyAttackDefinition& Attack : Attacks)
+	{
+		FCombatActionTiming Timing;
+		FString TimingError;
+		if (!FCombatActionTiming::InspectMontage(Attack.Montage, Timing, &TimingError) || !Timing.bHasHitWindow)
+		{
+			Context.AddWarning(FText::FromString(FString::Printf(TEXT("%s has no valid Combat Hit Window: %s"), *GetNameSafe(Attack.Montage), *TimingError)));
+		}
+		else if (Timing.HitWindowStart / Attack.PlayRate < MinTelegraph)
+		{
+			Context.AddWarning(FText::FromString(FString::Printf(TEXT("%s wind-up %.2f s is below the minimum telegraph time %.2f s."),
+				*GetNameSafe(Attack.Montage), Timing.HitWindowStart / Attack.PlayRate, MinTelegraph)));
+		}
 	}
 	return Result;
 }

@@ -67,6 +67,7 @@ void UMeleeTraceComponent::BeginHitWindow()
 	AlreadyHitActors.Reset();
 	PreviousSamplePositions = ComputeSamplePositions();
 	SetComponentTickEnabled(true);
+	OnHitWindowBegin.Broadcast();
 }
 
 void UMeleeTraceComponent::EndHitWindow()

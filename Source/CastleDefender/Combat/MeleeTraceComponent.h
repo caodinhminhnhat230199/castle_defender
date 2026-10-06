@@ -44,6 +44,9 @@ public:
 	const TSet<TWeakObjectPtr<AActor>>& GetAlreadyHitActors() const { return AlreadyHitActors; }
 	const FCombatHit& GetPendingAttackTemplate() const { return PendingHitTemplate; }
 
+	/** Native: fires when a hit window opens. Enemies stop wind-up tracking here (T-ENM-03). */
+	FSimpleMulticastDelegate OnHitWindowBegin;
+
 	/** Broadcast when a hit attempt on a target completes through DeliverHit. */
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FOnHitResolvedSignature OnHitResolved;

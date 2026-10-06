@@ -79,6 +79,42 @@ void FEnemyTargetingSpec::Define()
 		});
 	});
 
+	Describe("PickAttack", [this]()
+	{
+		const auto Attack = [](float Range, float Weight)
+		{
+			FEnemyAttackDefinition Result;
+			Result.Range = Range;
+			Result.Weight = Weight;
+			return Result;
+		};
+
+		It("returns none when no attack reaches the gap", [this, Attack]()
+		{
+			const TArray<FEnemyAttackDefinition> Attacks = { Attack(150.f, 1.f), Attack(200.f, 1.f) };
+			TestEqual("Out of range", EnemyTargeting::PickAttack(Attacks, {}, 250.f, 0.0, 0.5f), INDEX_NONE);
+			TestEqual("Reaches only the long one", EnemyTargeting::PickAttack(Attacks, {}, 180.f, 0.0, 0.f), 1);
+		});
+
+		It("skips attacks still on cooldown", [this, Attack]()
+		{
+			const TArray<FEnemyAttackDefinition> Attacks = { Attack(150.f, 1.f), Attack(150.f, 1.f) };
+			const TArray<double> Ready = { 10.0, 0.0 };
+			TestEqual("First cooling down", EnemyTargeting::PickAttack(Attacks, Ready, 100.f, 5.0, 0.f), 1);
+			TestEqual("Ready again at its time", EnemyTargeting::PickAttack(Attacks, Ready, 100.f, 10.0, 0.f), 0);
+			TestEqual("All cooling down", EnemyTargeting::PickAttack(Attacks, { 10.0, 10.0 }, 100.f, 5.0, 0.f), INDEX_NONE);
+		});
+
+		It("picks by weight with the roll", [this, Attack]()
+		{
+			const TArray<FEnemyAttackDefinition> Attacks = { Attack(150.f, 2.f), Attack(150.f, 1.f) };
+			TestEqual("Roll 0", EnemyTargeting::PickAttack(Attacks, {}, 100.f, 0.0, 0.f), 0);
+			TestEqual("Roll inside the first 2/3", EnemyTargeting::PickAttack(Attacks, {}, 100.f, 0.0, 0.6f), 0);
+			TestEqual("Roll past 2/3", EnemyTargeting::PickAttack(Attacks, {}, 100.f, 0.0, 0.7f), 1);
+			TestEqual("Roll 1", EnemyTargeting::PickAttack(Attacks, {}, 100.f, 0.0, 1.f), 1);
+		});
+	});
+
 	Describe("Brain", [this]()
 	{
 		BeforeEach([this]() { Fixture = MakeUnique<FBrainFixture>(); });
