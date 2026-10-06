@@ -2,6 +2,7 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 #include "Enemy/EnemyCharacter.h"
 #include "Tests/EnemyLifecycleTestListener.h"
+#include "Tests/EnemyTestFixture.h"
 #include "Combat/CombatLibrary.h"
 #include "Combat/HealthComponent.h"
 #include "Combat/CombatStateComponent.h"
@@ -14,26 +15,14 @@
 
 namespace
 {
-	struct FEnemyLifecycleFixture
+	struct FEnemyLifecycleFixture : FEnemyTestWorld
 	{
-		UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
 		AEnemyCharacter* Enemy = World->SpawnActor<AEnemyCharacter>();
-		UEnemyArchetypeDefinition* Definition = NewObject<UEnemyArchetypeDefinition>(Enemy);
+		UEnemyArchetypeDefinition* Definition = MakeTestEnemyDefinition(Enemy);
 		UEnemyLifecycleTestListener* Listener = NewObject<UEnemyLifecycleTestListener>();
 
 		FEnemyLifecycleFixture()
 		{
-			// Fixed lifecycle fixture numbers, not live gameplay tuning.
-			Definition->DisplayName = FText::FromString(TEXT("Lifecycle Fixture"));
-			Definition->EnemyClass = AEnemyCharacter::StaticClass();
-			Definition->MaxHealth = 100.f;
-			Definition->WalkSpeed = 300.f;
-			Definition->CombatState.MaxPoise = 50.f;
-			FEnemyAttackDefinition Attack;
-			Attack.Montage = NewObject<UAnimMontage>(Definition);
-			Attack.Range = 150.f;
-			Attack.Damage = 10.f;
-			Definition->Attacks.Add(Attack);
 			Enemy->InitFromSpawn(Definition, FEnemySpawnParams());
 			Enemy->OnEnemyRemoved.AddDynamic(Listener, &UEnemyLifecycleTestListener::HandleRemoved);
 		}
@@ -42,7 +31,6 @@ namespace
 			World->InitializeActorsForPlay(FURL());
 			Enemy->DispatchBeginPlay();
 		}
-		~FEnemyLifecycleFixture() { World->DestroyWorld(false); }
 	};
 }
 
