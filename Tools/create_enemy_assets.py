@@ -1,6 +1,6 @@
 """Creates enemy content and tests.
 
-T-ENM-01/03: BP_Enemy_Base, DA_Enemy_Test and the placeholder AM_Enemy_Melee_Light/Heavy attack montages.
+T-ENM-01/03/04: BP_Enemy_Base (stagger presentation graph), DA_Enemy_Test and the placeholder AM_Enemy_Melee_Light/Heavy/Stagger montages.
 T-ENM-02: BP_FT_EnemyAggroChase and the FT_Enemy_AggroChase map (functional tests are Blueprint, foundation §16).
 Idempotent: existing assets and their edits are kept; only missing assets are created.
 DA_Enemy_Test numbers are fixture values from the T-ENM-01 test case, not tuning (that is T-ENM-11).
@@ -83,6 +83,49 @@ else:
     unreal.BlueprintEditorLibrary.compile_blueprint(enemy_bp)
     assets.save_loaded_asset(enemy_bp, only_if_is_dirty=False)
     unreal.log(f"Created {bp_path}")
+
+# 2.1 T-ENM-04: stagger presentation. C++ owns the Staggered state; BP_Enemy_Base only plays the placeholder clip.
+stagger_path = f"{ENEMY_DIR}/AM_Enemy_Melee_Stagger"
+if assets.does_asset_exist(stagger_path):
+    stagger = assets.load_asset(stagger_path)
+else:
+    source = placeholder["anim"]("Rifle/HitReact/MM_HitReact_Front_Hvy_01")
+    factory = unreal.AnimMontageFactory()
+    factory.set_editor_property("target_skeleton", source.get_editor_property("skeleton"))
+    factory.set_editor_property("source_animation", source)
+    stagger = asset_tools.create_asset("AM_Enemy_Melee_Stagger", ENEMY_DIR, unreal.AnimMontage, factory)
+    assets.save_loaded_asset(stagger, only_if_is_dirty=False)
+    unreal.log(f"Created {stagger_path}")
+
+
+def wire_stagger_presentation(bp):
+    bel = unreal.BlueprintEditorLibrary
+    graph = unreal.BlueprintGraphEditor.get_graph_editor(bel.find_event_graph(bp))
+    event = graph.find_event_node("OnStaggerPresentation")
+    if event is None:
+        bel.add_event_override(bp, "OnStaggerPresentation", unreal.IntPoint(0, 600))
+        event = graph.find_event_node("OnStaggerPresentation")
+    if event.find_then_pin().list_connected_pins():
+        return  # Preserve an already wired graph, including user edits.
+    branch = graph.add_branch_node()
+    branch.set_node_pos(unreal.IntPoint(300, 600))
+    if not event.find_then_pin().try_create_connection(branch.find_execute_pin()) or \
+            not bel.find_output_pin(event, "bStaggered").try_create_connection(branch.find_condition_pin()):
+        raise RuntimeError("BP_Enemy_Base: cannot wire OnStaggerPresentation")
+    for path, source, y in (("/Script/Engine.Character.PlayAnimMontage", branch.find_then_pin(), 550),
+                            ("/Script/Engine.Character.StopAnimMontage", branch.find_else_pin(), 750)):
+        node = graph.add_call_function_node(path)
+        node.set_node_pos(unreal.IntPoint(550, y))
+        if not node.find_input_pin("AnimMontage").set_pin_value(stagger.get_path_name()) or \
+                not source.try_create_connection(node.find_execute_pin()):
+            raise RuntimeError(f"BP_Enemy_Base: cannot wire {path}")
+    if not bel.compile_blueprint(bp) or graph.list_nodes_with_errors() or graph.list_nodes_with_warnings():
+        raise RuntimeError("BP_Enemy_Base did not compile without warnings")
+    assets.save_loaded_asset(bp, only_if_is_dirty=False)
+    unreal.log("Wired OnStaggerPresentation in BP_Enemy_Base")
+
+
+wire_stagger_presentation(enemy_bp)
 
 # 3. DA_Enemy_Test.
 da_path = f"{ENEMY_DIR}/DA_Enemy_Test"
