@@ -16,6 +16,37 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-06: Claude Code: T-ENM-03 Done and committed
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`. Not pushed (no GitHub key on this PC).
+- **Tasks:** T-ENM-03 Review → Done on the user's PIE confirmation ("okay good"). AC-ENM-03 block/parry part stays open for T-CMB-08/09.
+- **Changed:** ENM `tasks.md`, this log; commits for T-ENM-03 code/tests, content and docs.
+- **Verified:** full gate 134/134 before committing; no code change since.
+- **Manual steps for the user:** none. `L_CombatSandbox.umap` (user's placed enemies) left uncommitted.
+- **Next:** T-ENM-04 (hit reaction + Staggered) or T-CMB-08 (block); user to choose.
+
+### 2026-10-06: Claude Code: enemy melee attack with telegraph [T-ENM-03]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`, uncommitted (on top of `3609254`).
+- **Tasks:** T-ENM-03 Todo → In Progress → Review.
+- **Decisions (user, 2026-10-06):** `MinEnemyTelegraphTime` = 0.4 s; placeholder wind-ups Light 0.5 s / Heavy 0.8 s. Recorded in ENM spec §13. Other `DA_Enemy_Test` numbers (damage 10/20, poise 10/25, heavy cooldown 3 s, weights 2/1, turn rate 360°/s, 1 s between attacks) are fixture placeholders for T-ENM-11 to tune.
+- **Changed:**
+  - `Enemy/EnemyBrainComponent.*`: attack start/end, telegraph feedback, focus tracking cleared at hit-window start, cooldowns.
+  - `Enemy/EnemyTargeting.*`: `PickAttack`.
+  - `Enemy/EnemyCharacter.*`: owns `UMeleeTraceComponent`; rotates by controller desired rotation, also during root motion.
+  - `Enemy/EnemyArchetypeDefinition.cpp`: wind-up validation warning.
+  - `Combat/MeleeTraceComponent.*`: native `OnHitWindowBegin` (main plan §8a updated).
+  - `Core/GameTuningSettings.h`: `MinEnemyTelegraphTime`.
+  - Tests: new `EnemyAttack.spec.cpp`, `PickAttack` cases, `EnemyTestFixture.h` teardown (EndPlay + GC).
+  - Content via `Tools/create_enemy_assets.bat`: `AM_Enemy_Melee_Light/Heavy`, `DA_Enemy_Test` attacks, regenerated `BP_FT_EnemyAggroChase` + `FT_Enemy_AggroChase` (now checks "targets the hero and closed the gap", since the enemy may already be Attacking). `AM_Enemy_Test_Attack` deleted (no referencers).
+- **Bug found and fixed:** the full gate crashed (access violation in `UnrealEditor_Water`) on the map load after the new spec. Root cause: the fixture began play on every actor, including Water's `ABuoyancyManager`, which registers a physics-solver callback in BeginPlay and removes it only in EndPlay; teardown never routed EndPlay. `FEnemyTestWorld` now tears down like `FTestWorldWrapper` (BeginTearingDown, EndPlay for begun actors, then GC). Evidence: `Saved/enm03-crash-evidence.log`, `Saved/Crashes/`.
+- **Verified:** editor + game builds pass. `run_tests.bat` full gate: 134/134, 0 with warnings, editor exit 0 (`Saved/enm03-full-tests.log`). Enemy filter 20/20 in three runs before the teardown fix, and inside the full gate after it. Log warnings only the known crowd-manager teardown and an editor layout-version notice.
+- **Manual steps for the user (PIE, `L_CombatSandbox`, enemy Archetype = `DA_Enemy_Test`, `game.debug.Enemy 1`):**
+  1. Approach: the enemy walks up, plays a wind-up (light: short swing; heavy: longer charged punch with a different telegraph sound) and hits for 10/20.
+  2. Dodge sideways just as the swing starts: the enemy keeps facing where it started and misses.
+  3. Stand still during the wind-up but step aside early: it turns to follow until the hit starts.
+  4. Kill it mid-wind-up: it stops, no errors in the Output Log.
+- **Open questions / blockers:** block/parry acceptance (AC-ENM-03) waits for T-CMB-08/09. Commit pending user go-ahead.
+- **Next:** after PIE: T-ENM-03 Done → T-CMB-08 (block) or T-ENM-04 (hit reaction + Staggered).
+
 ### 2026-10-06: Claude Code: T-ENM-02 Done; session work committed
 - **Agent / branch:** Claude Code, `feat/01-hero-combat`. User authorized commits (2026-10-06). Push not done: this PC has no GitHub SSH key.
 - **Tasks:** T-ENM-02 Review → Done after the user's PIE confirmation (debug circle/state, Idle → Engage, chase).

@@ -14,7 +14,7 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 |---|---|---|---|---|---|---|
 | T-ENM-01 | `AEnemyCharacter` + `UEnemyArchetypeDefinition` + health/combat-state wiring + team + death/despawn | GAMEPLAY | P0 | Must | T-FND-04, T-FND-05, T-FND-07 | Done |
 | T-ENM-02 | `UEnemyBrainComponent` FSM skeleton with timer-driven decision tick | AI | P0 | Must | T-ENM-01, T-FND-09 | Done |
-| T-ENM-03 | Melee attack with telegraph | GAMEPLAY | P0 | Must | T-ENM-02, T-CMB-04, T-UXF-01 | Todo |
+| T-ENM-03 | Melee attack with telegraph | GAMEPLAY | P0 | Must | T-ENM-02, T-CMB-04, T-UXF-01 | Done |
 | T-ENM-04 | Hit reaction + Staggered behavior | GAMEPLAY | P0 | Must | T-ENM-03, T-SYN-01, T-UXF-01 | Todo |
 | T-ENM-11 | P0 melee enemy content + sandbox tuning pass | DESIGN | P0 | Must | T-ENM-03, T-ENM-04, T-CMB-01 | Todo |
 | T-ENM-12 | P0 Functional Tests + G0 enemy check | QA | P0 | Must | T-ENM-11, T-FND-10, T-CMB-08, T-CMB-09, T-UXF-03 | Todo |
@@ -107,25 +107,27 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 - **Dependencies:** T-ENM-02, T-CMB-04 (`UCombatLibrary::DeliverHit`, `UMeleeTraceComponent`), T-UXF-01
 
 **Implementation Notes**
-- [ ] `FEnemyAttackDefinition`: montage, range, damage, poise damage, `bIsHeavy`, play rate, cooldown, weight. Global min time between attacks in runtime params.
-- [ ] Attack choice: filter by range and cooldown, weighted random; pure helper in `EnemyTargeting` (testable).
-- [ ] Start: state `Attacking`, `Montage_Play` at play rate, play `Feedback.Enemy.Telegraph` (or `.Heavy` when `bIsHeavy`) at montage start, `SetFocus(Target)` with CharacterMovement rotation rate as wind-up turn rate.
-- [ ] At hit-window begin: `ClearFocus` (no tracking during the active window). Use `UMeleeTraceComponent` (T-CMB-04) for the trace and deliver every hit through `UCombatLibrary::DeliverHit` with the payload (damage, poise damage, heavy flag, `SourceLayer = Enemy`, instigator). Never call `UHealthComponent::ApplyHit` directly: `DeliverHit` is what applies block, parry, i-frames, poise, states and armor.
-- [ ] Commitment: no decision changes while `Attacking`; exit only on montage end, Staggered (T-ENM-04) or death.
-- [ ] Optional if simple: `IsDataValid` warns when montage start → first hit-window notify is shorter than `UGameTuningSettings` min telegraph time (verify notify inspection API).
-- [ ] Add tags `Feedback.Enemy.Telegraph`, `Feedback.Enemy.Telegraph.Heavy`; placeholder rows in `DT_Feedback` (flash + whoosh).
+- [x] `FEnemyAttackDefinition`: montage, range, damage, poise damage, `bIsHeavy`, play rate, cooldown, weight. Global min time between attacks in runtime params.
+- [x] Attack choice: filter by range and cooldown, weighted random; pure helper in `EnemyTargeting` (testable).
+- [x] Start: state `Attacking`, `Montage_Play` at play rate, play `Feedback.Enemy.Telegraph` (or `.Heavy` when `bIsHeavy`) at montage start, `SetFocus(Target)` with CharacterMovement rotation rate as wind-up turn rate.
+- [x] At hit-window begin: `ClearFocus` (no tracking during the active window). Use `UMeleeTraceComponent` (T-CMB-04) for the trace and deliver every hit through `UCombatLibrary::DeliverHit` with the payload (damage, poise damage, heavy flag, `SourceLayer = Enemy`, instigator). Never call `UHealthComponent::ApplyHit` directly: `DeliverHit` is what applies block, parry, i-frames, poise, states and armor.
+- [x] Commitment: no decision changes while `Attacking`; exit only on montage end, Staggered (T-ENM-04) or death.
+- [x] Optional if simple: `IsDataValid` warns when montage start → first hit-window notify is shorter than `UGameTuningSettings` min telegraph time (verify notify inspection API).
+- [x] Add tags `Feedback.Enemy.Telegraph`, `Feedback.Enemy.Telegraph.Heavy`; placeholder rows in `DT_Feedback` (flash + whoosh).
 
 **Expected Files / Assets:** `EnemyBrainComponent.cpp` (attack path), `EnemyArchetypeDefinition.h`; `AM_Enemy_Melee_Light`, `AM_Enemy_Melee_Heavy` (placeholder).
 
 **Test Case:** Dummy target in range → enemy plays telegraph event at T0 → damage applied at T1 → assert T1 − T0 ≥ min telegraph time. Kill the dummy during wind-up → attack still plays to its end, no crash, enemy returns to `Idle`.
 
 **Acceptance Criteria**
-- [ ] Telegraph event always precedes damage by ≥ authored minimum.
-- [ ] Enemy stops rotating at hit-window start (Hero can dodge sideways).
+- [x] Telegraph event always precedes damage by ≥ authored minimum.
+- [x] Enemy stops rotating at hit-window start (Hero can dodge sideways).
 - [ ] Hero block and parry (CMB-08/-09) work against enemy attacks without enemy-specific code in CMB.
-- [ ] Attack values come from the DA only.
+- [x] Attack values come from the DA only.
 
 **Verification:** Functional Test `FT_Enemy_TelegraphGap`; PIE: dodge sideways at hit-window start avoids the hit.
+
+**Review handoff (2026-10-06, Claude Code):** attack path in `UEnemyBrainComponent`: `EnemyTargeting::PickAttack` (range gap = 2D distance minus both capsule radii, per-attack cooldown, weighted roll), `Montage_Play`, `Feedback.Enemy.Telegraph(.Heavy)` at montage start, Gameplay focus on the target while engaged and through the wind-up, cleared on `UMeleeTraceComponent::OnHitWindowBegin` (new native event, §8a). Hits go through the shared trace → `DeliverHit` with `SourceLayer = Enemy`. Cooldowns and `MinTimeBetweenAttacks` count from attack end. Enemy turns via controller desired rotation at `WindUpTurnRate`, with `bAllowPhysicsRotationDuringAnimRootMotion` (root-motion clips otherwise freeze rotation). `IsDataValid` warns when a wind-up is below `UGameTuningSettings::MinEnemyTelegraphTime` (0.4 s, user default). Content: `AM_Enemy_Melee_Light` (0.5 s wind-up) / `AM_Enemy_Melee_Heavy` (0.8 s), `DA_Enemy_Test` now uses both (fixture numbers; `AM_Enemy_Test_Attack` retired). Verification moved from `FT_Enemy_TelegraphGap` to Automation Spec `CastleDefender.Enemy.Attack`, which ticks a real world (timer → montage → notify → trace → `DeliverHit`): gap ≥ minimum for Light and Heavy, tracking during wind-up, zero yaw drift in the hit window and a dodge at window start avoids the hit, target killed mid-wind-up → attack plays out → Idle, damage equals DA. Full gate 134/134. Block/parry AC waits for T-CMB-08/09. PIE (user, 2026-10-06): pass → Done.
 
 ### T-ENM-04 — Hit reaction + Staggered behavior
 
