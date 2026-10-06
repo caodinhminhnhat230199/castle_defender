@@ -15,7 +15,7 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 | T-ENM-01 | `AEnemyCharacter` + `UEnemyArchetypeDefinition` + health/combat-state wiring + team + death/despawn | GAMEPLAY | P0 | Must | T-FND-04, T-FND-05, T-FND-07 | Done |
 | T-ENM-02 | `UEnemyBrainComponent` FSM skeleton with timer-driven decision tick | AI | P0 | Must | T-ENM-01, T-FND-09 | Done |
 | T-ENM-03 | Melee attack with telegraph | GAMEPLAY | P0 | Must | T-ENM-02, T-CMB-04, T-UXF-01 | Done |
-| T-ENM-04 | Hit reaction + Staggered behavior | GAMEPLAY | P0 | Must | T-ENM-03, T-SYN-01, T-UXF-01 | Todo |
+| T-ENM-04 | Hit reaction + Staggered behavior | GAMEPLAY | P0 | Must | T-ENM-03, T-SYN-01, T-UXF-01 | Review |
 | T-ENM-11 | P0 melee enemy content + sandbox tuning pass | DESIGN | P0 | Must | T-ENM-03, T-ENM-04, T-CMB-01 | Todo |
 | T-ENM-12 | P0 Functional Tests + G0 enemy check | QA | P0 | Must | T-ENM-11, T-FND-10, T-CMB-08, T-CMB-09, T-UXF-03 | Todo |
 | T-ENM-13 | Waypoint route following + sandbox goal (P1 advance) | AI | P1 | Must | T-ENM-02 | Todo |
@@ -137,22 +137,23 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 - **Dependencies:** T-ENM-03, T-SYN-01 (poise → Staggered), T-UXF-01
 
 **Implementation Notes**
-- [ ] `OnDamaged` → `OnHitReactPresentation(FCombatHit)` BlueprintImplementableEvent (BP plays additive flinch / flash). No state change.
-- [ ] Bind `UCombatStateComponent::OnStateAdded/Removed`. On `State.Combat.Staggered` added: stop attack montage (hit window must close; verify `NotifyEnd` on interrupt), `StopMovement`, `ClearFocus`, state `Staggered`, `OnStaggerPresentation(true)`.
-- [ ] On removed: `OnStaggerPresentation(false)`, state `Engage` if target valid else previous movement state, decide immediately.
-- [ ] Staggered duration comes from the DA via `UCombatStateComponent` (no ENM timer).
-- [ ] Do not play state VFX/icon here (SYN-04 / UXF-05 own them).
+- [x] `OnDamaged` → `OnHitReactPresentation(FCombatHit)` BlueprintImplementableEvent (BP plays additive flinch / flash). No state change.
+- [x] Bind `UCombatStateComponent::OnStateAdded/Removed`. On `State.Combat.Staggered` added: stop attack montage (hit window must close; verify `NotifyEnd` on interrupt), `StopMovement`, `ClearFocus`, state `Staggered`, `OnStaggerPresentation(true)`.
+- [x] On removed: `OnStaggerPresentation(false)`, state `Engage` if target valid else previous movement state, decide immediately.
+- [x] Staggered duration comes from the DA via `UCombatStateComponent` (no ENM timer).
+- [x] Do not play state VFX/icon here (SYN-04 / UXF-05 own them).
 
 **Expected Files / Assets:** `EnemyCharacter.cpp`, `EnemyBrainComponent.cpp`; `AM_Enemy_Melee_Stagger`; BP hit-react graph in `BP_Enemy_Base`.
 
 **Test Case:** Enemy starts an attack on the dummy → during wind-up apply `State.Combat.Staggered` via cheat → no damage reaches the dummy, enemy plays stagger, no decisions logged during the state, enemy re-engages after it ends.
 
 **Acceptance Criteria**
-- [ ] Staggered during wind-up or hit window: zero damage from that attack.
-- [ ] Light hits without poise break never cancel the attack.
-- [ ] After Staggered ends, the enemy acts again within one decision interval.
+- [x] Staggered during wind-up or hit window: zero damage from that attack.
+- [x] Light hits without poise break never cancel the attack.
+- [x] After Staggered ends, the enemy acts again within one decision interval.
 
 **Verification:** Functional Test `FT_Enemy_StaggerCancel`; PIE with Hero Heavy attacks.
+**Review handoff (2026-10-06, Claude Code):** `AEnemyCharacter`: `OnHitReactPresentation(FCombatHit)` on every damaging hit while alive (presentation only), `OnStaggerPresentation(bool)`. `UEnemyBrainComponent` binds `OnStateAdded/Removed`: on `State.Combat.Staggered` it stops the attack montage with no blend-out and closes the hit window at once (no reliance on `NotifyEnd` during blend-out), stops movement, clears focus, enters `Staggered`; on removal it re-engages (or Idles) and decides immediately. Duration is the DA's `StaggerDuration` through `UCombatStateComponent`; no ENM timer. `BP_Enemy_Base` plays `AM_Enemy_Melee_Stagger` (placeholder `MM_HitReact_Front_Hvy_01`) on true and stops it on false (wired by `Tools/create_enemy_assets.bat`). `OnHitReactPresentation` has no BP content yet: the placeholder rig has only a full-body slot, and a flinch montage there would interrupt the attack (R-ENM-08); impact feedback is T-UXF-03. Verification moved from `FT_Enemy_StaggerCancel` to Automation Spec `CastleDefender.Enemy.Stagger` (real world tick): poise break in the wind-up → no damage, stagger montage, no state change/telegraph/movement during the state, acts again in ≤ one decision interval; break at hit-window start → no damage; hit without break → attack still lands. Full gate 137/137 (twice). Open: PIE with Hero Heavy in `progress.md`.
 
 ### T-ENM-11 — P0 melee enemy content + sandbox tuning pass
 

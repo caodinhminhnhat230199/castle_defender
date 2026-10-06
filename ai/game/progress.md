@@ -16,6 +16,24 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-06: Claude Code: enemy hit reaction and Staggered [T-ENM-04]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`. Code/tests in `cbc1c77` (merged to `main` by the user in PR #3, `09f096a`); stagger content, the user's `L_CombatSandbox` enemy placements and these docs committed on top and pushed (2026-10-07). An IDE switch to `main` had conflicted re-applying the autostash; the stash was restored on the feature branch with nothing lost.
+- **Tasks:** T-ENM-04 Todo → In Progress → Review (user chose it before T-CMB-08).
+- **Changed:**
+  - `Enemy/EnemyCharacter.*`: `OnHitReactPresentation`, `OnStaggerPresentation` events; hit-react bound to `OnDamaged`.
+  - `Enemy/EnemyBrainComponent.*`: Staggered enter (cancel attack with no blend-out, close hit window, stop, clear focus) and exit (re-engage, decide now).
+  - Tests: new `EnemyStagger.spec.cpp`; fixture moved to `Tests/EnemyAttackFixture.h` (shared with `EnemyAttack.spec.cpp`).
+  - Content via `Tools/create_enemy_assets.bat`: `AM_Enemy_Melee_Stagger`; `BP_Enemy_Base` stagger graph.
+  - ENM `tasks.md`.
+- **Verified:** editor + game builds pass. Full gate 137/137 twice, 0 with warnings, editor exit 0 (`Saved/enm04-full-tests*.log`). Enemy filter 23/23 three runs. One run logged an engine smoke-test timing warning (`FAutomationTestAttemptToFindUninitializedScriptStructMembers` 1.8 s); the repeat run did not, so it is timing noise. First stagger-spec run failed on the test's own baseline (the break plays `Staggered.Applied` feedback synchronously); baseline moved after the break.
+- **Manual steps for the user (PIE, `L_CombatSandbox`, `DA_Enemy_Test`: 50 poise, 2 s regen delay; hero Light 5/5/10, Heavy 40):**
+  1. Let the enemy start a wind-up, then Light, Light, Heavy (or Heavy, Heavy) within 2 s: it stops mid-swing, plays the stagger reaction, you take no damage from that swing.
+  2. It stays still ~1.5 s, then walks back in / attacks again right away.
+  3. A single Light during its wind-up does not stop the swing.
+  4. Output Log: no new warnings.
+- **Open questions / blockers:** no BP flinch for normal hits yet (placeholder rig has one full-body slot; a flinch would cancel attacks). Impact feedback is T-UXF-03.
+- **Next:** after PIE: T-ENM-04 Done → T-CMB-08 (block).
+
 ### 2026-10-06: Claude Code: T-ENM-03 Done and committed
 - **Agent / branch:** Claude Code, `feat/01-hero-combat`. Not pushed (no GitHub key on this PC).
 - **Tasks:** T-ENM-03 Review → Done on the user's PIE confirmation ("okay good"). AC-ENM-03 block/parry part stays open for T-CMB-08/09.
