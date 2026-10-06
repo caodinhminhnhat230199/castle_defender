@@ -28,6 +28,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Montage")
 	static bool AddInvulnerableWindowToMontage(UAnimMontage* Montage, float StartTime, float Duration);
 
+	/** Adds a missing assist window without changing existing authored timing or adding duplicates. */
+	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Montage")
+	static bool EnsureRotationAssistWindow(UAnimMontage* Montage);
+
 	/** Editor setup only: scales a single-segment timing fixture to its authored duration. */
 	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Montage")
 	static bool SetSingleSegmentMontageDuration(UAnimMontage* Montage, float Duration);

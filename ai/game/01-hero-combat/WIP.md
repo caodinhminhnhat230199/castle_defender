@@ -1,5 +1,16 @@
 # Hero Combat — WIP và handoff
 
+## Current handoff (2026-10-06, Claude Code)
+
+This section supersedes the historical snapshot below. Branch: `feat/01-hero-combat`. CMB now has **11 Done, 0 Review, 10 Todo**.
+
+- **T-CMB-20 Done** and **T-ENM-01 Done** after Windows build, 119/119 Automation and user PIE sign-off. The P0A checkpoint is recorded in [tasks.md](tasks.md); P0B is open.
+- **Remaining P0 CMB:** 08 and 10 are ready; 09 needs 08; 14 needs T-ENM-03; 15/16 close P0B and G0.
+- **Later phases:** 12 (P2) and 17/18/19 (VS) remain closed by phase gates.
+- **Delivery:** source commits `b0c6057` (T-CMB-20) and `22eaaf1` (T-ENM-01). User authorized pushing `feat/01-hero-combat` for continuation on the Windows PC. See the latest progress entry for remote verification. Existing user instruction/log edits preserved.
+
+## Historical snapshot (superseded where it conflicts with the handoff above)
+
 Cập nhật: 2026-10-05 · Agent: Claude Code (phần mesh/animation; bản trước: Codex 2026-10-04) · Branch: `feat/01-hero-combat`.
 
 Tài liệu này lưu danh sách công việc còn lại và lý do chưa hoàn tất để teammate tiếp tục. Đây là snapshot; trước khi làm hãy đối chiếu [tasks.md](tasks.md), [technical-plan.md](technical-plan.md), [spec.md](spec.md), [progress.md](../progress.md) và Git diff hiện tại.

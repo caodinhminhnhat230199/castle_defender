@@ -43,6 +43,7 @@ UHeroClassDefinition::UHeroClassDefinition()
 bool UHeroClassDefinition::ValidateLightAttack(int32 ChainIndex, FString& OutError) const
 {
 	OutError.Reset();
+	if (!AttackAssist.IsValid()) { OutError = TEXT("AttackAssist bounds must be finite and nonnegative (angle <= 180)."); return false; }
 	if (LightChain.Num() != 3 || !LightChain.IsValidIndex(ChainIndex))
 	{
 		OutError = TEXT("LightChain must have exactly three entries and a valid index.");
@@ -85,6 +86,7 @@ bool UHeroClassDefinition::ValidateLightAttack(int32 ChainIndex, FString& OutErr
 bool UHeroClassDefinition::ValidateHeavyAttack(FString& OutError) const
 {
 	OutError.Reset();
+	if (!AttackAssist.IsValid()) { OutError = TEXT("AttackAssist bounds must be finite and nonnegative (angle <= 180)."); return false; }
 	FCombatActionTiming Timing;
 	if (!FCombatActionTiming::InspectMontage(Heavy.Montage, Timing, &OutError))
 	{

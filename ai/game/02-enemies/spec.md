@@ -243,14 +243,14 @@ Depended on by: CMB (target to hit), SQD (enemies to fight), DEF (enemies that b
 | Decision interval | P0 | 0.2 s (Swarm may use 0.3 s) | [TUNABLE] |
 | Local Aggro Radius | P0 | ~6–8 m placeholder | [TUNABLE] (§14.2) |
 | Leash radius | P2 | ~12–15 m placeholder | [TUNABLE] (§14.5) |
-| Local Aggro priority list (target kinds in order) | P2 | Swarm: Hero, soldier, Path Obstacle, Objective. Siege: Path Obstacle, Combat Tower, Blocker, soldier, Hero, Objective | [TUNABLE] |
+| Local Aggro priority list (target kinds in order) | P0 field (default Hero, soldier; T-ENM-02), per-archetype lists P2 | Swarm: Hero, soldier, Path Obstacle, Objective. Siege: Path Obstacle, Combat Tower, Blocker, soldier, Hero, Objective | [TUNABLE] |
 | Structure damage multiplier | P2 | Siege ~3× | [TUNABLE] (§20.1) |
 | Threat cost (read by DIR) | P1 | Swarm 2, Armored 8, Siege 25 (§8.1 illustrative) | [TUNABLE] |
 | Kill reward (read by RUN, A-05) | P3 | small int | [TUNABLE] |
 | Body despawn delay | P0 | ~3 s | [TUNABLE] |
 | Local avoidance on/off | P2 | from T-ENM-16 result | Perf setting |
 
-Global enemy tunables in `UGameTuningSettings`: stuck check time, max stuck attempts, obstacle queue radius, route rejoin distance, minimum telegraph time (validation).
+Global enemy tunables in `UGameTuningSettings`: stuck check time, max stuck attempts, obstacle queue radius, route rejoin distance, minimum telegraph time (validation; `MinEnemyTelegraphTime`, default 0.4 s chosen by the user 2026-10-06). Placeholder wind-ups for the P0 test attacks: Light 0.5 s, Heavy 0.8 s (user, 2026-10-06; T-ENM-11 tunes).
 
 ### Difficulty hooks (§25.1, §25.2): data only, no code in prototype
 

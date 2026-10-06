@@ -10,6 +10,9 @@
 #include "Hero/HeroClassDefinition.h"
 #include "Animation/AnimMontage.h"
 #include "Animation/AnimInstance.h"
+#include "Engine/World.h"
+#include "Engine/OverlapResult.h"
+#include "CollisionQueryParams.h"
 
 UHeroCombatComponent::UHeroCombatComponent()
 {
@@ -41,7 +44,8 @@ void UHeroCombatComponent::BeginPlay()
 void UHeroCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	if (IsRegistered()) { Super::TickComponent(DeltaTime, TickType, ThisTickFunction); }
-	// D-20: component DeltaTime already includes owner dilation; tick only while a buffered press needs an expiry clock.
+	// D-20: component DeltaTime includes owner dilation; tick only for buffer expiry or an authored assist window.
+	if (bRotationAssistWindowOpen) { UpdateRotationAssist(DeltaTime); }
 	if (BufferedInput.bValid)
 	{
 		BufferedInput.Age += DeltaTime;
@@ -75,12 +79,13 @@ FString UHeroCombatComponent::GetCombatDebugString() const
 	}
 	FString Cancels;
 	for (EHeroAction Action : OpenCancelActions) { Cancels += StaticEnum<EHeroAction>()->GetNameStringByValue(static_cast<int64>(Action)) + TEXT(" "); }
-	return FString::Printf(TEXT("%s | Chain %d\n%s %.3f/%.3f (%s)\nHit %d IFrame %d Parry %d Resistance %d\nCancel %d [%s]\nBuffer %s age %.3f | Stamina %.1f/%.1f\nShared [%s]\nLock-on inactive | Assist inactive\nParry consumed inactive"),
+	return FString::Printf(TEXT("%s | Chain %d\n%s %.3f/%.3f (%s)\nHit %d IFrame %d Parry %d Resistance %d\nCancel %d [%s]\nBuffer %s age %.3f | Stamina %.1f/%.1f\nShared [%s]\nLock-on inactive | Assist %s (window %d)\nParry consumed inactive"),
 		*StaticEnum<EHeroActionState>()->GetNameStringByValue(static_cast<int64>(CurrentState)), CurrentChainIndex, *GetNameSafe(ActiveMontage), Position, Timing.TotalDuration, *Phase,
 		Hero && Hero->GetMeleeTraceComponent()->IsHitWindowActive(), bInvulnerableWindowOpen, bParryWindowOpen, bInterruptResistanceWindowOpen, bCancelWindowOpen, *Cancels,
 		BufferedInput.bValid ? *StaticEnum<EHeroAction>()->GetNameStringByValue(static_cast<int64>(BufferedInput.Action)) : TEXT("None"), BufferedInput.Age,
 		Hero ? Hero->GetStaminaComponent()->GetCurrentStamina() : 0.f, Hero ? Hero->GetStaminaComponent()->GetMaxStamina() : 0.f,
-		CombatStateComp ? *CombatStateComp->GetActiveStates().ToStringSimple() : TEXT(""));
+		CombatStateComp ? *CombatStateComp->GetActiveStates().ToStringSimple() : TEXT(""),
+		*GetNameSafe(AssistTarget.Get()), bRotationAssistWindowOpen);
 }
 #endif
 
@@ -469,6 +474,7 @@ void UHeroCombatComponent::ForceCloseAllWindows()
 	CloseInvulnerableWindow();
 	CloseParryWindow();
 	CloseInterruptResistanceWindow();
+	CloseRotationAssistWindow();
 
 	if (HeroOwner)
 	{
@@ -490,7 +496,75 @@ void UHeroCombatComponent::BufferAction(EHeroAction Action)
 void UHeroCombatComponent::ClearBuffer()
 {
 	BufferedInput = FBufferedAction();
-	SetComponentTickEnabled(false);
+	SetComponentTickEnabled(bRotationAssistWindowOpen);
+}
+
+bool UHeroCombatComponent::IsEligibleAssistTarget(AActor* Candidate) const
+{
+	const AHeroCharacter* Hero = GetHeroOwner();
+	if (!Hero || !IsValid(Candidate) || Candidate == Hero || !Hero->GetHeroClassDefinition()) { return false; }
+	const UHealthComponent* Health = Candidate->FindComponentByClass<UHealthComponent>();
+	if (!Health || Health->IsDead()) { return false; }
+	return AreHostile(Hero, Candidate)
+		&& Hero->GetHeroClassDefinition()->AttackAssist.IsEligible(Candidate->GetActorLocation() - Hero->GetActorLocation(), AttackIntentYaw);
+}
+
+void UHeroCombatComponent::OpenRotationAssistWindow()
+{
+	AHeroCharacter* Hero = GetHeroOwner();
+	if (!Hero || !Hero->GetWorld() || !Hero->GetHeroClassDefinition() || IsSharedStaggered()
+		|| (CurrentState != EHeroActionState::LightAttack && CurrentState != EHeroActionState::HeavyAttack)) { return; }
+	const FHeroAttackAssistData& Data = Hero->GetHeroClassDefinition()->AttackAssist;
+	if (!Data.IsValid() || Data.Distance <= 0.f || Data.RotationRate <= 0.f) { return; }
+	CloseRotationAssistWindow();
+	TArray<FOverlapResult> Overlaps;
+	FCollisionObjectQueryParams Objects;
+	Objects.AddObjectTypesToQuery(ECC_Pawn);
+	Objects.AddObjectTypesToQuery(ECC_WorldDynamic); // Combat sandbox dummies are dynamic actors.
+	Hero->GetWorld()->OverlapMultiByObjectType(Overlaps, Hero->GetActorLocation(), FQuat::Identity,
+		Objects, FCollisionShape::MakeSphere(Data.Distance), FCollisionQueryParams(SCENE_QUERY_STAT(AttackAssist), false, Hero));
+	float BestAngle = TNumericLimits<float>::Max();
+	float BestDistance = TNumericLimits<float>::Max();
+	for (const FOverlapResult& Overlap : Overlaps)
+	{
+		AActor* Candidate = Overlap.GetActor();
+		if (!IsEligibleAssistTarget(Candidate)) { continue; }
+		const FVector Offset = Candidate->GetActorLocation() - Hero->GetActorLocation();
+		const float Angle = FMath::Abs(FMath::FindDeltaAngleDegrees(AttackIntentYaw, static_cast<float>(Offset.Rotation().Yaw)));
+		const float DistanceSquared = Offset.SizeSquared();
+		if (Angle < BestAngle || (FMath::IsNearlyEqual(Angle, BestAngle) && DistanceSquared < BestDistance))
+		{
+			AssistTarget = Candidate;
+			BestAngle = Angle;
+			BestDistance = DistanceSquared;
+		}
+	}
+	bRotationAssistWindowOpen = true;
+	SetComponentTickEnabled(true);
+}
+
+void UHeroCombatComponent::CloseRotationAssistWindow()
+{
+	bRotationAssistWindowOpen = false;
+	AssistTarget.Reset();
+	SetComponentTickEnabled(BufferedInput.bValid);
+}
+
+void UHeroCombatComponent::UpdateRotationAssist(float HeroDelta)
+{
+	AHeroCharacter* Hero = GetHeroOwner();
+	const UAnimInstance* Anim = Hero && Hero->GetMesh() ? Hero->GetMesh()->GetAnimInstance() : nullptr;
+	if (!Hero || IsSharedStaggered() || CurrentState == EHeroActionState::Dead
+		|| !ActiveMontage || !Anim || !Anim->Montage_IsActive(ActiveMontage))
+	{
+		CloseRotationAssistWindow();
+		return;
+	}
+	if (!IsEligibleAssistTarget(AssistTarget.Get())) { AssistTarget.Reset(); return; }
+	FRotator Facing = Hero->GetActorRotation();
+	const float TargetYaw = (AssistTarget->GetActorLocation() - Hero->GetActorLocation()).Rotation().Yaw;
+	Facing.Yaw = Hero->GetHeroClassDefinition()->AttackAssist.StepYaw(Facing.Yaw, TargetYaw, AttackIntentYaw, HeroDelta);
+	Hero->SetActorRotation(Facing); // R-CMB-48: no translation; root motion stays owned by the montage.
 }
 
 void UHeroCombatComponent::TryConsumeBuffer()
@@ -547,6 +621,7 @@ bool UHeroCombatComponent::PlayActionMontage(UAnimMontage* Montage, EHeroActionS
 	ForceCloseAllWindows();
 	// Detach the previous owner before Montage_Play can interrupt its instance.
 	ActiveMontage = nullptr;
+	AttackIntentYaw = HeroOwner->GetActorRotation().Yaw;
 
 	UAnimInstance* AnimInstance = HeroOwner->GetMesh() ? HeroOwner->GetMesh()->GetAnimInstance() : nullptr;
 	if (AnimInstance && HeroOwner->PlayAnimMontage(Montage) > 0.f)

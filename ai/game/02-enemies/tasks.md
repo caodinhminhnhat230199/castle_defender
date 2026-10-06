@@ -12,9 +12,9 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
-| T-ENM-01 | `AEnemyCharacter` + `UEnemyArchetypeDefinition` + health/combat-state wiring + team + death/despawn | GAMEPLAY | P0 | Must | T-FND-04, T-FND-05, T-FND-07 | Todo |
-| T-ENM-02 | `UEnemyBrainComponent` FSM skeleton with timer-driven decision tick | AI | P0 | Must | T-ENM-01, T-FND-09 | Todo |
-| T-ENM-03 | Melee attack with telegraph | GAMEPLAY | P0 | Must | T-ENM-02, T-CMB-04, T-UXF-01 | Todo |
+| T-ENM-01 | `AEnemyCharacter` + `UEnemyArchetypeDefinition` + health/combat-state wiring + team + death/despawn | GAMEPLAY | P0 | Must | T-FND-04, T-FND-05, T-FND-07 | Done |
+| T-ENM-02 | `UEnemyBrainComponent` FSM skeleton with timer-driven decision tick | AI | P0 | Must | T-ENM-01, T-FND-09 | Done |
+| T-ENM-03 | Melee attack with telegraph | GAMEPLAY | P0 | Must | T-ENM-02, T-CMB-04, T-UXF-01 | Done |
 | T-ENM-04 | Hit reaction + Staggered behavior | GAMEPLAY | P0 | Must | T-ENM-03, T-SYN-01, T-UXF-01 | Todo |
 | T-ENM-11 | P0 melee enemy content + sandbox tuning pass | DESIGN | P0 | Must | T-ENM-03, T-ENM-04, T-CMB-01 | Todo |
 | T-ENM-12 | P0 Functional Tests + G0 enemy check | QA | P0 | Must | T-ENM-11, T-FND-10, T-CMB-08, T-CMB-09, T-UXF-03 | Todo |
@@ -44,25 +44,29 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 - **Dependencies:** T-FND-04 (tags), T-FND-05 (contract), T-FND-07 (settings, Primary Asset Types)
 
 **Implementation Notes**
-- [ ] Create `UEnemyArchetypeDefinition` (`: UGameDefinition`, foundation §9) with P0 fields from spec §13 (tags, name, `EnemyClass`, health, `BaseArmor`, embedded `FCombatStateConfig` from SYN (MaxPoise, poise regen delay/rate, StaggerDuration), walk speed, attack list, decision interval, aggro radius, despawn delay). Leave room for the P3 `CounterTags` field added by T-DIR-04 (NEW-DIR-02). Register as Primary Asset Type `EnemyArchetypeDefinition` in `DefaultGame.ini`. `IsDataValid` (call `Super`): class set, health > 0, at least one attack.
-- [ ] Create `FEnemyRuntimeParams`; copy tunables from the DA in `InitFromSpawn` / `BeginPlay`. Never write to the DA.
-- [ ] Create `AEnemyCharacter` with `UHealthComponent`, `UCombatStateComponent`; init both from the DA. Implement `IGenericTeamAgentInterface` (team 1). `AIControllerClass` = stock `AAIController`, auto-possess placed or spawned.
-- [ ] `FEnemySpawnParams` + `InitFromSpawn(Archetype, Params)` for `SpawnActorDeferred` callers. `Archetype` is `EditAnywhere` for level-placed sandbox enemies.
-- [ ] Death on `OnDeath`: stop movement, capsule ignores Pawn channel, call `OnDeathPresentation()` (BlueprintImplementableEvent), play `Feedback.Enemy.Death`, `SetLifeSpan(DespawnDelay)`.
-- [ ] `OnEnemyRemoved(Enemy, EEnemyRemovedReason)` multicast, broadcast through one function guarded by `bRemovalReported`. Call it from death (`Killed`), `Despawn()` (`Despawned`), `FellOutOfWorld` override (`OutOfWorld`) and `EndPlay` (fallback `Despawned`).
-- [ ] Add leaf tags `Unit.Enemy.Melee`, `Unit.Enemy.Elite`, `Feedback.Enemy.Death`.
+- [x] Create `UEnemyArchetypeDefinition` (`: UGameDefinition`, foundation §9) with P0 fields from spec §13 (tags, name, `EnemyClass`, health, `BaseArmor`, embedded `FCombatStateConfig` from SYN (MaxPoise, poise regen delay/rate, StaggerDuration), walk speed, attack list, decision interval, aggro radius, despawn delay). Leave room for the P3 `CounterTags` field added by T-DIR-04 (NEW-DIR-02). Register as Primary Asset Type `EnemyArchetypeDefinition` in `DefaultGame.ini`. `IsDataValid` (call `Super`): class set, health > 0, at least one attack.
+- [x] Create `FEnemyRuntimeParams`; copy tunables from the DA in `InitFromSpawn` / `BeginPlay`. Never write to the DA.
+- [x] Create `AEnemyCharacter` with `UHealthComponent`, `UCombatStateComponent`; init both from the DA. Implement `IGenericTeamAgentInterface` (team 1). `AIControllerClass` = stock `AAIController`, auto-possess placed or spawned.
+- [x] `FEnemySpawnParams` + `InitFromSpawn(Archetype, Params)` for `SpawnActorDeferred` callers. `Archetype` is `EditAnywhere` for level-placed sandbox enemies.
+- [x] Death on `OnDeath`: stop movement, capsule ignores Pawn channel, call `OnDeathPresentation()` (BlueprintImplementableEvent), play `Feedback.Enemy.Death`, `SetLifeSpan(DespawnDelay)`.
+- [x] `OnEnemyRemoved(Enemy, EEnemyRemovedReason)` multicast, broadcast through one function guarded by `bRemovalReported`. Call it from death (`Killed`), `Despawn()` (`Despawned`), `FellOutOfWorld` override (`OutOfWorld`) and `EndPlay` (fallback `Despawned`).
+- [x] Add leaf tags `Unit.Enemy.Melee`, `Unit.Enemy.Elite`, `Feedback.Enemy.Death`.
 
 **Expected Files / Assets:** `Source/<Game>/Enemy/EnemyCharacter.h/.cpp`, `EnemyArchetypeDefinition.h/.cpp`; `Content/<Game>/Enemy/BP_Enemy_Base`, `DA_Enemy_Test`.
 
 **Test Case:** Place `BP_Enemy_Base` with `DA_Enemy_Test` (100 HP) → cheat-apply an `FCombatHit` of 100 damage → enemy dies, `OnEnemyRemoved(Killed)` fires once, actor is destroyed after the despawn delay. Kill another with `Z` below kill height → `OnEnemyRemoved(OutOfWorld)` once.
 
 **Acceptance Criteria**
-- [ ] Health and poise come from the DA; editing the DA changes them without code.
-- [ ] Every removal path reports exactly once (Automation or Functional check).
-- [ ] Dead enemy does not block Hero movement.
-- [ ] DA with no attacks fails `IsDataValid`.
+- [x] Health and poise come from the DA; editing the DA changes them without code.
+- [x] Every removal path reports exactly once (Automation or Functional check).
+- [x] Dead enemy does not block Hero movement.
+- [x] DA with no attacks fails `IsDataValid`.
 
 **Verification:** Automation Spec `Enemy.Lifecycle` (spawn, damage, death report count); PIE check in `L_Test_EnemyCombat`.
+
+**Review handoff (2026-10-06, Codex):** native body/data/lifecycle code, unit leaf tags, Asset Manager registration, removal contract and `CastleDefender.Enemy.Lifecycle` Specs are authored. `FeedbackTags::Enemy_Death` and its existing row are reused. No Blueprint/Data Asset/test-map content has been created; no Unreal build or Spec run was possible on this macOS executor. Windows/editor steps are in the latest `progress.md` entry. Keep Review until compiled, integrated with `BP_Enemy_Base`/`DA_Enemy_Test` and verified. T-ENM-02 remains Todo until this task is Done.
+
+**Windows verification (2026-10-06, Claude Code):** editor and game builds pass; full gate 119/119 with 0 warnings after the Spec fixture registered a world context. `Tools/create_enemy_assets.bat` (idempotent) created `BP_Enemy_Base` (Quinn + `ABP_Unarmed`, Archetype unset), `DA_Enemy_Test` (fixture: 100 HP, 300 walk, 50 poise, one attack) and placeholder `AM_Enemy_Test_Attack` (no windows; T-ENM-03). Both assets pass editor data validation. PIE (user, 2026-10-06): a killed enemy stops, does not block the hero and despawns after 3 s; a KillZ fall removes it; editing DA MaxHealth changes the next spawn. Pass → Done.
 
 ### T-ENM-02 — Brain FSM skeleton with timer-driven decision tick
 
@@ -72,26 +76,28 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 - **Dependencies:** T-ENM-01, T-FND-09 (CVar + cheat + Visual Logger convention)
 
 **Implementation Notes**
-- [ ] Component tick disabled. `FTimerHandle` looping at `RuntimeParams.DecisionInterval`, first fire after a random offset in [0, interval).
-- [ ] `EEnemyBrainState` with all states from the plan; P0 uses `Idle, Engage, Attacking (stub), Staggered (stub), Paused, Dead`. `SetState()` logs to Visual Logger and fires `OnBrainStateChanged`.
-- [ ] Hostile scan: one sphere overlap (`OverlapMultiByObjectType`, Pawn channel for now) at aggro radius, filter hostile team + alive. Scan only when there is no valid combat target.
-- [ ] Record last attacker from `UHealthComponent::OnDamaged` (instigator + game time).
-- [ ] Put `PickTarget` in `EnemyTargeting.h/.cpp` as a pure function (candidates → best by priority index, recent attacker, distance²). P0 priority list: Hero, Soldier.
-- [ ] Chase: `AAIController::MoveToActor` with acceptance radius = max attack range; re-issue only when the target moved more than a threshold.
-- [ ] `PauseDecisions()/ResumeDecisions()`.
-- [ ] `game.debug.Enemy` CVar: on decision tick draw state text, aggro radius, line to target (lifetime = interval). Off = no draw calls.
+- [x] Component tick disabled. `FTimerHandle` looping at `RuntimeParams.DecisionInterval`, first fire after a random offset in [0, interval).
+- [x] `EEnemyBrainState` with all states from the plan; P0 uses `Idle, Engage, Attacking (stub), Staggered (stub), Paused, Dead`. `SetState()` logs to Visual Logger and fires `OnBrainStateChanged`.
+- [x] Hostile scan: one sphere overlap (`OverlapMultiByObjectType`, Pawn channel for now) at aggro radius, filter hostile team + alive. Scan only when there is no valid combat target.
+- [x] Record last attacker from `UHealthComponent::OnDamaged` (instigator + game time).
+- [x] Put `PickTarget` in `EnemyTargeting.h/.cpp` as a pure function (candidates → best by priority index, recent attacker, distance²). P0 priority list: Hero, Soldier.
+- [x] Chase: `AAIController::MoveToActor` with acceptance radius = max attack range; re-issue only when the target moved more than a threshold.
+- [x] `PauseDecisions()/ResumeDecisions()`.
+- [x] `game.debug.Enemy` CVar: on decision tick draw state text, aggro radius, line to target (lifetime = interval). Off = no draw calls.
 
 **Expected Files / Assets:** `Source/<Game>/Enemy/EnemyBrainComponent.h/.cpp`, `EnemyTargeting.h/.cpp`; `Source/<Game>/Tests/EnemyTargeting.spec.cpp`.
 
 **Test Case:** Enemy in `L_Test_EnemyCombat`, test dummy (T-FND-09) placed outside aggro radius → enemy stays `Idle` → move dummy inside radius → within 2 decision intervals the enemy is in `Engage` and moving to it.
 
 **Acceptance Criteria**
-- [ ] `PrimaryComponentTick.bCanEverTick == false` on the brain.
-- [ ] Decision cadence follows the DA value (measured by counting decisions over 5 s).
-- [ ] 20 enemies spawned in one frame do not all decide in the same frame (log timestamps).
-- [ ] `PickTarget` Automation Spec passes (priority, tie-breaks).
+- [x] `PrimaryComponentTick.bCanEverTick == false` on the brain.
+- [x] Decision cadence follows the DA value (measured by counting decisions over 5 s).
+- [x] 20 enemies spawned in one frame do not all decide in the same frame (log timestamps).
+- [x] `PickTarget` Automation Spec passes (priority, tie-breaks).
 
 **Verification:** Automation Spec `Enemy.Targeting`; Functional Test `FT_Enemy_AggroChase`; Visual Logger capture reviewed.
+
+**Review handoff (2026-10-06, Claude Code):** `UEnemyBrainComponent` (tick off; looping timer at `DecisionInterval` with a random first offset; Idle/Engage/Paused/Dead; Visual Logger + `OnBrainStateChanged` on every change), pure `EnemyTargeting::PickTarget`, `game.debug.Enemy` draw on each decision. P0 target kinds: `AHeroCharacter` = Hero, any other hostile pawn = Soldier. Priority list is data: `UEnemyArchetypeDefinition::TargetPriority` (default Hero, Soldier; empty fails validation). Chase uses one `MoveToActor` per goal; the engine re-paths when the goal moves > 100 cm, so no extra threshold tunable. "Recent attacker" = last actor that damaged the enemy (NEW-ENM-3 default). Builds pass; full gate 126/126, 0 warnings; `Enemy.Targeting` stable over 3 runs (cadence 20–21 decisions per 5 s at 0.25 s, 20 enemies spread). `FT_Enemy_AggroChase` (Blueprint FT per foundation §16, generated with its navmesh by `Tools/create_enemy_assets.bat`): hero 10 m away → Idle; hero teleported to 3 m → Engage and closer than 280 cm after 1 s; passes in the full gate (127/127). `Archetype` is `ExposeOnSpawn` so Blueprint spawners set it. PIE (user, 2026-10-06): debug circle/state visible, Idle → Engage on entering the radius, chase to attack range. Pass → Done.
 
 ### T-ENM-03 — Melee attack with telegraph
 
@@ -101,25 +107,27 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 - **Dependencies:** T-ENM-02, T-CMB-04 (`UCombatLibrary::DeliverHit`, `UMeleeTraceComponent`), T-UXF-01
 
 **Implementation Notes**
-- [ ] `FEnemyAttackDefinition`: montage, range, damage, poise damage, `bIsHeavy`, play rate, cooldown, weight. Global min time between attacks in runtime params.
-- [ ] Attack choice: filter by range and cooldown, weighted random; pure helper in `EnemyTargeting` (testable).
-- [ ] Start: state `Attacking`, `Montage_Play` at play rate, play `Feedback.Enemy.Telegraph` (or `.Heavy` when `bIsHeavy`) at montage start, `SetFocus(Target)` with CharacterMovement rotation rate as wind-up turn rate.
-- [ ] At hit-window begin: `ClearFocus` (no tracking during the active window). Use `UMeleeTraceComponent` (T-CMB-04) for the trace and deliver every hit through `UCombatLibrary::DeliverHit` with the payload (damage, poise damage, heavy flag, `SourceLayer = Enemy`, instigator). Never call `UHealthComponent::ApplyHit` directly: `DeliverHit` is what applies block, parry, i-frames, poise, states and armor.
-- [ ] Commitment: no decision changes while `Attacking`; exit only on montage end, Staggered (T-ENM-04) or death.
-- [ ] Optional if simple: `IsDataValid` warns when montage start → first hit-window notify is shorter than `UGameTuningSettings` min telegraph time (verify notify inspection API).
-- [ ] Add tags `Feedback.Enemy.Telegraph`, `Feedback.Enemy.Telegraph.Heavy`; placeholder rows in `DT_Feedback` (flash + whoosh).
+- [x] `FEnemyAttackDefinition`: montage, range, damage, poise damage, `bIsHeavy`, play rate, cooldown, weight. Global min time between attacks in runtime params.
+- [x] Attack choice: filter by range and cooldown, weighted random; pure helper in `EnemyTargeting` (testable).
+- [x] Start: state `Attacking`, `Montage_Play` at play rate, play `Feedback.Enemy.Telegraph` (or `.Heavy` when `bIsHeavy`) at montage start, `SetFocus(Target)` with CharacterMovement rotation rate as wind-up turn rate.
+- [x] At hit-window begin: `ClearFocus` (no tracking during the active window). Use `UMeleeTraceComponent` (T-CMB-04) for the trace and deliver every hit through `UCombatLibrary::DeliverHit` with the payload (damage, poise damage, heavy flag, `SourceLayer = Enemy`, instigator). Never call `UHealthComponent::ApplyHit` directly: `DeliverHit` is what applies block, parry, i-frames, poise, states and armor.
+- [x] Commitment: no decision changes while `Attacking`; exit only on montage end, Staggered (T-ENM-04) or death.
+- [x] Optional if simple: `IsDataValid` warns when montage start → first hit-window notify is shorter than `UGameTuningSettings` min telegraph time (verify notify inspection API).
+- [x] Add tags `Feedback.Enemy.Telegraph`, `Feedback.Enemy.Telegraph.Heavy`; placeholder rows in `DT_Feedback` (flash + whoosh).
 
 **Expected Files / Assets:** `EnemyBrainComponent.cpp` (attack path), `EnemyArchetypeDefinition.h`; `AM_Enemy_Melee_Light`, `AM_Enemy_Melee_Heavy` (placeholder).
 
 **Test Case:** Dummy target in range → enemy plays telegraph event at T0 → damage applied at T1 → assert T1 − T0 ≥ min telegraph time. Kill the dummy during wind-up → attack still plays to its end, no crash, enemy returns to `Idle`.
 
 **Acceptance Criteria**
-- [ ] Telegraph event always precedes damage by ≥ authored minimum.
-- [ ] Enemy stops rotating at hit-window start (Hero can dodge sideways).
+- [x] Telegraph event always precedes damage by ≥ authored minimum.
+- [x] Enemy stops rotating at hit-window start (Hero can dodge sideways).
 - [ ] Hero block and parry (CMB-08/-09) work against enemy attacks without enemy-specific code in CMB.
-- [ ] Attack values come from the DA only.
+- [x] Attack values come from the DA only.
 
 **Verification:** Functional Test `FT_Enemy_TelegraphGap`; PIE: dodge sideways at hit-window start avoids the hit.
+
+**Review handoff (2026-10-06, Claude Code):** attack path in `UEnemyBrainComponent`: `EnemyTargeting::PickAttack` (range gap = 2D distance minus both capsule radii, per-attack cooldown, weighted roll), `Montage_Play`, `Feedback.Enemy.Telegraph(.Heavy)` at montage start, Gameplay focus on the target while engaged and through the wind-up, cleared on `UMeleeTraceComponent::OnHitWindowBegin` (new native event, §8a). Hits go through the shared trace → `DeliverHit` with `SourceLayer = Enemy`. Cooldowns and `MinTimeBetweenAttacks` count from attack end. Enemy turns via controller desired rotation at `WindUpTurnRate`, with `bAllowPhysicsRotationDuringAnimRootMotion` (root-motion clips otherwise freeze rotation). `IsDataValid` warns when a wind-up is below `UGameTuningSettings::MinEnemyTelegraphTime` (0.4 s, user default). Content: `AM_Enemy_Melee_Light` (0.5 s wind-up) / `AM_Enemy_Melee_Heavy` (0.8 s), `DA_Enemy_Test` now uses both (fixture numbers; `AM_Enemy_Test_Attack` retired). Verification moved from `FT_Enemy_TelegraphGap` to Automation Spec `CastleDefender.Enemy.Attack`, which ticks a real world (timer → montage → notify → trace → `DeliverHit`): gap ≥ minimum for Light and Heavy, tracking during wind-up, zero yaw drift in the hit window and a dodge at window start avoids the hit, target killed mid-wind-up → attack plays out → Idle, damage equals DA. Full gate 134/134. Block/parry AC waits for T-CMB-08/09. PIE (user, 2026-10-06): pass → Done.
 
 ### T-ENM-04 — Hit reaction + Staggered behavior
 

@@ -73,6 +73,41 @@ enum class EHeroActionState : uint8
 UENUM(BlueprintType)
 enum class EHeroDodgeDirection : uint8 { Forward, Backward, Left, Right };
 
+/** R-CMB-46/48: facing assistance is bounded by the attack's original intent; never adds translation. */
+USTRUCT(BlueprintType)
+struct CASTLEDEFENDER_API FHeroAttackAssistData
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack Assist", meta = (ClampMin = "0", ClampMax = "180"))
+	float MaxAngle = 35.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack Assist", meta = (ClampMin = "0"))
+	float Distance = 400.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack Assist", meta = (ClampMin = "0"))
+	float RotationRate = 720.f;
+
+	bool IsValid() const
+	{
+		return FMath::IsFinite(MaxAngle) && MaxAngle >= 0.f && MaxAngle <= 180.f
+			&& FMath::IsFinite(Distance) && Distance >= 0.f
+			&& FMath::IsFinite(RotationRate) && RotationRate >= 0.f;
+	}
+	bool IsEligible(const FVector& Offset, float IntentYaw) const
+	{
+		return IsValid() && Distance > 0.f && RotationRate > 0.f && FMath::IsFinite(IntentYaw)
+			&& !Offset.ContainsNaN() && !Offset.GetSafeNormal2D().IsNearlyZero() && Offset.SizeSquared() <= FMath::Square(Distance)
+			&& FMath::Abs(FMath::FindDeltaAngleDegrees(IntentYaw, static_cast<float>(Offset.Rotation().Yaw))) <= MaxAngle + KINDA_SMALL_NUMBER;
+	}
+	float StepYaw(float CurrentYaw, float TargetYaw, float IntentYaw, float HeroDelta) const
+	{
+		if (!IsValid() || !FMath::IsFinite(HeroDelta) || HeroDelta <= 0.f
+			|| !FMath::IsFinite(CurrentYaw) || !FMath::IsFinite(TargetYaw) || !FMath::IsFinite(IntentYaw)) { return CurrentYaw; }
+		const float DesiredOffset = FMath::Clamp(FMath::FindDeltaAngleDegrees(IntentYaw, TargetYaw), -MaxAngle, MaxAngle);
+		const float Delta = FMath::Clamp(FMath::FindDeltaAngleDegrees(CurrentYaw, IntentYaw + DesiredOffset),
+			-RotationRate * HeroDelta, RotationRate * HeroDelta);
+		return FRotator::NormalizeAxis(CurrentYaw + Delta);
+	}
+};
+
 USTRUCT(BlueprintType)
 struct FHeroHitReactData
 {

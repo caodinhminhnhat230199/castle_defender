@@ -10,6 +10,7 @@ namespace GameDebug
 #if !UE_BUILD_SHIPPING
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarCombat;
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarCombatTrace;
+	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarEnemy;
 #endif
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarAI;
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarArmy;

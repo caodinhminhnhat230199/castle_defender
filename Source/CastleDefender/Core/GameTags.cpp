@@ -12,6 +12,8 @@ namespace GameTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Hero_Parrying, "State.Hero.Parrying");
 	UE_DEFINE_GAMEPLAY_TAG(State_Hero_Dead, "State.Hero.Dead");
 
+	UE_DEFINE_GAMEPLAY_TAG(Unit_Enemy_Melee, "Unit.Enemy.Melee");
+	UE_DEFINE_GAMEPLAY_TAG(Unit_Enemy_Elite, "Unit.Enemy.Elite");
 	UE_DEFINE_GAMEPLAY_TAG(Unit_Enemy_Swarm, "Unit.Enemy.Swarm");
 	UE_DEFINE_GAMEPLAY_TAG(Unit_Enemy_Armored, "Unit.Enemy.Armored");
 	UE_DEFINE_GAMEPLAY_TAG(Unit_Enemy_Siege, "Unit.Enemy.Siege");

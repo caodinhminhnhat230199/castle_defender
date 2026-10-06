@@ -235,7 +235,7 @@ All definitions derive from `UGameDefinition` (T-FND-07). Primary Asset Type nam
 - Functional Tests (`AFunctionalTest` Blueprint actors in `Content/<Game>/Maps/Test/`, maps named `FT_<Feature>_<Case>`) for scenario checks. They run as `Project.Functional Tests.CastleDefender.Maps.Test.<Map>.<ActorLabel>`. Blueprint only: `FunctionalTesting` is a Developer module, so a C++ `AFunctionalTest` subclass would break Shipping builds of the single runtime module (D-01).
 - CLI: `Tools/run_tests.ps1` runs both groups headless (`-NullRHI`) and reads `Saved/Automation/CLI/index.json`, because the editor exit code does not reflect test results.
 - Visual Logger for AI decisions and paths. Convention: the VLog category is the domain log category (`LogGameAI`, `LogGameArmy`, ...), and every AI decision logs its state name: `UE_VLOG(this, LogGameAI, Log, TEXT("State %s -> %s"), ...)`.
-- CVars under `game.debug.*` (`Combat`, `AI`, `Army`, `Lanes`, `Director`, `Feedback` (added by T-UXF-01); declared in `Core/GameDebug.h`, flagged cheat) toggling debug draw.
+- CVars under `game.debug.*` (`Combat`, `AI`, `Army`, `Lanes`, `Director`, `Feedback` (added by T-UXF-01), `CombatStates` (T-SYN-01), `CombatTrace` (T-CMB-21), `Enemy` (T-ENM-02); declared in `Core/GameDebug.h`, flagged cheat) toggling debug draw.
 - `UGameCheatManager` commands: spawn enemy/squad/wave, set stamina infinite, kill hero, damage Core, skip phase.
 
 ## 17. Source Control

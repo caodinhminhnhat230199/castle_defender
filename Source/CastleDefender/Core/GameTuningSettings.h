@@ -9,7 +9,7 @@ class UDataTable;
 
 /**
  * Global [TUNABLE] values (D-06). Project Settings > Game > Game Tuning; saved to DefaultGame.ini.
- * Features add properties under the categories Combat, Army, Focus, Respawn, Feedback and Debug.
+ * Features add properties under the categories Combat, Enemy, Army, Focus, Respawn, Feedback and Debug.
  * Per-content values belong in definition assets (UGameDefinition), not here.
  */
 UCLASS(Config = Game, DefaultConfig, meta = (DisplayName = "Game Tuning"))
@@ -40,4 +40,8 @@ public:
 
 	UPROPERTY(Config, EditAnywhere, Category = "Feedback", meta = (ClampMin = "0.01", Units = "s"))
 	float DefaultBurstWindow = 0.25f;
+
+	/** R-ENM-05: shortest allowed wind-up (attack start → first hit window). Enemy definitions warn below it. User default 2026-10-06. */
+	UPROPERTY(Config, EditAnywhere, Category = "Enemy", meta = (ClampMin = "0", Units = "s"))
+	float MinEnemyTelegraphTime = 0.4f;
 };

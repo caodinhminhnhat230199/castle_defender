@@ -16,6 +16,153 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-06: Claude Code: T-ENM-03 Done and committed
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`. Not pushed (no GitHub key on this PC).
+- **Tasks:** T-ENM-03 Review → Done on the user's PIE confirmation ("okay good"). AC-ENM-03 block/parry part stays open for T-CMB-08/09.
+- **Changed:** ENM `tasks.md`, this log; commits for T-ENM-03 code/tests, content and docs.
+- **Verified:** full gate 134/134 before committing; no code change since.
+- **Manual steps for the user:** none. `L_CombatSandbox.umap` (user's placed enemies) left uncommitted.
+- **Next:** T-ENM-04 (hit reaction + Staggered) or T-CMB-08 (block); user to choose.
+
+### 2026-10-06: Claude Code: enemy melee attack with telegraph [T-ENM-03]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`, uncommitted (on top of `3609254`).
+- **Tasks:** T-ENM-03 Todo → In Progress → Review.
+- **Decisions (user, 2026-10-06):** `MinEnemyTelegraphTime` = 0.4 s; placeholder wind-ups Light 0.5 s / Heavy 0.8 s. Recorded in ENM spec §13. Other `DA_Enemy_Test` numbers (damage 10/20, poise 10/25, heavy cooldown 3 s, weights 2/1, turn rate 360°/s, 1 s between attacks) are fixture placeholders for T-ENM-11 to tune.
+- **Changed:**
+  - `Enemy/EnemyBrainComponent.*`: attack start/end, telegraph feedback, focus tracking cleared at hit-window start, cooldowns.
+  - `Enemy/EnemyTargeting.*`: `PickAttack`.
+  - `Enemy/EnemyCharacter.*`: owns `UMeleeTraceComponent`; rotates by controller desired rotation, also during root motion.
+  - `Enemy/EnemyArchetypeDefinition.cpp`: wind-up validation warning.
+  - `Combat/MeleeTraceComponent.*`: native `OnHitWindowBegin` (main plan §8a updated).
+  - `Core/GameTuningSettings.h`: `MinEnemyTelegraphTime`.
+  - Tests: new `EnemyAttack.spec.cpp`, `PickAttack` cases, `EnemyTestFixture.h` teardown (EndPlay + GC).
+  - Content via `Tools/create_enemy_assets.bat`: `AM_Enemy_Melee_Light/Heavy`, `DA_Enemy_Test` attacks, regenerated `BP_FT_EnemyAggroChase` + `FT_Enemy_AggroChase` (now checks "targets the hero and closed the gap", since the enemy may already be Attacking). `AM_Enemy_Test_Attack` deleted (no referencers).
+- **Bug found and fixed:** the full gate crashed (access violation in `UnrealEditor_Water`) on the map load after the new spec. Root cause: the fixture began play on every actor, including Water's `ABuoyancyManager`, which registers a physics-solver callback in BeginPlay and removes it only in EndPlay; teardown never routed EndPlay. `FEnemyTestWorld` now tears down like `FTestWorldWrapper` (BeginTearingDown, EndPlay for begun actors, then GC). Evidence: `Saved/enm03-crash-evidence.log`, `Saved/Crashes/`.
+- **Verified:** editor + game builds pass. `run_tests.bat` full gate: 134/134, 0 with warnings, editor exit 0 (`Saved/enm03-full-tests.log`). Enemy filter 20/20 in three runs before the teardown fix, and inside the full gate after it. Log warnings only the known crowd-manager teardown and an editor layout-version notice.
+- **Manual steps for the user (PIE, `L_CombatSandbox`, enemy Archetype = `DA_Enemy_Test`, `game.debug.Enemy 1`):**
+  1. Approach: the enemy walks up, plays a wind-up (light: short swing; heavy: longer charged punch with a different telegraph sound) and hits for 10/20.
+  2. Dodge sideways just as the swing starts: the enemy keeps facing where it started and misses.
+  3. Stand still during the wind-up but step aside early: it turns to follow until the hit starts.
+  4. Kill it mid-wind-up: it stops, no errors in the Output Log.
+- **Open questions / blockers:** block/parry acceptance (AC-ENM-03) waits for T-CMB-08/09. Commit pending user go-ahead.
+- **Next:** after PIE: T-ENM-03 Done → T-CMB-08 (block) or T-ENM-04 (hit reaction + Staggered).
+
+### 2026-10-06: Claude Code: T-ENM-02 Done; session work committed
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`. User authorized commits (2026-10-06). Push not done: this PC has no GitHub SSH key.
+- **Tasks:** T-ENM-02 Review → Done after the user's PIE confirmation (debug circle/state, Idle → Engage, chase).
+- **Changed:** ENM `tasks.md`, this log; commits listed in `git log` (T-CMB-20 assets, enemy test fixture, T-ENM-02 brain, enemy assets/FT, docs).
+- **Verified:** last full gate 127/127 before committing; no code change since.
+- **Manual steps for the user:** push `feat/01-hero-combat` from a machine with GitHub access, or add an SSH key/HTTPS credential here.
+- **Next:** T-ENM-03 (melee attack with telegraph).
+
+### 2026-10-06: Claude Code: FT_Enemy_AggroChase functional test; enemy debug view answer [T-ENM-02]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`, uncommitted.
+- **Tasks:** T-ENM-02 stays Review (PIE check pending).
+- **User report:** "no enemy status/circle visible". Cause from the editor log: `game.debug.Enemy 1` was never entered (only `game.debug.Combat`/`CombatTrace`), and two placed enemies had no Archetype, so they logged `invalid enemy archetype` and despawned as designed. No code change needed.
+- **Decision:** user approved an automated test. Per foundation §16 Functional Tests are Blueprint-only (a C++ `AFunctionalTest` would break Shipping of the single module), so no module dependency was added; the earlier question was moot.
+- **Changed:**
+  - `Tools/create_enemy_assets.py` now also wires `Maps/Test/BP_FT_EnemyAggroChase` and creates `FT_Enemy_AggroChase` (floor, nav bounds, test actor). `create_enemy_assets.ps1` builds and saves the navmesh of a newly created map with `ResavePackages -BuildNavigationData` (the async-load nav lock is disabled for that command only; commandlet worlds never release it).
+  - `EnemyCharacter.h`: `Archetype` is `ExposeOnSpawn`.
+  - ENM tasks T-ENM-02 handoff.
+- **Verified:** editor + game builds pass. `run_tests.bat -Filter Project.Functional`: 2/2. Full gate: 127/127, 0 with warnings, editor exit 0 (`Saved/enm02-full-tests.log`). First FT run failed on the test's own velocity check (enemy reaches the 150 cm stop range in ~0.3 s and is idle at 1 s); replaced with a distance check. Log has the engine `LogCrowdFollowing: Unable to find RecastNavMesh` warning once per test-map teardown (3 vs 1 before: one more map); it fires in `CleanupWorld`, not from game code.
+- **Manual steps for the user:** PIE check from the entry below, now with: set each placed enemy's Archetype; console `game.debug.Enemy 1`.
+- **Open questions / blockers:** commit not yet authorized.
+- **Next:** T-ENM-02 Done after PIE → T-ENM-03, T-CMB-08.
+
+### 2026-10-06: Claude Code: enemy brain FSM, targeting and aggro chase [T-ENM-02]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`, uncommitted.
+- **Tasks:** T-ENM-02 Todo → In Progress → Review.
+- **Changed:**
+  - New `Enemy/EnemyBrainComponent.h/.cpp`, `Enemy/EnemyTargeting.h/.cpp`, `Tests/EnemyTargeting.spec.cpp`, `Tests/EnemyTestFixture.h` (shared world-with-context + fixture archetype; `EnemyLifecycle.spec.cpp` now uses it).
+  - `EnemyCharacter`: owns `Brain`, starts it after runtime init, stops it in every removal path. `EnemyArchetypeDefinition`: `TargetPriority` field (default Hero, Soldier) copied to runtime params; empty list fails validation.
+  - `Core/GameDebug`: `game.debug.Enemy` (non-Shipping).
+  - Docs: ENM tasks (status, ticks, handoff), ENM spec §13 priority-list row, foundation technical plan CVar list.
+- **Verified:** editor + game builds pass (only the known engine C4996). `Tools/run_tests.bat`: 126/126, 0 with warnings, editor exit 0 (`Saved/enm02-full-tests.log`). `-Filter CastleDefender.Enemy` 3 consecutive runs 13/13. The first cadence run failed on a test-harness artifact (timers activate at the end of the first manual tick); the window now starts at activation. Not run: PIE, Visual Logger, `FT_Enemy_AggroChase`.
+- **Manual steps for the user (PIE, `L_CombatSandbox` with a `BP_Enemy_Base` instance, Archetype = `DA_Enemy_Test`):**
+  1. Console `game.debug.Enemy 1`: orange 6 m circle, state text "Idle" above the enemy.
+  2. Walk inside the circle: within ~0.4 s it reads "Engage -> <hero>", a red line points at the hero and the enemy walks to ~1.5 m from you, then stops. Walk away: it follows (no leash until P2). It does not attack yet (T-ENM-03).
+  3. Kill it: state stops updating, no further movement.
+  4. Optional: Tools → Debug → Visual Logger, record, repeat 2: `LogGameAI` shows `State Idle -> Engage`.
+  5. Output Log: no new warnings.
+- **Open questions / blockers:** `FT_Enemy_AggroChase` needs either the `FunctionalTesting` module dependency (C++ functional test placed by a script) or a Blueprint FT built in the editor; AGENTS requires asking before adding a module dependency. Default if no answer: author it with the T-ENM-12 P0 Functional Test suite.
+- **Next:** after PIE pass: T-ENM-02 Done → T-ENM-03 (melee attack + telegraph), T-CMB-08 (block).
+
+### 2026-10-06: Claude Code: user PIE sign-off; T-CMB-20 and T-ENM-01 Done; P0A checkpoint recorded
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`, uncommitted.
+- **Tasks:** T-CMB-20 Review → Done; T-ENM-01 Review → Done; P0A checkpoint recorded in CMB `tasks.md`. P0B open: T-CMB-08/10 and T-ENM-02 have all dependencies Done.
+- **Changed:** CMB/ENM `tasks.md` (status, checkboxes, evidence), CMB `WIP.md` handoff, this log.
+- **Verified:** the user ran the PIE checks from the entry below (assist bounds/interruption; enemy kill, walk-through body, 3 s despawn, KillZ removal, DA MaxHealth edit) and reported pass. No defects or redesign blocker reported.
+- **Manual steps for the user:** none.
+- **Open questions / blockers:** commit/push not yet authorized; push needs credentials on this PC.
+- **Next:** T-ENM-02 (brain FSM), then T-ENM-03; T-CMB-08 (block).
+
+### 2026-10-06: Claude Code: Windows verification of T-CMB-20 and T-ENM-01; enemy fixture assets [T-CMB-20, T-ENM-01]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat` at `fc5cc9a` (Windows PC). `git fetch` failed (no SSH key on this PC); local branch matched the pushed tip recorded below. No commit yet.
+- **Tasks:** T-CMB-20 and T-ENM-01 stay Review: headless verification passed, rendered PIE checks remain for the user.
+- **Changed:**
+  - `Tests/EnemyLifecycle.spec.cpp`: fixture registers an `FWorldContext` (same as engine `FTestWorldWrapper`). Without it every actor destroy logged `UWorld::DestroyActor: World has no context!`, 5 tests reported SuccessWithWarnings and `run_tests.bat` exited 1 on the count mismatch.
+  - New `Tools/create_enemy_assets.bat/.ps1/.py` (idempotent) → `Content/CastleDefender/Enemy/BP_Enemy_Base`, `DA_Enemy_Test`, `AM_Enemy_Test_Attack` (from Mannequin `MM_Attack_01`, no notifies).
+  - `Tools/create_hero_assets.bat` re-run: Light_01/02/03 and Heavy montages gained assist windows; `BP_Hero_Warlord` and `BP_SandboxGameMode` re-saved (script keeps the existing mesh; no content change intended).
+- **Verified:**
+  - `Tools/build.bat` and `-Target CastleDefender`: succeed; only the known engine `GetMovementBase` C4996. Logs: `Saved/p0a-verify-editor-build.log`, `p0a-verify-game-build.log`.
+  - `Tools/run_tests.bat` full gate: exit 0, 119 passed, 0 failed, 0 with warnings, editor exit 0 (includes Hero.AttackAssist and Enemy.Lifecycle). Log: `Saved/p0a-verify-tests.log`.
+  - `EditorValidatorSubsystem` on DA_Enemy_Test and BP_Enemy_Base: 2 valid, 0 invalid. Asset script re-run creates nothing.
+  - Not run: PIE (needs a rendered editor session).
+- **Manual steps for the user:**
+  1. **T-CMB-20 assist (L_CombatSandbox, `game.debug.Combat 1`):** spawn a dummy (`SpawnTestDummy`). Light/Heavy at a target within 35° and 400 cm turns the hero toward it during the window with no extra slide; outside 35° or beyond 400 cm, no turn; dead target, no turn. Interrupt with a hit (`DebugHitHero`) mid-swing: turn stops.
+  2. **T-ENM-01 lifecycle:** drag `Enemy/BP_Enemy_Base` into L_CombatSandbox (or a new `Maps/Test/L_Test_EnemyCombat`), set the instance's Archetype = `DA_Enemy_Test`. In PIE, hit it with Light/Heavy until 100 HP is gone: it stops, the hero walks through the body, and it disappears after 3 s. Place a second one high above a hole/off the floor edge so it falls below KillZ; it disappears. Change `MaxHealth` in the DA to 200, PIE again: it takes twice the hits. Watch the Output Log for new warnings.
+  3. Report pass/fail; then both tasks move to Done and T-CMB-08/10 and T-ENM-02 open.
+- **Open questions / blockers:** the enemy has no AI yet (T-ENM-02), so it stands idle; expected. Push needs SSH or HTTPS credentials on this PC.
+- **Next:** after the PIE sign-off: P0A checkpoint, then T-ENM-02 (brain FSM) and T-CMB-08 (block).
+
+### 2026-10-06: Codex: publish P0 source and handoff to the Windows PC
+- **Agent / branch:** Codex, `feat/01-hero-combat`; user explicitly requested committing/pushing the current work for PC continuation.
+- **Tasks:** T-CMB-20 and T-ENM-01 remain Review; no Unreal verification or task completion inferred from delivery.
+- **Changed:** committed rotation assist as `b0c6057`, enemy lifecycle as `22eaaf1`; this handoff, CMB task acceptance/WIP and the earlier AGENTS progress-update rule are included in the documentation commit.
+- **Verified:** source commits created successfully; `git diff --check` passed before committing. Pushed `b0c6057`, `22eaaf1` and handoff commit `9f531ca`; `git ls-remote` confirmed GitHub's branch tip at `9f531ca65ea61a6e6b2d3b225783e4d18ef1542e`. Working tree was clean and upstream tracking set. This delivery record is committed and pushed as a follow-up.
+- **Manual steps for the user:** on the PC, fetch the remote and checkout `feat/01-hero-combat`. Follow the Windows build, asset-generation, Automation and PIE steps in the next entry before starting dependent tasks. Commit or stash existing PC edits before switching branches.
+- **Open questions / blockers:** source and new Specs still need UE 5.8 verification; no binary assets were created on Mac.
+- **Next:** resume T-CMB-20/T-ENM-01 verification on Windows, then continue dependent P0 tasks.
+
+### 2026-10-06: Codex: enemy lifecycle source ready; Windows verification blocks dependent tasks [T-ENM-01]
+- **Agent / branch:** Codex, `feat/01-hero-combat`; no commit/push. Earlier `AGENTS.md` and progress edits retained.
+- **Tasks:** T-ENM-01 In Progress → Review. T-CMB-20 remains Review. T-CMB-05/06/07/11/21 are Done by user acceptance. T-CMB-08/09/10/14/15/16 and T-ENM-02 remain Todo; no later-phase task opened.
+- **Changed:** `Enemy/EnemyArchetypeDefinition.h/.cpp`, `Enemy/EnemyCharacter.h/.cpp`; `Tests/EnemyLifecycle.spec.cpp` and `EnemyLifecycleTestListener.h`; Core/GameTags (Melee/Elite); `Config/DefaultGame.ini`; main plan §8a (ENM owns spawn init/removal, DIR owns capped spawning); ENM tasks/technical plan and CMB WIP. Refined assist Specs and synchronized accepted CMB criteria with the existing-action sign-off.
+- **Verified:** `git diff --check` passed; `python3 -X pycache_prefix=/private/tmp/game-p0-pycache -m py_compile Tools/create_hero_assets.py` passed. Inspected source lifecycle and assist cleanup/filtering paths. Checked Epic's UE 5.8 AActor::SetActorRotation, FGenericTeamId and AActor::SetLifeSpan documentation; lifespan 0 explicitly destroys the body because UE's SetLifeSpan(0) clears expiry. `uname -s` reports Darwin; Spotlight found no UnrealEditor.app, and no `pwsh` executable was available. No Unreal build, Automation Spec, PIE or binary asset generation was run. New Specs are authored, not passed.
+- **Manual steps for the user:**
+  1. On the Windows UE 5.8 executor, run `Tools/build.bat` and `Tools/build.bat -Target CastleDefender`, then `Tools/create_hero_assets.bat` for the missing Light/Heavy assist notifies, and `Tools/run_tests.bat` (full gate, including the new Hero.AttackAssist and Enemy.Lifecycle Specs). Fix failures before marking either Review task Done.
+  2. In Unreal Editor, create `Content/CastleDefender/Enemy/BP_Enemy_Base` derived from EnemyCharacter and `DA_Enemy_Test` of EnemyArchetypeDefinition. Keep the BP's Archetype default unset to avoid a DA/BP reference cycle. Assign EnemyClass = BP_Enemy_Base; fill DisplayName, positive health/walk speed/MaxPoise, attack montage/range/damage and wind-up turn rate. Use an existing placeholder montage for this lifecycle-only fixture; attack execution remains T-ENM-03. Other prototype defaults are decision interval 0.2 s, aggro radius 600 cm and despawn delay 3 s. Save and validate the DA; an empty attack list must fail.
+  3. Create/open `Maps/Test/L_Test_EnemyCombat`; place BP_Enemy_Base and set its per-instance Archetype to DA_Enemy_Test. Use the shared `UCombatLibrary::DeliverHit` node to apply lethal damage. Observe OnEnemyRemoved(Killed) once, no pawn collision and destruction after the configured delay; repeat with explicit Despawn and falling below KillZ (OutOfWorld). Confirm changing health/poise in the DA changes the next spawn, and record evidence.
+  4. Perform rendered assist checks and record the P0A checkpoint as described in the preceding entry. Then mark T-CMB-20 and T-ENM-01 Done only if all required checks pass, and continue T-CMB-08/10 and T-ENM-02 → 03.
+- **Open questions / blockers:** Windows UE 5.8 execution/editor access is required to advance dependency status. No remote Windows executor is connected in this session. An unattended run here cannot complete P0B/editor content/Functional Tests/G0; no acceptance evidence has been invented. P2/VS stay behind their phase gates.
+- **Next:** resume on the Windows UE 5.8 executor with the current branch and diff, verify T-CMB-20/T-ENM-01, then continue the remaining P0 Todo tasks in dependency order.
+
+### 2026-10-06: Codex: bounded attack assist source ready for Windows verification [T-CMB-20]
+- **Agent / branch:** Codex, `feat/01-hero-combat`.
+- **Tasks:** T-CMB-20 In Progress → Review; T-ENM-01 Todo → In Progress (independent P0 dependency for the sandbox).
+- **Changed:** HeroCombatTypes, HeroClassDefinition, HeroCombatComponent, HeroCombatLibrary, CombatActionTiming, new AttackAssist spec, `Tools/create_hero_assets.py`, CMB/ENM task tables and this log. Next intended files: EnemyCharacter, EnemyArchetypeDefinition, lifecycle spec, native unit tags and asset registration.
+- **Verified:** source inspection only. No Unreal build/test/PIE or asset generation executed on macOS.
+- **Manual steps for the user:** on Windows UE 5.8: `Tools/build.bat`; `Tools/create_hero_assets.bat`; `Tools/run_tests.bat`; also `Tools/build.bat -Target CastleDefender`. In `L_CombatSandbox`, enable `game.debug.Combat 1`, test targets within/outside 35° and 400 cm, allies/dead targets, interruption/death/Staggered and Light/Heavy under actor hit stop. Confirm facing turns within the authored window with no added translation; record P0A checkpoint.
+- **Open questions / blockers:** assist assets and tests are unverified. T-CMB-08/10 cannot start under the task dependency/P0A checkpoint rules until T-CMB-20 passes verification. T-CMB-09/14/15/16 depend on subsequent combat/enemy/content/QA tasks. P2/VS remain gate-closed.
+- **Next:** finish the eligible T-ENM-01 source work, then record its Windows/editor handoff.
+
+### 2026-10-06: Codex: user accepts Hero Combat review tasks; continue P0
+- **Agent / branch:** Codex, `feat/01-hero-combat`, recreated from `main` at `350161a`; existing instruction/log edits preserved. No other active agent recorded in this checkout.
+- **Tasks:** T-CMB-05/06/07/11/21 Review → Done following the user's explicit report that all five were tested and acceptable. T-CMB-20 Todo → In Progress.
+- **Changed:** CMB `tasks.md`, this log. Intended implementation files: HeroCombatTypes, HeroClassDefinition, HeroCombatComponent, HeroCombatLibrary, CombatActionTiming, AttackAssist spec and hero asset setup script.
+- **Verified:** matched the user's acceptance to the earlier Windows build/107-test/PIE entries. No new Unreal run in this session.
+- **Manual steps for the user:** new gameplay requires the Windows UE 5.8 build/test/PIE path before acceptance.
+- **Open questions / blockers:** this executor is macOS; no Unreal installation found in `/Applications` or `/Users/Shared`. Existing build/test runners are Windows `.bat`/PowerShell. P0B requires T-CMB-20 verification and a recorded P0A checkpoint; later phases remain closed.
+- **Next:** implement T-CMB-20; then independent P0 dependencies with all prerequisites Done. Continue until the remaining work needs unavailable engine verification or a phase gate.
+
+### 2026-10-06: Codex: require progress update after every completed task
+- **Tasks:** workflow rule only; no feature task started.
+- **Changed:** `AGENTS.md` §9; removed the temporary standalone rule section from this file.
+- **Verified:** reviewed the rule in `AGENTS.md` and confirmed `progress.md` retains the entry template and history.
+- **Manual steps for the user:** none.
+- **Open questions / blockers:** none.
+- **Next:** apply this rule after every completed task or work item.
+
 ### 2026-10-06: Claude Code: One branch for all work, dependency features included
 - **Decision (user):** too many branches; use one branch with multiple commits. Dependency tasks from other features (UXF, SYN, …) are now committed on the active feature branch `feat/01-hero-combat`, not on their own `feat/<NN>` branches. Supersedes the 2026-10-05 dependency-branch plan.
 - **Agent / branch:** Claude Code, `feat/01-hero-combat`; no other active agents.
