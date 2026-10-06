@@ -54,6 +54,7 @@ void AEnemyCharacter::BeginPlay()
 	GetCharacterMovement()->MaxWalkSpeed = RuntimeParams.WalkSpeed;
 	GetCharacterMovement()->RotationRate.Yaw = RuntimeParams.WindUpTurnRate;
 	Health->OnDeath.AddDynamic(this, &AEnemyCharacter::HandleDeath);
+	Health->OnDamaged.AddDynamic(this, &AEnemyCharacter::HandleDamaged);
 	Brain->StartDecisions();
 }
 
@@ -120,4 +121,9 @@ void AEnemyCharacter::EndPlay(const EEndPlayReason::Type Reason)
 {
 	ReportRemoval(EEnemyRemovedReason::Despawned);
 	Super::EndPlay(Reason);
+}
+
+void AEnemyCharacter::HandleDamaged(const FCombatHit& Hit, float /*NewHealth*/)
+{
+	if (!Health->IsDead() && !bRemovalReported) { OnHitReactPresentation(Hit); }
 }

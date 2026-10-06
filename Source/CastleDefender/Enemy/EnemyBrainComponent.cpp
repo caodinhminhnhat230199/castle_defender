@@ -3,6 +3,7 @@
 #include "Enemy/EnemyTargeting.h"
 #include "AIController.h"
 #include "Combat/HealthComponent.h"
+#include "Combat/CombatStateComponent.h"
 #include "Combat/MeleeTraceComponent.h"
 #include "Animation/AnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -30,6 +31,8 @@ void UEnemyBrainComponent::StartDecisions()
 	if (!Enemy || State == EEnemyBrainState::Dead) { return; }
 	Enemy->GetHealthComponent()->OnDamaged.AddUniqueDynamic(this, &UEnemyBrainComponent::HandleDamaged);
 	Enemy->GetMeleeTraceComponent()->OnHitWindowBegin.AddUObject(this, &UEnemyBrainComponent::HandleHitWindowBegin);
+	Enemy->GetCombatStateComponent()->OnStateAdded.AddUniqueDynamic(this, &UEnemyBrainComponent::HandleStateAdded);
+	Enemy->GetCombatStateComponent()->OnStateRemoved.AddUniqueDynamic(this, &UEnemyBrainComponent::HandleStateRemoved);
 	AttackReadyTimes.Init(0.0, Enemy->GetRuntimeParams().Attacks.Num());
 	const float Interval = Enemy->GetRuntimeParams().DecisionInterval;
 	// Random first fire spreads enemies spawned in the same frame across the interval.
@@ -251,4 +254,34 @@ void UEnemyBrainComponent::DrawDebug() const
 	DrawDebugCircle(GetWorld(), Origin, Params.LocalAggroRadius, 32, FColor::Orange, false, Lifetime, 0, 2.f, FVector::XAxisVector, FVector::YAxisVector, false);
 	if (Goal) { DrawDebugLine(GetWorld(), Origin, Goal->GetActorLocation(), FColor::Red, false, Lifetime, 0, 2.f); }
 #endif
+}
+
+void UEnemyBrainComponent::CancelAttack()
+{
+	if (ActiveMontage)
+	{
+		// Cooldown bookkeeping still runs in HandleAttackEnded when the montage reports its end.
+		if (UAnimInstance* Anim = Enemy->GetMesh()->GetAnimInstance()) { Anim->Montage_Stop(0.f, ActiveMontage); }
+	}
+	Enemy->GetMeleeTraceComponent()->EndHitWindow();
+}
+
+void UEnemyBrainComponent::HandleStateAdded(FGameplayTag CombatState, AActor* /*Instigator*/)
+{
+	if (CombatState != GameTags::State_Combat_Staggered || State == EEnemyBrainState::Dead) { return; }
+	// R-ENM-07: the current attack is cancelled with no damage and the enemy takes no action until the state ends.
+	CancelAttack();
+	StopMoving();
+	if (AAIController* AI = Cast<AAIController>(Enemy->GetController())) { AI->ClearFocus(EAIFocusPriority::Gameplay); }
+	if (State != EEnemyBrainState::Paused) { SetState(EEnemyBrainState::Staggered); }
+	Enemy->OnStaggerPresentation(true);
+}
+
+void UEnemyBrainComponent::HandleStateRemoved(FGameplayTag CombatState)
+{
+	if (CombatState != GameTags::State_Combat_Staggered || State == EEnemyBrainState::Dead) { return; }
+	Enemy->OnStaggerPresentation(false);
+	if (State != EEnemyBrainState::Staggered) { return; }
+	SetState(IsValidTarget(Target.Get()) ? EEnemyBrainState::Engage : EEnemyBrainState::Idle);
+	Decide(); // Act again now, not on the next timer fire.
 }

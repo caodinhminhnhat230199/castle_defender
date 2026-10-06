@@ -8,7 +8,7 @@
 class AEnemyCharacter;
 class UAnimMontage;
 
-/** P0 uses Idle, Engage, Attacking, Paused and Dead; Staggered lands with T-ENM-04, route states in P1/P2. */
+/** P0 uses Idle, Engage, Attacking, Staggered, Paused and Dead; route states arrive in P1/P2. */
 UENUM(BlueprintType)
 enum class EEnemyBrainState : uint8 { Idle, FollowRoute, Engage, Attacking, Staggered, ReturnToRoute, Paused, Dead };
 
@@ -63,6 +63,12 @@ private:
 	void DrawDebug() const;
 	UFUNCTION()
 	void HandleDamaged(const FCombatHit& Hit, float NewHealth);
+	UFUNCTION()
+	void HandleStateAdded(FGameplayTag CombatState, AActor* Instigator);
+	UFUNCTION()
+	void HandleStateRemoved(FGameplayTag CombatState);
+	/** Ends the running attack at once: no blend-out, so its hit window cannot open again. */
+	void CancelAttack();
 
 	UPROPERTY()
 	TObjectPtr<AEnemyCharacter> Enemy;

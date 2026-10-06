@@ -55,6 +55,12 @@ public:
 	FEnemyRemovedSignature OnEnemyRemoved;
 	UFUNCTION(BlueprintImplementableEvent, Category = "Enemy|Presentation")
 	void OnDeathPresentation();
+	/** R-ENM-08: every damaging hit while alive. Presentation only: it never changes the enemy's action. */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Enemy|Presentation")
+	void OnHitReactPresentation(const FCombatHit& Hit);
+	/** R-ENM-07: true when Staggered starts, false when it ends. The brain owns the state change. */
+	UFUNCTION(BlueprintImplementableEvent, Category = "Enemy|Presentation")
+	void OnStaggerPresentation(bool bStaggered);
 
 protected:
 	/** Set per instance for placed enemies, on the Blueprint spawn node (ExposeOnSpawn), or by InitFromSpawn. */
@@ -74,6 +80,8 @@ protected:
 private:
 	UFUNCTION()
 	void HandleDeath(const FCombatHit& KillingHit);
+	UFUNCTION()
+	void HandleDamaged(const FCombatHit& Hit, float NewHealth);
 	void StopActing();
 	void ReportRemoval(EEnemyRemovedReason Reason);
 	bool bRemovalReported = false;
