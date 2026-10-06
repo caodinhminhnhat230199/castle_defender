@@ -4,18 +4,28 @@
 #include "Animation/AnimMontage.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "Enemy/EnemyArchetypeDefinition.h"
 #include "Enemy/EnemyCharacter.h"
 
-/** Test world with an engine context: destroying actors in a context-less world logs a warning (as in FTestWorldWrapper). */
+/** Test world set up and torn down like FTestWorldWrapper: an engine context (destroying actors in a context-less world warns), EndPlay and GC on teardown. */
 struct FEnemyTestWorld
 {
 	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
 	FEnemyTestWorld() { GEngine->CreateNewWorldContext(EWorldType::Game).SetCurrentWorld(World); }
 	~FEnemyTestWorld()
 	{
+		// End play for every actor that began it. Engine actors such as Water's ABuoyancyManager register physics-solver
+		// callbacks in BeginPlay and remove them only in EndPlay; skipping it crashes the next garbage collection.
+		World->BeginTearingDown();
+		for (TActorIterator<AActor> It(World); It; ++It)
+		{
+			if (It->HasActorBegunPlay()) { It->RouteEndPlay(EEndPlayReason::Quit); }
+		}
 		GEngine->DestroyWorldContext(World);
 		World->DestroyWorld(false);
+		// As FTestWorldWrapper: collect now so a destroyed world never survives into the next test's map load.
+		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
 	}
 };
 
