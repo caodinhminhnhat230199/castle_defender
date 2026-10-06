@@ -1,12 +1,11 @@
 # Hero Combat — WIP và handoff
 
-## Current handoff (2026-10-06, Codex)
+## Current handoff (2026-10-06, Claude Code)
 
-This section supersedes the historical snapshot below. Branch: `feat/01-hero-combat`, from merged `main` at `350161a`. The user accepted T-CMB-05/06/07/11/21 after testing: all five are Done. CMB now has **10 Done, 1 Review, 10 Todo**.
+This section supersedes the historical snapshot below. Branch: `feat/01-hero-combat`. CMB now has **11 Done, 0 Review, 10 Todo**.
 
-- **T-CMB-20 Review:** bounded rotation assist source, notify/timing validation, debugger, asset setup hook and Automation Specs added. This macOS executor has no Unreal Engine; no new build/test/PIE run or binary asset save. Run `Tools/build.bat`, `Tools/create_hero_assets.bat`, `Tools/run_tests.bat` and rendered AC-CMB-21 checks on the Windows PC; record the P0A checkpoint before T-CMB-08/10.
-- **T-ENM-01 Review:** independent P0 enemy lifecycle source and Specs added on this branch. Native asset registration and removal contract are updated; Blueprint/DA/test-map creation and Windows verification remain. Check the latest `progress.md` entry for editor steps.
-- **Remaining P0 CMB:** 08/09/10/14/15/16. These require the assist checkpoint, verified enemy providers, editor content and QA/playtest evidence. Do not treat source-ready Review tasks as Done.
+- **T-CMB-20 Done** and **T-ENM-01 Done** after Windows build, 119/119 Automation and user PIE sign-off. The P0A checkpoint is recorded in [tasks.md](tasks.md); P0B is open.
+- **Remaining P0 CMB:** 08 and 10 are ready; 09 needs 08; 14 needs T-ENM-03; 15/16 close P0B and G0.
 - **Later phases:** 12 (P2) and 17/18/19 (VS) remain closed by phase gates.
 - **Delivery:** source commits `b0c6057` (T-CMB-20) and `22eaaf1` (T-ENM-01). User authorized pushing `feat/01-hero-combat` for continuation on the Windows PC. See the latest progress entry for remote verification. Existing user instruction/log edits preserved.
 

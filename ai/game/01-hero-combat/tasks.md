@@ -36,7 +36,7 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-17 | Warlord proximity buff (provisional) | GAMEPLAY | VS | Should | T-PRK-02, T-SQD-01 | Todo |
 | T-CMB-18 | Rally / charge / hold-line design spike (provisional) | DESIGN | VS | Could | T-CMB-17 | Todo |
 | T-CMB-19 | Combat animation polish with production animation (provisional) | ANIM | VS | Should | T-CMB-15, T-CMB-16 | Todo |
-| T-CMB-20 | Bounded attack rotation assist | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-05, T-CMB-06 | Review |
+| T-CMB-20 | Bounded attack rotation assist | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-05, T-CMB-06 | Done |
 | T-CMB-21 | Combat timing/state debugger + trace visualization | TOOLS | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Done |
 
 P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression and final stamina tuning land in T-CMB-08/15/16. T-CMB-04 establishes resolution/feedback separation early; P0B completes outcome coverage as defenses land. T-CMB-15 owns final suite acceptance, but each P0A task runs its own focused tests before the checkpoint. Keep every task `Todo` until implementation starts.
@@ -563,23 +563,25 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-02, T-CMB-04, T-CMB-05, T-CMB-06
 
 **Implementation Notes**
-- [ ] `FHeroAttackAssistData` in `.AttackAssist`: MaxAngle 35°, Distance 400 cm, RotationRate 720°/s (spec defaults; no constants).
-- [ ] During authored RotationAssist only, select an alive hostile near intended attack direction/camera aim; T-CMB-10 supplies locked-target preference later.
-- [ ] Reject targets outside angle/range or invalid/dead/friendly; revalidate before applying rotation, bound total turn by MaxAngle and angular speed by RotationRate. With no target preserve player intent.
-- [ ] Turn facing only; never move/pull the pawn. Existing authored root motion remains independent of assistance.
-- [ ] Close assist on montage interruption, shared Staggered or death; per-frame work only while the window is open, with its reason in a code comment.
+- [x] `FHeroAttackAssistData` in `.AttackAssist`: MaxAngle 35°, Distance 400 cm, RotationRate 720°/s (spec defaults; no constants).
+- [x] During authored RotationAssist only, select an alive hostile near intended attack direction/camera aim; T-CMB-10 supplies locked-target preference later.
+- [x] Reject targets outside angle/range or invalid/dead/friendly; revalidate before applying rotation, bound total turn by MaxAngle and angular speed by RotationRate. With no target preserve player intent.
+- [x] Turn facing only; never move/pull the pawn. Existing authored root motion remains independent of assistance.
+- [x] Close assist on montage interruption, shared Staggered or death; per-frame work only while the window is open, with its reason in a code comment.
 
 **Expected Files / Assets** `HeroCombatTypes.h`, `HeroClassDefinition.*`, `HeroCombatComponent.*`, `AM_Warlord_Light_*`, `AM_Warlord_Heavy`; `Source/<Game>/Tests/AttackAssist.spec.cpp`
 
 **Test Case** Target inside 35°/400 cm → bounded turn in window; outside either limit, ally or dead target → no assist. Compare pawn displacement with assistance enabled/disabled to exclude added translation.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-21 free-camera portion passes; T-CMB-10/15 verify locked preference.
-- [ ] Assist bounds Spec passes; debugger exposes the selected assist target.
+- [x] AC-CMB-21 free-camera portion passes; T-CMB-10/15 verify locked preference.
+- [x] Assist bounds Spec passes; debugger exposes the selected assist target.
 
 **Verification** Automation Spec and rendered PIE in `L_CombatSandbox`.
 
 **Review handoff (2026-10-06, Codex):** source implementation adds data bounds, an authored RotationAssist notify, entry-only overlap selection, live hostile/alive/cone/range revalidation, hero-clock yaw steps, interruption cleanup and debug target display. `create_hero_assets.py` adds missing assist windows to the actual Light/Heavy DA references without replacing authored windows. `AttackAssist.spec.cpp` covers bounds, dilation, wraparound, idempotence, candidate filtering, buffer ticking and Staggered cleanup. Unreal is unavailable on this macOS executor: these tests have NOT run and assets have NOT been saved. On Windows run `Tools/build.bat`, `Tools/create_hero_assets.bat`, `Tools/run_tests.bat`, then rendered `L_CombatSandbox` checks for AC-CMB-21 and the P0A checkpoint. Keep Review until those pass; T-CMB-08/10 remain waiting.
+
+**Done (2026-10-06, Claude Code):** Windows editor/game builds pass; `create_hero_assets.bat` saved assist windows on Light_01/02/03 and Heavy; full gate 119/119 (Hero.AttackAssist included). The user ran the rendered `L_CombatSandbox` AC-CMB-21 free-camera checks (inside/outside 35° and 400 cm, dead target, interruption) and reported pass. Locked-target preference stays with T-CMB-10/15.
 
 ---
 
@@ -615,6 +617,8 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 ### P0A checkpoint (sequencing only, not a production gate)
 
 After T-CMB-01…07, 11, 13, 20 and 21 have their task verification, record a short `L_CombatSandbox` session with a hostile dummy/scripted test attacker or the available ENM melee enemy. Exercise Light/Heavy/Dodge, timing/trace/assist, stamina, hit reaction and death/reset. Confirm responsiveness/readability and no action-pipeline redesign blocker; record defects and the next iteration in `progress.md` before starting P0B. This checkpoint does not mark T-CMB-15/16 Done or permit P1. Full timed poise/Staggered behavior requires T-SYN-01, not the Foundation skeleton.
+
+**Recorded (2026-10-06):** every listed task is Done with verification. The user exercised Light/Heavy/Dodge, stamina, hit reaction/death (T-CMB-05/06/07/11/21 acceptance), the assist (T-CMB-20) and the `BP_Enemy_Base` lifecycle in `L_CombatSandbox`, and reported no defects and no redesign blocker. P0B (T-CMB-08/10, then 09/14) may start.
 
 ## P2
 
