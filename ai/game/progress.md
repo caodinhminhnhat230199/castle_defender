@@ -16,6 +16,74 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-06: Claude Code: T-ENM-02 Done; session work committed
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`. User authorized commits (2026-10-06). Push not done: this PC has no GitHub SSH key.
+- **Tasks:** T-ENM-02 Review → Done after the user's PIE confirmation (debug circle/state, Idle → Engage, chase).
+- **Changed:** ENM `tasks.md`, this log; commits listed in `git log` (T-CMB-20 assets, enemy test fixture, T-ENM-02 brain, enemy assets/FT, docs).
+- **Verified:** last full gate 127/127 before committing; no code change since.
+- **Manual steps for the user:** push `feat/01-hero-combat` from a machine with GitHub access, or add an SSH key/HTTPS credential here.
+- **Next:** T-ENM-03 (melee attack with telegraph).
+
+### 2026-10-06: Claude Code: FT_Enemy_AggroChase functional test; enemy debug view answer [T-ENM-02]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`, uncommitted.
+- **Tasks:** T-ENM-02 stays Review (PIE check pending).
+- **User report:** "no enemy status/circle visible". Cause from the editor log: `game.debug.Enemy 1` was never entered (only `game.debug.Combat`/`CombatTrace`), and two placed enemies had no Archetype, so they logged `invalid enemy archetype` and despawned as designed. No code change needed.
+- **Decision:** user approved an automated test. Per foundation §16 Functional Tests are Blueprint-only (a C++ `AFunctionalTest` would break Shipping of the single module), so no module dependency was added; the earlier question was moot.
+- **Changed:**
+  - `Tools/create_enemy_assets.py` now also wires `Maps/Test/BP_FT_EnemyAggroChase` and creates `FT_Enemy_AggroChase` (floor, nav bounds, test actor). `create_enemy_assets.ps1` builds and saves the navmesh of a newly created map with `ResavePackages -BuildNavigationData` (the async-load nav lock is disabled for that command only; commandlet worlds never release it).
+  - `EnemyCharacter.h`: `Archetype` is `ExposeOnSpawn`.
+  - ENM tasks T-ENM-02 handoff.
+- **Verified:** editor + game builds pass. `run_tests.bat -Filter Project.Functional`: 2/2. Full gate: 127/127, 0 with warnings, editor exit 0 (`Saved/enm02-full-tests.log`). First FT run failed on the test's own velocity check (enemy reaches the 150 cm stop range in ~0.3 s and is idle at 1 s); replaced with a distance check. Log has the engine `LogCrowdFollowing: Unable to find RecastNavMesh` warning once per test-map teardown (3 vs 1 before: one more map); it fires in `CleanupWorld`, not from game code.
+- **Manual steps for the user:** PIE check from the entry below, now with: set each placed enemy's Archetype; console `game.debug.Enemy 1`.
+- **Open questions / blockers:** commit not yet authorized.
+- **Next:** T-ENM-02 Done after PIE → T-ENM-03, T-CMB-08.
+
+### 2026-10-06: Claude Code: enemy brain FSM, targeting and aggro chase [T-ENM-02]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`, uncommitted.
+- **Tasks:** T-ENM-02 Todo → In Progress → Review.
+- **Changed:**
+  - New `Enemy/EnemyBrainComponent.h/.cpp`, `Enemy/EnemyTargeting.h/.cpp`, `Tests/EnemyTargeting.spec.cpp`, `Tests/EnemyTestFixture.h` (shared world-with-context + fixture archetype; `EnemyLifecycle.spec.cpp` now uses it).
+  - `EnemyCharacter`: owns `Brain`, starts it after runtime init, stops it in every removal path. `EnemyArchetypeDefinition`: `TargetPriority` field (default Hero, Soldier) copied to runtime params; empty list fails validation.
+  - `Core/GameDebug`: `game.debug.Enemy` (non-Shipping).
+  - Docs: ENM tasks (status, ticks, handoff), ENM spec §13 priority-list row, foundation technical plan CVar list.
+- **Verified:** editor + game builds pass (only the known engine C4996). `Tools/run_tests.bat`: 126/126, 0 with warnings, editor exit 0 (`Saved/enm02-full-tests.log`). `-Filter CastleDefender.Enemy` 3 consecutive runs 13/13. The first cadence run failed on a test-harness artifact (timers activate at the end of the first manual tick); the window now starts at activation. Not run: PIE, Visual Logger, `FT_Enemy_AggroChase`.
+- **Manual steps for the user (PIE, `L_CombatSandbox` with a `BP_Enemy_Base` instance, Archetype = `DA_Enemy_Test`):**
+  1. Console `game.debug.Enemy 1`: orange 6 m circle, state text "Idle" above the enemy.
+  2. Walk inside the circle: within ~0.4 s it reads "Engage -> <hero>", a red line points at the hero and the enemy walks to ~1.5 m from you, then stops. Walk away: it follows (no leash until P2). It does not attack yet (T-ENM-03).
+  3. Kill it: state stops updating, no further movement.
+  4. Optional: Tools → Debug → Visual Logger, record, repeat 2: `LogGameAI` shows `State Idle -> Engage`.
+  5. Output Log: no new warnings.
+- **Open questions / blockers:** `FT_Enemy_AggroChase` needs either the `FunctionalTesting` module dependency (C++ functional test placed by a script) or a Blueprint FT built in the editor; AGENTS requires asking before adding a module dependency. Default if no answer: author it with the T-ENM-12 P0 Functional Test suite.
+- **Next:** after PIE pass: T-ENM-02 Done → T-ENM-03 (melee attack + telegraph), T-CMB-08 (block).
+
+### 2026-10-06: Claude Code: user PIE sign-off; T-CMB-20 and T-ENM-01 Done; P0A checkpoint recorded
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`, uncommitted.
+- **Tasks:** T-CMB-20 Review → Done; T-ENM-01 Review → Done; P0A checkpoint recorded in CMB `tasks.md`. P0B open: T-CMB-08/10 and T-ENM-02 have all dependencies Done.
+- **Changed:** CMB/ENM `tasks.md` (status, checkboxes, evidence), CMB `WIP.md` handoff, this log.
+- **Verified:** the user ran the PIE checks from the entry below (assist bounds/interruption; enemy kill, walk-through body, 3 s despawn, KillZ removal, DA MaxHealth edit) and reported pass. No defects or redesign blocker reported.
+- **Manual steps for the user:** none.
+- **Open questions / blockers:** commit/push not yet authorized; push needs credentials on this PC.
+- **Next:** T-ENM-02 (brain FSM), then T-ENM-03; T-CMB-08 (block).
+
+### 2026-10-06: Claude Code: Windows verification of T-CMB-20 and T-ENM-01; enemy fixture assets [T-CMB-20, T-ENM-01]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat` at `fc5cc9a` (Windows PC). `git fetch` failed (no SSH key on this PC); local branch matched the pushed tip recorded below. No commit yet.
+- **Tasks:** T-CMB-20 and T-ENM-01 stay Review: headless verification passed, rendered PIE checks remain for the user.
+- **Changed:**
+  - `Tests/EnemyLifecycle.spec.cpp`: fixture registers an `FWorldContext` (same as engine `FTestWorldWrapper`). Without it every actor destroy logged `UWorld::DestroyActor: World has no context!`, 5 tests reported SuccessWithWarnings and `run_tests.bat` exited 1 on the count mismatch.
+  - New `Tools/create_enemy_assets.bat/.ps1/.py` (idempotent) → `Content/CastleDefender/Enemy/BP_Enemy_Base`, `DA_Enemy_Test`, `AM_Enemy_Test_Attack` (from Mannequin `MM_Attack_01`, no notifies).
+  - `Tools/create_hero_assets.bat` re-run: Light_01/02/03 and Heavy montages gained assist windows; `BP_Hero_Warlord` and `BP_SandboxGameMode` re-saved (script keeps the existing mesh; no content change intended).
+- **Verified:**
+  - `Tools/build.bat` and `-Target CastleDefender`: succeed; only the known engine `GetMovementBase` C4996. Logs: `Saved/p0a-verify-editor-build.log`, `p0a-verify-game-build.log`.
+  - `Tools/run_tests.bat` full gate: exit 0, 119 passed, 0 failed, 0 with warnings, editor exit 0 (includes Hero.AttackAssist and Enemy.Lifecycle). Log: `Saved/p0a-verify-tests.log`.
+  - `EditorValidatorSubsystem` on DA_Enemy_Test and BP_Enemy_Base: 2 valid, 0 invalid. Asset script re-run creates nothing.
+  - Not run: PIE (needs a rendered editor session).
+- **Manual steps for the user:**
+  1. **T-CMB-20 assist (L_CombatSandbox, `game.debug.Combat 1`):** spawn a dummy (`SpawnTestDummy`). Light/Heavy at a target within 35° and 400 cm turns the hero toward it during the window with no extra slide; outside 35° or beyond 400 cm, no turn; dead target, no turn. Interrupt with a hit (`DebugHitHero`) mid-swing: turn stops.
+  2. **T-ENM-01 lifecycle:** drag `Enemy/BP_Enemy_Base` into L_CombatSandbox (or a new `Maps/Test/L_Test_EnemyCombat`), set the instance's Archetype = `DA_Enemy_Test`. In PIE, hit it with Light/Heavy until 100 HP is gone: it stops, the hero walks through the body, and it disappears after 3 s. Place a second one high above a hole/off the floor edge so it falls below KillZ; it disappears. Change `MaxHealth` in the DA to 200, PIE again: it takes twice the hits. Watch the Output Log for new warnings.
+  3. Report pass/fail; then both tasks move to Done and T-CMB-08/10 and T-ENM-02 open.
+- **Open questions / blockers:** the enemy has no AI yet (T-ENM-02), so it stands idle; expected. Push needs SSH or HTTPS credentials on this PC.
+- **Next:** after the PIE sign-off: P0A checkpoint, then T-ENM-02 (brain FSM) and T-CMB-08 (block).
+
 ### 2026-10-06: Codex: publish P0 source and handoff to the Windows PC
 - **Agent / branch:** Codex, `feat/01-hero-combat`; user explicitly requested committing/pushing the current work for PC continuation.
 - **Tasks:** T-CMB-20 and T-ENM-01 remain Review; no Unreal verification or task completion inferred from delivery.
