@@ -19,6 +19,7 @@ bool UEnemyArchetypeDefinition::ValidateDefinition(FString& OutError) const
 		return false;
 	}
 	if (Attacks.IsEmpty()) { OutError = TEXT("Enemy requires at least one attack."); return false; }
+	if (TargetPriority.IsEmpty()) { OutError = TEXT("Enemy requires at least one target kind in TargetPriority."); return false; }
 	for (const FEnemyAttackDefinition& Attack : Attacks)
 	{
 		if (!Attack.Montage || !Nonnegative(Attack.Range) || Attack.Range <= 0.f
@@ -44,6 +45,7 @@ FEnemyRuntimeParams UEnemyArchetypeDefinition::MakeRuntimeParams() const
 	Params.Attacks = Attacks;
 	Params.DecisionInterval = DecisionInterval;
 	Params.LocalAggroRadius = LocalAggroRadius;
+	Params.TargetPriority = TargetPriority;
 	Params.MinTimeBetweenAttacks = MinTimeBetweenAttacks;
 	Params.WindUpTurnRate = WindUpTurnRate;
 	Params.DespawnDelay = DespawnDelay;

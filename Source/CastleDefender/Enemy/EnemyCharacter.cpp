@@ -2,6 +2,7 @@
 #include "AIController.h"
 #include "Combat/HealthComponent.h"
 #include "Combat/CombatStateComponent.h"
+#include "Enemy/EnemyBrainComponent.h"
 #include "Combat/MeleeTraceComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -14,6 +15,7 @@ AEnemyCharacter::AEnemyCharacter()
 {
 	Health = CreateDefaultSubobject<UHealthComponent>(TEXT("Health"));
 	CombatState = CreateDefaultSubobject<UCombatStateComponent>(TEXT("CombatState"));
+	Brain = CreateDefaultSubobject<UEnemyBrainComponent>(TEXT("Brain"));
 	AIControllerClass = AAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
@@ -45,10 +47,12 @@ void AEnemyCharacter::BeginPlay()
 	GetCharacterMovement()->MaxWalkSpeed = RuntimeParams.WalkSpeed;
 	GetCharacterMovement()->RotationRate.Yaw = RuntimeParams.WindUpTurnRate;
 	Health->OnDeath.AddDynamic(this, &AEnemyCharacter::HandleDeath);
+	Brain->StartDecisions();
 }
 
 void AEnemyCharacter::StopActing()
 {
+	Brain->StopDecisions();
 	if (AAIController* AI = Cast<AAIController>(GetController()))
 	{
 		AI->StopMovement();

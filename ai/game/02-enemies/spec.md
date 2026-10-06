@@ -243,7 +243,7 @@ Depended on by: CMB (target to hit), SQD (enemies to fight), DEF (enemies that b
 | Decision interval | P0 | 0.2 s (Swarm may use 0.3 s) | [TUNABLE] |
 | Local Aggro Radius | P0 | ~6–8 m placeholder | [TUNABLE] (§14.2) |
 | Leash radius | P2 | ~12–15 m placeholder | [TUNABLE] (§14.5) |
-| Local Aggro priority list (target kinds in order) | P2 | Swarm: Hero, soldier, Path Obstacle, Objective. Siege: Path Obstacle, Combat Tower, Blocker, soldier, Hero, Objective | [TUNABLE] |
+| Local Aggro priority list (target kinds in order) | P0 field (default Hero, soldier; T-ENM-02), per-archetype lists P2 | Swarm: Hero, soldier, Path Obstacle, Objective. Siege: Path Obstacle, Combat Tower, Blocker, soldier, Hero, Objective | [TUNABLE] |
 | Structure damage multiplier | P2 | Siege ~3× | [TUNABLE] (§20.1) |
 | Threat cost (read by DIR) | P1 | Swarm 2, Armored 8, Siege 25 (§8.1 illustrative) | [TUNABLE] |
 | Kill reward (read by RUN, A-05) | P3 | small int | [TUNABLE] |

@@ -9,6 +9,7 @@
 
 class UHealthComponent;
 class UCombatStateComponent;
+class UEnemyBrainComponent;
 
 UENUM(BlueprintType)
 enum class EEnemyRemovedReason : uint8 { Killed, Despawned, OutOfWorld };
@@ -22,7 +23,7 @@ struct CASTLEDEFENDER_API FEnemySpawnParams
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEnemyRemovedSignature, AEnemyCharacter*, Enemy, EEnemyRemovedReason, Reason);
 
-/** Enemy body and lifecycle only; brain/attacks are supplied by T-ENM-02/03. */
+/** Enemy body and lifecycle; decisions live in UEnemyBrainComponent, attacks arrive with T-ENM-03. */
 UCLASS()
 class CASTLEDEFENDER_API AEnemyCharacter : public ACharacter, public IGenericTeamAgentInterface
 {
@@ -42,6 +43,8 @@ public:
 	UHealthComponent* GetHealthComponent() const { return Health; }
 	UFUNCTION(BlueprintPure, Category = "Enemy")
 	UCombatStateComponent* GetCombatStateComponent() const { return CombatState; }
+	UFUNCTION(BlueprintPure, Category = "Enemy")
+	UEnemyBrainComponent* GetBrainComponent() const { return Brain; }
 	const FEnemyRuntimeParams& GetRuntimeParams() const { return RuntimeParams; }
 	bool HasReportedRemoval() const { return bRemovalReported; }
 	UFUNCTION(BlueprintPure, Category = "Enemy")
@@ -52,12 +55,15 @@ public:
 	void OnDeathPresentation();
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
+	/** Set per instance for placed enemies, on the Blueprint spawn node (ExposeOnSpawn), or by InitFromSpawn. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy", meta = (ExposeOnSpawn = true))
 	TObjectPtr<UEnemyArchetypeDefinition> Archetype;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<UHealthComponent> Health;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<UCombatStateComponent> CombatState;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
+	TObjectPtr<UEnemyBrainComponent> Brain;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Enemy")
 	FEnemyRuntimeParams RuntimeParams;
 

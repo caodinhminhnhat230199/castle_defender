@@ -4,6 +4,7 @@
 #include "Core/GameDefinition.h"
 #include "Combat/CombatStateTypes.h"
 #include "Animation/AnimMontage.h"
+#include "Enemy/EnemyTargeting.h"
 #include "EnemyArchetypeDefinition.generated.h"
 
 class AEnemyCharacter;
@@ -53,6 +54,8 @@ struct CASTLEDEFENDER_API FEnemyRuntimeParams
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
 	float LocalAggroRadius = 600.f;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
+	TArray<EEnemyTargetKind> TargetPriority;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
 	float MinTimeBetweenAttacks = 0.f;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
 	float WindUpTurnRate = 0.f;
@@ -90,6 +93,9 @@ public:
 	float DecisionInterval = 0.2f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy", meta = (ClampMin = "0"))
 	float LocalAggroRadius = 600.f;
+	/** R-ENM-27: kinds this archetype may target, best first. P0 default from the T-ENM-02 notes. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
+	TArray<EEnemyTargetKind> TargetPriority = { EEnemyTargetKind::Hero, EEnemyTargetKind::Soldier };
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy", meta = (ClampMin = "0"))
 	float MinTimeBetweenAttacks = 0.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy", meta = (ClampMin = "0"))
