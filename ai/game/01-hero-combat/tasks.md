@@ -24,7 +24,7 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Done |
 | T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04, T-SYN-01 | Done |
 | T-CMB-07 | Dodge with i-frames | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Done |
-| T-CMB-08 | Block + block break | GAMEPLAY | P0B | Must | T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Todo |
+| T-CMB-08 | Block + block break | GAMEPLAY | P0B | Must | T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Review |
 | T-CMB-09 | Parry + counter / vulnerability window | GAMEPLAY | P0B | Must | T-CMB-08, T-SYN-01 | Todo |
 | T-CMB-10 | Lock-on | GAMEPLAY | P0B | Must | T-CMB-01, T-FND-09, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Todo |
 | T-CMB-11 | Hero hit reactions, damage taken, death event | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-13 | Done |
@@ -315,12 +315,12 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21
 
 **Implementation Notes**
-- [ ] `FHeroBlockData`: `DamageReduction`, `StaminaPerDamage`, `ArcDegrees` (140° default), `BlockRegenSuppressAfterHit` (0.6 s default), `BlockBreakStaggerDuration`, `MoveSpeedMultiplier`, block-hit and block-break montages.
-- [ ] `IA_Block` hold: Started → Block (if allowed), Completed → Idle. ABP upper-body guard pose from a component bool; move speed × multiplier; `Stamina.SetBlocking(true/false)`.
-- [ ] `InterceptHit` while Block and `IsInFrontArc`: `Hit.Damage *= (1 − DamageReduction)`; `ApplyDamage(original × StaminaPerDamage)`; if depleted → `ApplyState(State.Combat.Staggered, BlockBreakStaggerDuration, self)`, play break montage, return BlockBroken; else play block-hit montage, return Blocked.
-- [ ] Reuse T-CMB-02 shared-state hooks: block break drops guard and applies shared Staggered via SYN; never start a CMB stagger timer. Its debug/presentation label derives from `HasState`.
-- [ ] Every absorbed hit restarts blocking-regen suppression using `.Block.BlockRegenSuppressAfterHit`; normal regen delay and suppression must both permit blocking regen. Test repeated hits restarting the delay and post-suppression regen at ×0.5.
-- [ ] Hits outside the arc fall through to normal damage.
+- [x] `FHeroBlockData`: `DamageReduction`, `StaminaPerDamage`, `ArcDegrees` (140° default), `BlockRegenSuppressAfterHit` (0.6 s default), `BlockBreakStaggerDuration`, `MoveSpeedMultiplier`, block-hit and block-break montages.
+- [x] `IA_Block` hold: Started → Block (if allowed), Completed → Idle. ABP upper-body guard pose from a component bool; move speed × multiplier; `Stamina.SetBlocking(true/false)`.
+- [x] `InterceptHit` while Block and `IsInFrontArc`: `Hit.Damage *= (1 − DamageReduction)`; `ApplyDamage(original × StaminaPerDamage)`; if depleted → `ApplyState(State.Combat.Staggered, BlockBreakStaggerDuration, self)`, play break montage, return BlockBroken; else play block-hit montage, return Blocked.
+- [x] Reuse T-CMB-02 shared-state hooks: block break drops guard and applies shared Staggered via SYN; never start a CMB stagger timer. Its debug/presentation label derives from `HasState`.
+- [x] Every absorbed hit restarts blocking-regen suppression using `.Block.BlockRegenSuppressAfterHit`; normal regen delay and suppression must both permit blocking regen. Test repeated hits restarting the delay and post-suppression regen at ×0.5.
+- [x] Hits outside the arc fall through to normal damage.
 
 **Expected Files / Assets** `HeroCombatComponent.cpp`, `ABP_Warlord` guard layer; `Content/<Game>/Hero/AM_Warlord_BlockHit`, `AM_Warlord_BlockBreak`
 
@@ -331,6 +331,7 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 - [ ] Releasing Block returns to Idle in the same frame.
 
 **Verification** PIE; `FT_BlockReduce`, `FT_BlockBreak` in T-CMB-15.
+**Review handoff (2026-10-07, Claude Code):** `FHeroBlockData` on `UHeroClassDefinition::Block` (0.8 / 1.0 / 140° / 0.6 s / 1.2 s / ×0.5, validated). `InterceptHit` blocks only in Block state and inside the arc (source = instigator, else opposite `HitDirection`); reduces damage, drains stamina from the original force, restarts suppression; at 0 stamina it drops to Idle, applies shared Staggered for `BlockBreakStaggerDuration` and fires `OnBlockBroken(Attacker)`. Entering/leaving Block drives `Stamina.SetBlocking` and guard speed. Block is a hold: the press is remembered (not buffered) and Block resumes when a committed action, cancel window or Staggered ends while still held. `DeliverHit` plays one `Feedback.Combat.Block` / `BlockBreak` per blocked attempt (from the interceptor result, so a lethal block still reads as a block). Content via `Tools/create_hero_assets.bat`: `AM_Warlord_BlockHit` (`MM_HitReact_Front_Lgt_01`), `AM_Warlord_BlockBreak` (`MM_HitReact_Front_Hvy_01`) as presentation montages; `ABP_Warlord` guard layer = layered blend from `spine_01` of `MM_Attack_01` frame 0, weighted by `UHeroAnimInstance::GuardAlpha` (0.1 s fade). Spec `CastleDefender.Combat.Hero.Block` (6 cases). Open: PIE with `DebugHitHero` and the ENM enemy.
 
 ---
 

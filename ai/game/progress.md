@@ -16,6 +16,26 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 
 ---
 
+### 2026-10-07: Claude Code: hero Block + block break [T-CMB-08]
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`, uncommitted (on top of `0ebad22`).
+- **Tasks:** T-CMB-08 Todo → In Progress → Review. T-ENM-04 stays Review (PIE from the entry below still pending).
+- **Changed:**
+  - `Hero/HeroCombatTypes.h` (`FHeroBlockData`), `HeroClassDefinition.*` (`Block` + validation), `HeroCombatComponent.*` (interceptor block/break, `OnBlockBroken(Attacker)`, held-block resume, Block state drives stamina blocking + speed, `GetHitSourceLocation` shared with hit reactions), `HeroCharacter.*` (`UpdateMaxWalkSpeed` public, guard speed), `HeroAnimInstance.*` (`bIsBlocking`, `GuardAlpha`).
+  - `Combat/CombatLibrary.cpp`: `DeliverHit` plays one `Feedback.Combat.Block`/`BlockBreak` per blocked attempt.
+  - Tests: new `HeroDefense.spec.cpp` (`CastleDefender.Combat.Hero.Block`, 6 cases); block validation case in `HeroClassDefinition.spec.cpp`; listener helpers.
+  - Content via `Tools/create_hero_assets.bat` (script extended, idempotent): `AM_Warlord_BlockHit`, `AM_Warlord_BlockBreak`, `DA_HeroClass_Warlord.Block`, `ABP_Warlord` guard layer (Main States → layered blend from `spine_01` with `MM_Attack_01` frame 0, weight `GuardAlpha` → DefaultSlot).
+  - Docs: CMB `tasks.md` (status, ticks, handoff), spec §events + technical plan `OnBlockBroken(Attacker)`.
+- **Decisions (agent, within spec):** Block is a hold, so the press is remembered rather than buffered; it resumes when the blocking action, cancel window or Staggered ends while held. Guard pose clip chosen by measuring hand height (fists 121–129 cm vs 90 cm idle); placeholder until production animation.
+- **Verified:** editor + game Development builds succeed, no new warnings (only the known engine C4996). `run_tests.bat -Filter CastleDefender.Combat`: 95/95. Full gate `run_tests.bat`: 144/144, editor exit 0; log warnings only the known layout notice and 3× crowd-manager teardown (`Saved/cmb08-full-tests.log`). ABP read back from disk: links and branch filter as intended, 0 node errors/warnings, compiles. Not run: PIE.
+- **Finding:** `DeliverHit` emits no hit-outcome feedback other than Block/BlockBreak: `Hit.Light/Heavy`, `Parry` and `Hero.Damaged` are never played, although T-CMB-04 is ticked for it. Parry belongs to T-CMB-09; the rest should be fixed with T-UXF-03 or reopened under T-CMB-04. Not changed here.
+- **Manual steps for the user (PIE, `L_CombatSandbox`, `game.debug.Combat 1`):**
+  1. Hold Block (Left Ctrl): arms come up, walk speed halves. Console `DebugHitHero 20 0 1` → HP −4, stamina −20, short block reaction, still guarding. `DebugHitHero 20 0 0` (behind) → HP −20, stamina unchanged, back hit reaction.
+  2. Spend stamina to ~10 (dodges), hold Block, `DebugHitHero 20 0 1` → guard drops, heavy reaction, no input works for ~1.2 s; still holding Block → guard comes back when it ends.
+  3. Release Block → normal speed at once. Hold Block during a Light swing → guard rises when the swing ends.
+  4. Against the enemy (`DA_Enemy_Test`): blocking in front absorbs its swings until stamina runs out. Output Log: no new warnings.
+- **Open questions / blockers:** commit not yet requested this session.
+- **Next:** after PIE: T-CMB-08 Done → T-CMB-09 (parry) or T-CMB-10 (lock-on).
+
 ### 2026-10-06: Claude Code: enemy hit reaction and Staggered [T-ENM-04]
 - **Agent / branch:** Claude Code, `feat/01-hero-combat`. Code/tests in `cbc1c77` (merged to `main` by the user in PR #3, `09f096a`); stagger content, the user's `L_CombatSandbox` enemy placements and these docs committed on top and pushed (2026-10-07). An IDE switch to `main` had conflicted re-applying the autostash; the stash was restored on the feature branch with nothing lost.
 - **Tasks:** T-ENM-04 Todo → In Progress → Review (user chose it before T-CMB-08).

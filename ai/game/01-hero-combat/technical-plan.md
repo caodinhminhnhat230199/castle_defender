@@ -82,7 +82,7 @@ No GAS (D-04). Per-frame work is limited to movement/camera, open hit/assist win
 - Montage notifies → owner's `UHeroCombatComponent` / `UMeleeTraceComponent` (owner resolved per callback; runtime window state on components, not shared notify objects).
 - Outgoing hits → `UMeleeTraceComponent` → `UCombatLibrary::DeliverHit` → target components (direct).
 - Incoming hits → `DeliverHit` → `ICombatHitInterceptor` on the hero → `UHealthComponent` → `OnDamaged` → `UHeroCombatComponent` hit reaction.
-- State changes → dynamic multicast delegates (`OnActionStateChanged`, `OnCombatResolved(FCombatResolutionEvent)`, `OnHitLanded`, `OnParrySucceeded`, `OnBlockBroken`, `OnStaminaChanged`, `OnStaminaSpendFailed`, `OnLockOnTargetChanged`, `OnHeroDeath`). HUD, telemetry, perks and CSM bind; CMB never calls them.
+- State changes → dynamic multicast delegates (`OnActionStateChanged`, `OnCombatResolved(FCombatResolutionEvent)`, `OnHitLanded`, `OnParrySucceeded`, `OnBlockBroken(Attacker)`, `OnStaminaChanged`, `OnStaminaSpendFailed`, `OnLockOnTargetChanged`, `OnHeroDeath`). HUD, telemetry, perks and CSM bind; CMB never calls them.
 - Resolution → one immutable event with a unique resolution ID, delivered on participating combat components with incoming/outgoing roles; observers deduplicate by ID when subscribed to both. No global bus. Landed-hit observers never produce a second resolution.
 - Presentation → one feedback selection per resolution in DeliverHit (including HeroDamaged when applicable); OnDamaged drives interruption/presentation animation but does not replay that feedback. Non-hit events such as death/stamina-failure retain their own producer (D-10).
 
