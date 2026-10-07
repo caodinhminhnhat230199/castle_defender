@@ -120,6 +120,36 @@ struct FHeroHitReactData
 	TObjectPtr<UAnimMontage> DeathMontage;
 };
 
+/** Held frontal guard (R-CMB-22/23/49): blocked force becomes stamina damage; 0 stamina breaks into shared Staggered. */
+USTRUCT(BlueprintType)
+struct CASTLEDEFENDER_API FHeroBlockData
+{
+	GENERATED_BODY()
+	/** Fraction of a frontal hit's damage removed while blocking. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Block", meta = (ClampMin = "0", ClampMax = "1"))
+	float DamageReduction = 0.8f;
+	/** Stamina lost per point of the hit's original (unreduced) damage. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Block", meta = (ClampMin = "0"))
+	float StaminaPerDamage = 1.f;
+	/** Total width of the guarded front arc. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Block", meta = (ClampMin = "0", ClampMax = "360"))
+	float ArcDegrees = 140.f;
+	/** Blocking regeneration waits this long after every absorbed hit (on top of the normal regen delay). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Block", meta = (ClampMin = "0"))
+	float BlockRegenSuppressAfterHit = 0.6f;
+	/** Shared Staggered duration applied to the hero on block break. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Block", meta = (ClampMin = "0.01"))
+	float BlockBreakStaggerDuration = 1.2f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Block", meta = (ClampMin = "0.01", ClampMax = "1"))
+	float MoveSpeedMultiplier = 0.5f;
+	/** Presentation only: plays over the guard without leaving Block. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Block")
+	TObjectPtr<UAnimMontage> BlockHitMontage;
+	/** Presentation only: plays while the shared Staggered state gates actions. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Block")
+	TObjectPtr<UAnimMontage> BlockBreakMontage;
+};
+
 /** Directional montages own movement/timing; the definition owns cost and distance scale. */
 USTRUCT(BlueprintType)
 struct CASTLEDEFENDER_API FHeroDodgeData

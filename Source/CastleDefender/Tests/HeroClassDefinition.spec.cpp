@@ -24,6 +24,7 @@ void FHeroClassDefinitionSpec::Define()
 			Definition->Heavy = Authored->Heavy;
 			Definition->Dodge = Authored->Dodge;
 			Definition->HitReact = Authored->HitReact;
+			Definition->Block = Authored->Block;
 		}
 	});
 
@@ -48,6 +49,17 @@ void FHeroClassDefinitionSpec::Define()
 		FDataValidationContext Context;
 		TestTrue("Invalid", Definition->IsDataValid(Context) == EDataValidationResult::Invalid);
 		TestTrue("Has errors", Context.GetNumErrors() > 0);
+	});
+
+	It("fails validation when the block arc is zero or a block montage is missing", [this]()
+	{
+		Definition->Block.ArcDegrees = 0.f;
+		FDataValidationContext ArcContext;
+		TestTrue("Zero arc invalid", Definition->IsDataValid(ArcContext) == EDataValidationResult::Invalid);
+		Definition->Block.ArcDegrees = 140.f;
+		Definition->Block.BlockBreakMontage = nullptr;
+		FDataValidationContext MontageContext;
+		TestTrue("Missing break montage invalid", Definition->IsDataValid(MontageContext) == EDataValidationResult::Invalid);
 	});
 
 	It("fails validation when SprintSpeed is less than or equal to JogSpeed", [this]()

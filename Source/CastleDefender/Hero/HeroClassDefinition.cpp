@@ -276,6 +276,24 @@ EDataValidationResult UHeroClassDefinition::IsDataValid(FDataValidationContext& 
 			Result = EDataValidationResult::Invalid;
 		}
 	}
+	if (!FMath::IsWithinInclusive(Block.DamageReduction, 0.f, 1.f) || Block.StaminaPerDamage < 0.f
+		|| Block.ArcDegrees <= 0.f || Block.ArcDegrees > 360.f || Block.BlockRegenSuppressAfterHit < 0.f
+		|| Block.BlockBreakStaggerDuration <= 0.f || Block.MoveSpeedMultiplier <= 0.f || Block.MoveSpeedMultiplier > 1.f)
+	{
+		Context.AddError(LOCTEXT("InvalidBlock", "Block: DamageReduction 0-1, StaminaPerDamage >= 0, ArcDegrees 0-360, suppression >= 0, BlockBreakStaggerDuration > 0, MoveSpeedMultiplier 0-1."));
+		Result = EDataValidationResult::Invalid;
+	}
+	for (const UAnimMontage* Montage : { Block.BlockHitMontage.Get(), Block.BlockBreakMontage.Get() })
+	{
+		FCombatActionTiming Timing;
+		FString Error;
+		if (!FCombatActionTiming::InspectMontage(Montage, Timing, &Error)
+			|| Timing.bHasHitWindow || Timing.bHasInvulnerableWindow || Timing.bHasParryWindow || Timing.bHasCancelWindow)
+		{
+			Context.AddError(LOCTEXT("InvalidBlockMontage", "Block: BlockHitMontage and BlockBreakMontage require valid montages with no combat windows."));
+			Result = EDataValidationResult::Invalid;
+		}
+	}
 	FCombatActionTiming DeathTiming;
 	FString DeathError;
 	if (!FCombatActionTiming::InspectMontage(HitReact.DeathMontage, DeathTiming, &DeathError)

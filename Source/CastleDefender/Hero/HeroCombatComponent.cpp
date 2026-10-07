@@ -4,6 +4,7 @@
 #include "Combat/HealthComponent.h"
 #include "Combat/CombatActionTiming.h"
 #include "Combat/MeleeTraceComponent.h"
+#include "Combat/CombatLibrary.h"
 #include "Hero/StaminaComponent.h"
 #include "Core/GameLog.h"
 #include "Core/GameTags.h"
@@ -164,6 +165,8 @@ bool UHeroCombatComponent::CanStartAction(EHeroAction Action) const
 bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 {
 	HeroOwner = GetHeroOwner();
+	if (Action == EHeroAction::BlockStart) { bBlockInputHeld = true; }
+	else if (Action == EHeroAction::BlockEnd) { bBlockInputHeld = false; }
 	int32 TargetChainIndex = 0;
 	if (Action == EHeroAction::Light)
 	{
@@ -340,8 +343,9 @@ bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 		return true;
 	}
 
-	// Refuse and optionally buffer
-	if (CurrentState != EHeroActionState::Dead && !IsSharedStaggered())
+	// Refuse and optionally buffer. Block is a hold: the held flag, not the buffer, resumes it.
+	if (CurrentState != EHeroActionState::Dead && !IsSharedStaggered()
+		&& Action != EHeroAction::BlockStart && Action != EHeroAction::BlockEnd)
 	{
 		BufferAction(Action);
 	}
@@ -366,6 +370,12 @@ void UHeroCombatComponent::SetActionState(EHeroActionState NewState)
 		bDodgeRootMotionScaleApplied = false;
 	}
 	CurrentState = NewState;
+	if ((OldState == EHeroActionState::Block || NewState == EHeroActionState::Block) && HeroOwner)
+	{
+		// R-CMB-12: blocking regen multiplier and guard move speed follow the Block state.
+		HeroOwner->GetStaminaComponent()->SetBlocking(NewState == EHeroActionState::Block);
+		HeroOwner->UpdateMaxWalkSpeed();
+	}
 
 	if (CurrentState == EHeroActionState::Idle || CurrentState == EHeroActionState::Dead)
 	{
@@ -436,6 +446,7 @@ void UHeroCombatComponent::OpenCancelWindow(const TArray<EHeroAction>& InAllowed
 	bCancelWindowOpen = true;
 	OpenCancelActions = InAllowedActions;
 	TryConsumeBuffer();
+	TryResumeHeldBlock();
 }
 
 void UHeroCombatComponent::CloseCancelWindow()
@@ -592,6 +603,14 @@ void UHeroCombatComponent::TryConsumeBuffer()
 	}
 }
 
+void UHeroCombatComponent::TryResumeHeldBlock()
+{
+	if (bBlockInputHeld && !BufferedInput.bValid && CurrentState != EHeroActionState::Block && CanStartAction(EHeroAction::BlockStart))
+	{
+		RequestAction(EHeroAction::BlockStart);
+	}
+}
+
 void UHeroCombatComponent::ArmMeleeTrace(const FHeroAttackData& Attack, bool bHeavy) const
 {
 	UMeleeTraceComponent* TraceComp = HeroOwner ? HeroOwner->GetMeleeTraceComponent() : nullptr;
@@ -656,6 +675,7 @@ void UHeroCombatComponent::HandleMontageEnded(UAnimMontage* Montage, bool bInter
 		{
 			SetActionState(EHeroActionState::Idle);
 			TryConsumeBuffer();
+			TryResumeHeldBlock();
 		}
 	}
 }
@@ -685,9 +705,15 @@ void UHeroCombatComponent::HandleStateRemoved(FGameplayTag StateTag)
 {
 	if (StateTag.MatchesTag(GameTags::State_Combat_Staggered))
 	{
+		if (BlockBreakPresentation && HeroOwner)
+		{
+			HeroOwner->StopAnimMontage(BlockBreakPresentation);
+			BlockBreakPresentation = nullptr;
+		}
 		if (CurrentState == EHeroActionState::Idle)
 		{
 			TryConsumeBuffer();
+			TryResumeHeldBlock();
 		}
 	}
 }
@@ -711,8 +737,7 @@ void UHeroCombatComponent::HandleOwnerDamaged(const FCombatHit& Hit, float NewHe
 		ActiveMontage = nullptr;
 		HeroOwner->StopAnimMontage(InterruptedMontage);
 	}
-	const FVector ToSource = Hit.Instigator.IsValid()
-		? Hit.Instigator->GetActorLocation() - HeroOwner->GetActorLocation() : -Hit.HitDirection;
+	const FVector ToSource = GetHitSourceLocation(Hit) - HeroOwner->GetActorLocation();
 	const bool bFromFront = FVector::DotProduct(HeroOwner->GetActorForwardVector(), ToSource.GetSafeNormal2D()) >= 0.f;
 	const UHeroClassDefinition* Definition = HeroOwner->GetHeroClassDefinition();
 	UAnimMontage* Reaction = Definition ? (bFromFront ? Definition->HitReact.FrontMontage : Definition->HitReact.BackMontage) : nullptr;
@@ -763,7 +788,61 @@ ECombatHitResult UHeroCombatComponent::InterceptHit(FCombatHit& Hit)
 		return ECombatHitResult::Parried;
 	}
 
+	const AHeroCharacter* Hero = GetHeroOwner();
+	const UHeroClassDefinition* Definition = Hero ? Hero->GetHeroClassDefinition() : nullptr;
+	if (CurrentState == EHeroActionState::Block && Definition
+		&& UCombatLibrary::IsInFrontArc(Hero, GetHitSourceLocation(Hit), Definition->Block.ArcDegrees))
+	{
+		return ResolveBlockedHit(Hit, Definition->Block);
+	}
+
 	return ECombatHitResult::Hit;
+}
+
+ECombatHitResult UHeroCombatComponent::ResolveBlockedHit(FCombatHit& Hit, const FHeroBlockData& Block)
+{
+	const float Force = Hit.Damage;
+	Hit.Damage *= 1.f - Block.DamageReduction;
+	UStaminaComponent* Stamina = HeroOwner->GetStaminaComponent();
+	// R-CMB-49: every absorbed hit restarts the blocking-regen suppression; ApplyDamage restarts the normal delay.
+	Stamina->OnBlockedHit(Block.BlockRegenSuppressAfterHit);
+	if (!Stamina->ApplyDamage(Force * Block.StaminaPerDamage))
+	{
+		PlayPresentationMontage(Block.BlockHitMontage);
+		return ECombatHitResult::Blocked;
+	}
+
+	// R-CMB-23 / R-CMB-52: the guard drops and the shared state gates actions; CMB keeps no stagger timer.
+	SetActionState(EHeroActionState::Idle);
+	if (CombatStateComp)
+	{
+		CombatStateComp->ApplyState(GameTags::State_Combat_Staggered, Block.BlockBreakStaggerDuration, HeroOwner);
+	}
+	if (IsSharedStaggered())
+	{
+		PlayPresentationMontage(Block.BlockBreakMontage);
+		BlockBreakPresentation = Block.BlockBreakMontage;
+	}
+	UE_LOG(LogGameCombat, Log, TEXT("Hero block broken by %s"), *GetNameSafe(Hit.Instigator.Get()));
+	OnBlockBroken.Broadcast(Hit.Instigator.Get());
+	return ECombatHitResult::BlockBroken;
+}
+
+void UHeroCombatComponent::PlayPresentationMontage(UAnimMontage* Montage)
+{
+	if (Montage && HeroOwner && !ActiveMontage)
+	{
+		HeroOwner->PlayAnimMontage(Montage);
+	}
+}
+
+FVector UHeroCombatComponent::GetHitSourceLocation(const FCombatHit& Hit) const
+{
+	const AActor* Owner = GetOwner();
+	const FVector OwnerLocation = Owner ? Owner->GetActorLocation() : FVector::ZeroVector;
+	if (Hit.Instigator.IsValid()) { return Hit.Instigator->GetActorLocation(); }
+	if (!Hit.HitDirection.IsNearlyZero()) { return OwnerLocation - Hit.HitDirection.GetSafeNormal() * 100.f; }
+	return Hit.HitLocation.IsNearlyZero() ? OwnerLocation : Hit.HitLocation;
 }
 
 void UHeroCombatComponent::NotifyCombatResolved(const FCombatResolutionEvent& Event)

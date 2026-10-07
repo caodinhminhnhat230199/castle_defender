@@ -206,6 +206,11 @@ void AHeroCharacter::UpdateMaxWalkSpeed()
 {
 	const float JogSpeed = HeroClassDefinition ? HeroClassDefinition->Movement.JogSpeed : 450.f;
 	const float SprintSpeed = HeroClassDefinition ? HeroClassDefinition->Movement.SprintSpeed : 700.f;
+	if (HeroClassDefinition && CombatComponent && CombatComponent->GetActionState() == EHeroActionState::Block)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = JogSpeed * HeroClassDefinition->Block.MoveSpeedMultiplier;
+		return;
+	}
 	GetCharacterMovement()->MaxWalkSpeed = bIsSprinting ? SprintSpeed : JogSpeed;
 }
 

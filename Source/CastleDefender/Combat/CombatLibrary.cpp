@@ -6,6 +6,8 @@
 #include "Combat/CombatStateComponent.h"
 #include "Core/GameTags.h"
 #include "Core/GameLog.h"
+#include "Feedback/FeedbackSubsystem.h"
+#include "Feedback/FeedbackTags.h"
 #include "GameFramework/Actor.h"
 
 ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hit)
@@ -103,6 +105,22 @@ ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hi
 
 	Resolution.Result = FinalResult;
 	DispatchCombatResolution(Resolution);
+
+	// One block feedback per attempt, chosen from the interceptor outcome so a lethal block still reads as a block.
+	if (WorkingHit.bWasBlocked)
+	{
+		if (UFeedbackSubsystem* Feedback = UFeedbackSubsystem::Get(Target))
+		{
+			FFeedbackEventContext Context;
+			Context.Instigator = Hit.Instigator;
+			Context.Target = Target;
+			Context.bIsHeavy = Hit.bIsHeavy;
+			Context.bTargetArmored = Resolution.bTargetArmored;
+			Context.Location = Resolution.HitLocation;
+			Context.Direction = Hit.HitDirection;
+			Feedback->Play(InterceptorResult == ECombatHitResult::BlockBroken ? FeedbackTags::Combat_BlockBreak : FeedbackTags::Combat_Block, Context);
+		}
+	}
 
 	return FinalResult;
 }

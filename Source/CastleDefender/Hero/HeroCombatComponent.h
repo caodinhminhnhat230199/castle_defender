@@ -15,6 +15,7 @@ class UCombatStateComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHeroActionStateChangedSignature, EHeroActionState, OldState, EHeroActionState, NewState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCombatResolvedSignature, const FCombatResolutionEvent&, ResolutionEvent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHitLandedSignature, AActor*, Target, ECombatHitResult, Result);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBlockBrokenSignature, AActor*, Attacker);
 
 /**
  * Action state machine and commitment manager for the Hero (spec §4.4, technical-plan §5.1).
@@ -129,6 +130,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FOnHitLandedSignature OnHitLanded;
 
+	/** A blocked hit emptied stamina; the hero is now under shared Staggered. */
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnBlockBrokenSignature OnBlockBroken;
+
 	UFUNCTION()
 	void HandleMeleeHitResolved(AActor* Target, ECombatHitResult Result);
 
@@ -161,6 +166,13 @@ private:
 
 	void SetActionState(EHeroActionState NewState);
 	void TryConsumeBuffer();
+	/** Re-enters Block when the hold outlived a committed action or Staggered. */
+	void TryResumeHeldBlock();
+	ECombatHitResult ResolveBlockedHit(FCombatHit& Hit, const FHeroBlockData& Block);
+	/** Plays a montage that does not own the action state (block hit, block break). */
+	void PlayPresentationMontage(UAnimMontage* Montage);
+	/** Where the hit came from: instigator, else opposite its direction, else its location. */
+	FVector GetHitSourceLocation(const FCombatHit& Hit) const;
 	void BufferAction(EHeroAction Action);
 	bool IsSharedStaggered() const;
 	bool IsEligibleAssistTarget(AActor* Candidate) const;
@@ -190,11 +202,16 @@ private:
 	bool bDodgeRootMotionScaleApplied = false;
 	bool bInterruptResistanceWindowOpen = false;
 	bool bRotationAssistWindowOpen = false;
+	bool bBlockInputHeld = false;
 	float AttackIntentYaw = 0.f;
 	TWeakObjectPtr<AActor> AssistTarget;
 
 	UPROPERTY()
 	TObjectPtr<UAnimMontage> ActiveMontage;
+
+	/** Block-break montage; stopped when Staggered ends so it never outlives the gate. */
+	UPROPERTY()
+	TObjectPtr<UAnimMontage> BlockBreakPresentation;
 
 	UPROPERTY()
 	TObjectPtr<AHeroCharacter> HeroOwner;

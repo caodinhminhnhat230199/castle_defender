@@ -87,6 +87,11 @@ public:
 		LastResolutionEvent = Event;
 	}
 
+	int32 BlockBrokenCount = 0;
+
+	UFUNCTION()
+	void HandleBlockBroken(AActor* Attacker) { ++BlockBrokenCount; }
+
 	int32 HitResolvedCount = 0;
 	ECombatHitResult LastHitResolvedResult = ECombatHitResult::Ignored;
 

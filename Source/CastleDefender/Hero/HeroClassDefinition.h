@@ -52,6 +52,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
 	FHeroDodgeData Dodge;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	FHeroBlockData Block;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
 	FHeroHitReactData HitReact;
 
 	UPROPERTY(meta = (DeprecatedProperty, DeprecationMessage = "Use Dodge.StaminaCost."))

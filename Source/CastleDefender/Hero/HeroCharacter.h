@@ -57,6 +57,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Hero")
 	bool IsSprinting() const { return bIsSprinting; }
 
+	/** Jog/sprint speed, scaled down while the combat component holds Block. */
+	void UpdateMaxWalkSpeed();
+
 	UFUNCTION(BlueprintPure, Category = "Hero")
 	FVector GetMovementInputWorldDirection() const;
 
@@ -178,8 +181,6 @@ protected:
 private:
 	UFUNCTION()
 	void HandleDeath(const FCombatHit& KillingHit);
-
-	void UpdateMaxWalkSpeed();
 
 	bool bIsSprinting = false;
 	bool bDeathHandled = false;
