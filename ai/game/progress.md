@@ -17,7 +17,7 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 ---
 
 ### 2026-10-07: Claude Code: hero Block + block break [T-CMB-08]
-- **Agent / branch:** Claude Code, `feat/01-hero-combat`, uncommitted (on top of `0ebad22`).
+- **Agent / branch:** Claude Code, `feat/01-hero-combat`. Committed on user request (2026-10-08): `858f9ea` code/tests, `9b988bf` content/script, `07ad2ea` docs. Not pushed.
 - **Tasks:** T-CMB-08 Todo → In Progress → Review. T-ENM-04 stays Review (PIE from the entry below still pending).
 - **Changed:**
   - `Hero/HeroCombatTypes.h` (`FHeroBlockData`), `HeroClassDefinition.*` (`Block` + validation), `HeroCombatComponent.*` (interceptor block/break, `OnBlockBroken(Attacker)`, held-block resume, Block state drives stamina blocking + speed, `GetHitSourceLocation` shared with hit reactions), `HeroCharacter.*` (`UpdateMaxWalkSpeed` public, guard speed), `HeroAnimInstance.*` (`bIsBlocking`, `GuardAlpha`).
@@ -33,7 +33,7 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
   2. Spend stamina to ~10 (dodges), hold Block, `DebugHitHero 20 0 1` → guard drops, heavy reaction, no input works for ~1.2 s; still holding Block → guard comes back when it ends.
   3. Release Block → normal speed at once. Hold Block during a Light swing → guard rises when the swing ends.
   4. Against the enemy (`DA_Enemy_Test`): blocking in front absorbs its swings until stamina runs out. Output Log: no new warnings.
-- **Open questions / blockers:** commit not yet requested this session.
+- **Open questions / blockers:** none; push not requested.
 - **Next:** after PIE: T-CMB-08 Done → T-CMB-09 (parry) or T-CMB-10 (lock-on).
 
 ### 2026-10-06: Claude Code: enemy hit reaction and Staggered [T-ENM-04]
