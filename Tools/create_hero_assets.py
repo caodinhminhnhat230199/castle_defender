@@ -157,6 +157,17 @@ for name, clip, windows, field in [
         react_data.set_editor_property(field, montage)
 da.set_editor_property("hit_react", react_data)
 
+# T-CMB-08: block reactions are presentation montages with no combat windows; Block itself is a held state.
+block_data = da.get_editor_property("block")
+for name, clip_path, field in [
+        ("AM_Warlord_BlockHit", "Rifle/HitReact/MM_HitReact_Front_Lgt_01", "block_hit_montage"),
+        ("AM_Warlord_BlockBreak", "Rifle/HitReact/MM_HitReact_Front_Hvy_01", "block_break_montage")]:
+    clip = anim(clip_path)
+    montage, _ = author_montage(name, clip, clip.get_play_length(), clip.get_play_length(), [])
+    if not block_data.get_editor_property(field):
+        block_data.set_editor_property(field, montage)
+da.set_editor_property("block", block_data)
+
 # Fill missing references without resetting attack numbers, states or resistance tuning.
 attack_data_list = da.get_editor_property("light_chain")
 if len(attack_data_list) != 3:
@@ -246,6 +257,63 @@ def wire_foot_ik_alpha(abp):
 
 
 wire_foot_ik_alpha(abp)
+
+
+def wire_guard_layer(abp):
+    """T-CMB-08: inserts an upper-body guard layer (spine_01 up) before DefaultSlot, weighted by GuardAlpha.
+
+    Placeholder pose: frame 0 of MM_Attack_01 (fists raised at chest height). Montages still override it.
+    """
+    bel, pins = unreal.BlueprintEditorLibrary, unreal.BlueprintGraphPinLibrary
+    graph = unreal.BlueprintGraphEditor.get_graph_editor(bel.find_graph(abp, "AnimGraph"))
+    nodes = graph.list_all_nodes()
+    if any(n.get_class().get_name() == "AnimGraphNode_LayeredBoneBlend" for n in nodes):
+        return
+    slots = [n for n in nodes if n.get_class().get_name() == "AnimGraphNode_Slot"]
+    if len(slots) != 1:
+        raise RuntimeError(f"ABP_Warlord: expected one Slot node, found {len(slots)}")
+    slot_source = bel.find_input_pin(slots[0], "Source")
+    upstream = pins.list_connected_pins(slot_source)
+    if len(upstream) != 1:
+        raise RuntimeError("ABP_Warlord: DefaultSlot Source must have exactly one input")
+    slot_pos = bel.get_node_pos(slots[0])
+    layered = graph.create_node_from_name("Animation|Blends|Layeredblendperbone",
+                                          unreal.Vector2D(slot_pos.x - 40, slot_pos.y + 260), [])
+    guard = graph.create_node_from_name("Animation|Sequences|Evaluate'MM_Attack_01'",
+                                        unreal.Vector2D(slot_pos.x - 360, slot_pos.y + 360), [])
+    alpha = graph.add_get_member_variable_node("GuardAlpha")
+    if not layered or not guard or not alpha:
+        raise RuntimeError("ABP_Warlord: could not create the guard layer nodes")
+    bel.set_node_pos(alpha, unreal.IntPoint(slot_pos.x - 300, slot_pos.y + 480))
+
+    inner = layered.get_editor_property("node")
+    branch = unreal.BranchFilter()
+    branch.set_editor_property("bone_name", "spine_01")
+    branch.set_editor_property("blend_depth", 0)
+    layer = unreal.InputBlendPose()
+    layer.set_editor_property("branch_filters", [branch])
+    inner.set_editor_property("layer_setup", [layer])
+    inner.set_editor_property("mesh_space_rotation_blend", True)
+    layered.set_editor_property("node", inner)
+
+    source = upstream[0]
+    pins.break_pin_links(slot_source)
+    links = [
+        (source, bel.find_input_pin(layered, "BasePose")),
+        (bel.find_output_pin(guard, "Pose"), bel.find_input_pin(layered, "BlendPoses_0")),
+        (bel.find_output_pin(alpha, "GuardAlpha"), bel.find_input_pin(layered, "BlendWeights_0")),
+        (bel.find_output_pin(layered, "Pose"), slot_source),
+    ]
+    for out_pin, in_pin in links:
+        if not pins.try_create_connection(out_pin, in_pin):
+            raise RuntimeError(f"ABP_Warlord: could not connect {pins.get_pin_name(out_pin)} -> {pins.get_pin_name(in_pin)}")
+    if not bel.compile_blueprint(abp):
+        raise RuntimeError("ABP_Warlord failed to compile after adding the guard layer")
+    assets.save_loaded_asset(abp, only_if_is_dirty=False)
+    unreal.log("ABP_Warlord: guard layer wired (spine_01, GuardAlpha)")
+
+
+wire_guard_layer(abp)
 
 mesh = hero_cdo.get_editor_property("mesh")
 if not mesh.get_skeletal_mesh_asset():
