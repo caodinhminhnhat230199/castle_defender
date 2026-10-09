@@ -169,3 +169,20 @@ private:
 	TMap<FGameplayTag, const FFeedbackRow*> Rows;
 	TMap<TPair<FGameplayTag, FName>, const FFeedbackRow*> Variants;
 };
+
+/** Results from an automated feedback table audit (T-UXF-09, R-UXF-01, R-UXF-06). */
+struct CASTLEDEFENDER_API FFeedbackAuditResult
+{
+	bool bSuccess = true;
+	TArray<FString> Errors;
+	TArray<FString> Warnings;
+	int32 AuditedRowCount = 0;
+	int32 AuditedLeafCount = 0;
+};
+
+/** Tooling to audit DT_Feedback coverage, outputs, validity, and state presentation mappings (T-UXF-09). */
+struct CASTLEDEFENDER_API FFeedbackTableAuditor
+{
+	/** Audits DT_Feedback row validity, native leaf coverage, output existence, and DT_CombatStatePresentation mappings. */
+	static FFeedbackAuditResult Audit(const UDataTable* FeedbackTable, const UDataTable* StatePresentationTable = nullptr);
+};

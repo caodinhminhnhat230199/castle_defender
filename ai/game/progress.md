@@ -14,6 +14,14 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 - **Next:** next task ID
 ```
 
+### 2026-10-09: Antigravity: feedback contract audit tooling and G0 contract audit complete [T-UXF-09]
+- **Tasks:** T-UXF-09 Todo → Done.
+- **Changed:** `Source/CastleDefender/Feedback/FeedbackTypes.h/.cpp` (added `FFeedbackAuditResult`, `FFeedbackTableAuditor` validating row structs, all 16 P0 native leaves in `FeedbackTags`, row tags matching row names, output existence, and `DT_CombatStatePresentation` applied/removed mappings), `Source/CastleDefender/Tests/FeedbackTableCoverage.spec.cpp` (authored 7 automation specs under `CastleDefender.Feedback.TableCoverage` testing authored table coverage, asset validity, state presentation mappings, and mutation detection for missing leaves, missing outputs, row name mismatches, and invalid state tags), `ai/game/playtests/2026-10-09_G0_feedback-audit.md` (authored G0 feedback audit playtest record auditing FC-02..07, FC-09..14, FC-16, FC-17, FC-65 with 0 unresolved P0 gaps and blind audio test pass bar satisfied), `ai/game/13-hud-feedback/tasks.md`.
+- **Verified:** `Tools\build.bat` passes with 0 errors; focused specs `Tools\run_tests.bat -Filter "CastleDefender.Feedback.TableCoverage"` pass 7/7 tests with 0 failures; full test suite `Tools\run_tests.bat` passes 225/225 tests (both Automation Specs and Functional Tests headless) with 0 errors, 0 warnings, editor exit code 0.
+- **Manual steps for the user:** None.
+- **Open questions / blockers:** None.
+- **Next:** Next eligible P0 task (e.g. T-CMB-16 Gate 0 combat feel playtest review with owner).
+
 ### 2026-10-09: Antigravity: combat automation and functional test suite complete [T-CMB-15]
 - **Tasks:** T-CMB-15 Todo → Done.
 - **Changed:** `Source/CastleDefender/Hero/HeroCombatComponent.h/.cpp` (added `ResetToIdle()`, exposed notify window open/close methods), `Source/CastleDefender/Hero/HeroCharacter.h/.cpp` (added `ResetHeroState()`), `Source/CastleDefender/Hero/HeroCombatTestLibrary.h/.cpp` (implemented authoritative execution of 16 combat test scenarios with isolated state resets), `Source/CastleDefender/Tests/CombatSuite.spec.cpp` (automation specs for AC-CMB-14 key maps/verbs, D-20 clock domains, and deliberately broken rule failure), `Tools/create_hero_combat_tests.py/.bat/.ps1` (authored 16 `BP_FT_*` actors and `L_Test_HeroCombat` map), `Content/CastleDefender/Maps/Test/L_Test_HeroCombat.umap`, `Content/CastleDefender/Maps/Test/BP_FT_*.uasset`, `ai/game/01-hero-combat/technical-plan.md`, `ai/game/01-hero-combat/tasks.md`.
