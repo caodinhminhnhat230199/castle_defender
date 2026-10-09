@@ -8,11 +8,13 @@
 #include "Combat/CombatStateComponent.h"
 #include "Hero/HeroCombatComponent.h"
 #include "Hero/StaminaComponent.h"
+#include "Hero/LockOnComponent.h"
 #include "Combat/MeleeTraceComponent.h"
 #include "Core/GameLog.h"
 #include "Core/GameTags.h"
 #include "Core/GameDebug.h"
 #include "Feedback/FeedbackTags.h"
+#include "Feedback/FeedbackSubsystem.h"
 #include "DrawDebugHelpers.h"
 
 AHeroCharacter::AHeroCharacter()
@@ -46,6 +48,7 @@ AHeroCharacter::AHeroCharacter()
 	CombatState = CreateDefaultSubobject<UCombatStateComponent>(TEXT("CombatState"));
 	CombatComponent = CreateDefaultSubobject<UHeroCombatComponent>(TEXT("CombatComponent"));
 	StaminaComponent = CreateDefaultSubobject<UStaminaComponent>(TEXT("StaminaComponent"));
+	LockOnComponent = CreateDefaultSubobject<ULockOnComponent>(TEXT("LockOnComponent"));
 	MeleeTraceComponent = CreateDefaultSubobject<UMeleeTraceComponent>(TEXT("MeleeTraceComponent"));
 
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
@@ -146,7 +149,15 @@ void AHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		}
 		if (ParryAction)
 		{
-			EnhancedInput->BindAction(ParryAction, ETriggerEvent::Triggered, this, &AHeroCharacter::OnParry);
+			EnhancedInput->BindAction(ParryAction, ETriggerEvent::Started, this, &AHeroCharacter::OnParry);
+		}
+		if (LockOnAction)
+		{
+			EnhancedInput->BindAction(LockOnAction, ETriggerEvent::Started, this, &AHeroCharacter::OnLockOn);
+		}
+		if (LockOnSwitchAction)
+		{
+			EnhancedInput->BindAction(LockOnSwitchAction, ETriggerEvent::Triggered, this, &AHeroCharacter::OnLockOnSwitch);
 		}
 	}
 }
@@ -156,8 +167,6 @@ void AHeroCharacter::ApplyTuning()
 	if (HeroClassDefinition)
 	{
 		GetCharacterMovement()->RotationRate = FRotator(0.f, HeroClassDefinition->Movement.RotationRateYaw, 0.f);
-		GetCharacterMovement()->bOrientRotationToMovement = !HeroClassDefinition->Movement.bFaceCameraDirection;
-		GetCharacterMovement()->bUseControllerDesiredRotation = HeroClassDefinition->Movement.bFaceCameraDirection;
 
 		if (CameraBoom)
 		{
@@ -178,6 +187,7 @@ void AHeroCharacter::ApplyTuning()
 		}
 	}
 
+	UpdateFacingPolicy();
 	UpdateMaxWalkSpeed();
 }
 
@@ -247,12 +257,22 @@ FVector AHeroCharacter::GetMovementInputWorldDirection() const
 
 bool AHeroCharacter::IsFacingCameraDirection() const
 {
-	return GetCharacterMovement()->bUseControllerDesiredRotation;
+	return LockOnComponent->GetLockOnTarget() != nullptr
+		|| (HeroClassDefinition ? HeroClassDefinition->Movement.bFaceCameraDirection : true);
+}
+
+void AHeroCharacter::UpdateFacingPolicy()
+{
+	const EHeroActionState State = CombatComponent->GetActionState();
+	const bool bLocomotion = State == EHeroActionState::Idle || State == EHeroActionState::Block;
+	const bool bFaceCamera = IsFacingCameraDirection();
+	GetCharacterMovement()->bUseControllerDesiredRotation = bLocomotion && bFaceCamera;
+	GetCharacterMovement()->bOrientRotationToMovement = bLocomotion && !bFaceCamera;
 }
 
 void AHeroCharacter::Look(const FInputActionValue& Value)
 {
-	if (Health && Health->IsDead()) { return; }
+	if ((Health && Health->IsDead()) || LockOnComponent->GetLockOnTarget()) { return; }
 	const FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
@@ -324,12 +344,26 @@ void AHeroCharacter::HandleDeath(const FCombatHit& KillingHit)
 {
 	if (bDeathHandled) { return; }
 	bDeathHandled = true;
+	LockOnComponent->Release();
 	StopSprint();
 	MovementInputAxes = FVector2D::ZeroVector;
 	GetCharacterMovement()->StopMovementImmediately();
 	GetCharacterMovement()->DisableMovement();
 	CombatComponent->HandleOwnerDeath(KillingHit);
+	if (UFeedbackSubsystem* Feedback = UFeedbackSubsystem::Get(this))
+	{
+		FFeedbackEventContext Context;
+		Context.Instigator = KillingHit.Instigator;
+		Context.Target = this;
+		Context.Location = GetActorLocation();
+		Context.Direction = KillingHit.HitDirection;
+		Context.bIsHeavy = KillingHit.bIsHeavy;
+		Feedback->Play(FeedbackTags::Hero_Death, Context);
+	}
 	OnHeroDeath.Broadcast(KillingHit);
 	OnFeedbackRequested.Broadcast(FeedbackTags::Hero_Death, KillingHit);
 	OnDeathPresentation(KillingHit);
 }
+
+void AHeroCharacter::OnLockOn(const FInputActionValue& Value) { LockOnComponent->Toggle(); }
+void AHeroCharacter::OnLockOnSwitch(const FInputActionValue& Value) { LockOnComponent->Switch(Value.Get<float>()); }

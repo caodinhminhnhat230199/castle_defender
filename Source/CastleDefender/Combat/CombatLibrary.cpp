@@ -9,6 +9,24 @@
 #include "Feedback/FeedbackSubsystem.h"
 #include "Feedback/FeedbackTags.h"
 #include "GameFramework/Actor.h"
+#include "Hero/HeroCharacter.h"
+
+namespace
+{
+	FFeedbackEventContext MakeFeedbackContext(const FCombatResolutionEvent& Resolution)
+	{
+		FFeedbackEventContext Context;
+		Context.Instigator = Resolution.Instigator;
+		Context.Target = Resolution.Target;
+		Context.Location = Resolution.HitLocation;
+		Context.Direction = Resolution.HitDirection;
+		Context.bIsHeavy = Resolution.bIsHeavy;
+		Context.bTargetArmored = Resolution.bTargetArmored;
+		Context.Surface = Resolution.Hit.Surface;
+		Context.Magnitude = Resolution.DamageApplied;
+		return Context;
+	}
+}
 
 ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hit)
 {
@@ -66,6 +84,13 @@ ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hi
 		Resolution.DamageApplied = 0.f;
 		Resolution.PoiseDamageApplied = 0.f;
 		DispatchCombatResolution(Resolution);
+		if (InterceptorResult == ECombatHitResult::Parried)
+		{
+			if (UFeedbackSubsystem* Feedback = UFeedbackSubsystem::Get(Target))
+			{
+				Feedback->Play(FeedbackTags::Combat_Parry, MakeFeedbackContext(Resolution));
+			}
+		}
 		return InterceptorResult;
 	}
 
@@ -106,19 +131,18 @@ ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hi
 	Resolution.Result = FinalResult;
 	DispatchCombatResolution(Resolution);
 
-	// One block feedback per attempt, chosen from the interceptor outcome so a lethal block still reads as a block.
-	if (WorkingHit.bWasBlocked)
+	// R-UXF-12: one impact outcome, preserving a defensive outcome even when its reduced damage is lethal.
+	if (UFeedbackSubsystem* Feedback = UFeedbackSubsystem::Get(Target))
 	{
-		if (UFeedbackSubsystem* Feedback = UFeedbackSubsystem::Get(Target))
+		const FFeedbackEventContext Context = MakeFeedbackContext(Resolution);
+		const FGameplayTag OutcomeTag = WorkingHit.bWasBlocked
+			? (InterceptorResult == ECombatHitResult::BlockBroken ? FeedbackTags::Combat_BlockBreak : FeedbackTags::Combat_Block)
+			: (Hit.bIsHeavy ? FeedbackTags::Combat_Hit_Heavy : FeedbackTags::Combat_Hit_Light);
+		Feedback->Play(OutcomeTag, Context);
+		// The HUD damage event is independent of the exclusive impact type, and only reports actual HP loss.
+		if (Cast<AHeroCharacter>(Target) && DamageDealt > 0.f)
 		{
-			FFeedbackEventContext Context;
-			Context.Instigator = Hit.Instigator;
-			Context.Target = Target;
-			Context.bIsHeavy = Hit.bIsHeavy;
-			Context.bTargetArmored = Resolution.bTargetArmored;
-			Context.Location = Resolution.HitLocation;
-			Context.Direction = Hit.HitDirection;
-			Feedback->Play(InterceptorResult == ECombatHitResult::BlockBroken ? FeedbackTags::Combat_BlockBreak : FeedbackTags::Combat_Block, Context);
+			Feedback->Play(FeedbackTags::Hero_Damaged, Context);
 		}
 	}
 

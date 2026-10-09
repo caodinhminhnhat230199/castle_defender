@@ -9,6 +9,8 @@
 #include "Combat/MeleeTraceComponent.h"
 #include "Core/GameTags.h"
 #include "Feedback/FeedbackTags.h"
+#include "Feedback/FeedbackSubsystem.h"
+#include "Tests/FeedbackTestListener.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 BEGIN_DEFINE_SPEC(FHeroHitReactionSpec, "CastleDefender.Combat.Hero.HitReaction", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
@@ -113,6 +115,10 @@ void FHeroHitReactionSpec::Define()
         F.Hero->OnHeroDeath.AddDynamic(Listener, &UCombatTestListener::HandleDeath);
         Listener->HeroCombat = Combat;
         F.Hero->OnFeedbackRequested.AddDynamic(Listener, &UCombatTestListener::HandleFeedback);
+        UFeedbackSubsystem* Feedback = UFeedbackSubsystem::Get(F.World);
+        Feedback->SetFeedbackTable(UFeedbackTestListener::MakeTable({ FeedbackTags::Hero_Death, FeedbackTags::Combat_Hit_Light, FeedbackTags::Hero_Damaged }));
+        UFeedbackTestListener* Presented = NewObject<UFeedbackTestListener>();
+        Feedback->OnFeedbackPlayed.AddDynamic(Presented, &UFeedbackTestListener::HandlePlayed);
         F.Hero->StartSprint();
         Combat->RequestAction(EHeroAction::Light);
         Combat->RequestAction(EHeroAction::Dodge);
@@ -127,6 +133,8 @@ void FHeroHitReactionSpec::Define()
         TestEqual("Observers see committed Dead state", Listener->ActionStateAtDeath, EHeroActionState::Dead);
         TestEqual("One feedback", Listener->FeedbackCount, 1);
         TestEqual("Death tag", Listener->LastFeedback, FGameplayTag(FeedbackTags::Hero_Death));
+        TestEqual("One shared death presentation", Presented->PlayedTags.FilterByPredicate([](const FGameplayTag& Tag) { return Tag == FeedbackTags::Hero_Death; }).Num(), 1);
+        TestTrue("Shared death tag", Presented->PlayedTags.Contains(FeedbackTags::Hero_Death.GetTag()));
         TestFalse("No buffered action", Combat->HasBufferedInput());
         TestFalse("No new action", Combat->RequestAction(EHeroAction::Light));
         F.Hero->StartSprint();

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "Feedback/FeedbackTypes.h"
+#include "Containers/Ticker.h"
 #include "FeedbackSubsystem.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FFeedbackPlayedSignature, FGameplayTag, RowTag, const FFeedbackEventContext&, Context);
@@ -27,7 +28,7 @@ public:
 	/**
 	 * Plays the row for Tag (or its variant from Context). Returns true when the row played;
 	 * false for an unknown tag, a missing table, or a cooldown/burst rejection.
-	 * Hit stop and camera shake fields are applied from T-UXF-03.
+	 * Presentation includes actor hit stop and camera shake from the resolved row.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Feedback")
 	bool Play(UPARAM(meta = (Categories = "Feedback")) FGameplayTag Tag, const FFeedbackEventContext& Context);
@@ -66,7 +67,12 @@ protected:
 private:
 	void RebuildIndex();
 	void WarnOnce(FName Key, const FString& Message);
-	void PlayOutputs(const FFeedbackRow& Row, const FFeedbackEventContext& Context) const;
+	void PlayOutputs(const FFeedbackRow& Row, const FFeedbackEventContext& Context);
+	void ApplyHitStop(const FFeedbackRow& Row, const FFeedbackEventContext& Context);
+	void StopActor(AActor* Actor, double EndTime, float Dilation);
+	void RestoreHitStops();
+	void ApplyCameraShake(const FFeedbackRow& Row, const FFeedbackEventContext& Context, const FVector& Location);
+	void StopCameraShakes();
 	void ShowRecentTags() const;
 
 	UPROPERTY(Transient)
@@ -78,4 +84,17 @@ private:
 	TSet<FName> WarnedKeys;
 	TArray<FGameplayTag> RecentTags;
 	EHUDLayer HUDLayers = EHUDLayer::None;
+	struct FHitStop
+	{
+		float OriginalDilation = 1.f;
+		double EndTime = 0.0;
+		FTSTicker::FDelegateHandle Handle;
+	};
+	TMap<TWeakObjectPtr<AActor>, FHitStop> HitStops;
+	struct FCameraShake
+	{
+		TWeakObjectPtr<class APlayerCameraManager> Camera;
+		TWeakObjectPtr<class UCameraShakeBase> Instance;
+	};
+	TMap<FGameplayTag, FCameraShake> CameraShakes;
 };

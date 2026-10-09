@@ -7,6 +7,8 @@
 
 class UAnimMontage;
 class UAnimSequenceBase;
+class UAnimSequence;
+class UBlendSpace;
 
 /**
  * Blueprint and Python function library for Hero Combat setup and montage authoring (spec §4.4, technical-plan §3.5).
@@ -17,6 +19,12 @@ class CASTLEDEFENDER_API UHeroCombatLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
+	/** Editor-only placeholder: keep a side-step pose and copy the dash's travel profile laterally. */
+	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Authoring")
+	static bool AuthorSideDodge(UAnimSequence* SideStep, UAnimSequence* Dash, float DashEndTime, bool bRight);
+	/** Editor Python bridge: rebuild the serialized blend triangulation after authoring samples. */
+	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Authoring")
+	static bool FinalizeStrafeBlendSpace(UBlendSpace* BlendSpace);
 	/** Adds an active melee combat hit window notify to a montage. */
 	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Montage")
 	static bool AddCombatHitWindowToMontage(UAnimMontage* Montage, float StartTime, float Duration);
@@ -27,6 +35,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Montage")
 	static bool AddInvulnerableWindowToMontage(UAnimMontage* Montage, float StartTime, float Duration);
+	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Montage")
+	static bool AddParryWindowToMontage(UAnimMontage* Montage, float StartTime, float Duration);
 
 	/** Adds a missing assist window without changing existing authored timing or adding duplicates. */
 	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Montage")

@@ -7,6 +7,8 @@
 #include "Components/ActorComponent.h"
 #include "Combat/CombatHitInterceptor.h"
 #include "Hero/HeroCombatComponent.h"
+#include "Combat/CombatLibrary.h"
+#include "Combat/MeleeTraceComponent.h"
 #include "CombatTestListener.generated.h"
 
 /** Test helper: counts combat delegate broadcasts (dynamic delegates need a UFUNCTION target). */
@@ -88,6 +90,45 @@ public:
 	}
 
 	int32 BlockBrokenCount = 0;
+	int32 ParrySucceededCount = 0;
+	AActor* ParryAttacker = nullptr;
+	AActor* ReentrantParryTarget = nullptr;
+	ECombatHitResult ReentrantParryResult = ECombatHitResult::Ignored;
+	UFUNCTION()
+	void HandleParrySucceeded(AActor* Attacker)
+	{
+		++ParrySucceededCount;
+		ParryAttacker = Attacker;
+		if (ReentrantParryTarget)
+		{
+			FCombatHit Hit; Hit.Damage = 20.f; Hit.Instigator = Attacker; Hit.SourceLayer = ECombatLayer::Enemy;
+			ReentrantParryResult = UCombatLibrary::DeliverHit(ReentrantParryTarget, Hit);
+		}
+	}
+	UMeleeTraceComponent* ReentrantCounterTrace = nullptr;
+	UMeleeTraceComponent* TraceToCloseOnState = nullptr;
+	bool bReopenTraceOnState = false;
+	UFUNCTION()
+	void HandleCloseTraceOnState(FGameplayTag State, AActor* Instigator)
+	{
+		if (TraceToCloseOnState)
+		{
+			TraceToCloseOnState->EndHitWindow();
+			if (bReopenTraceOnState)
+			{
+				TraceToCloseOnState->GetOwner()->SetActorLocation(FVector(600.f, 0.f, 0.f));
+				TraceToCloseOnState->BeginHitWindow();
+			}
+		}
+	}
+	AActor* ReentrantCounterTarget = nullptr;
+	bool bCounterDamageSeen = false;
+	UFUNCTION()
+	void HandleCounterDamage(const FCombatHit& Hit, float RemainingHealth)
+	{
+		bCounterDamageSeen = Hit.bIsParryCounter;
+		if (ReentrantCounterTrace && ReentrantCounterTarget) { ReentrantCounterTrace->TryHitTarget(ReentrantCounterTarget); }
+	}
 
 	UFUNCTION()
 	void HandleBlockBroken(AActor* Attacker) { ++BlockBrokenCount; }

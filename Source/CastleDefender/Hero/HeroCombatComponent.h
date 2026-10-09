@@ -16,6 +16,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHeroActionStateChangedSignature, E
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCombatResolvedSignature, const FCombatResolutionEvent&, ResolutionEvent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHitLandedSignature, AActor*, Target, ECombatHitResult, Result);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBlockBrokenSignature, AActor*, Attacker);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnParrySucceededSignature, AActor*, Attacker);
 
 /**
  * Action state machine and commitment manager for the Hero (spec §4.4, technical-plan §5.1).
@@ -133,6 +134,14 @@ public:
 	/** A blocked hit emptied stamina; the hero is now under shared Staggered. */
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FOnBlockBrokenSignature OnBlockBroken;
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnParrySucceededSignature OnParrySucceeded;
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	bool HasCounterWindow() const { return CounterTimeRemaining > 0.f && !bCounterAttackPending; }
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	float GetCounterTimeRemaining() const { return CounterTimeRemaining; }
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	bool IsParryConsumed() const { return bParryConsumed; }
 
 	UFUNCTION()
 	void HandleMeleeHitResolved(AActor* Target, ECombatHitResult Result);
@@ -168,6 +177,9 @@ private:
 	void TryConsumeBuffer();
 	/** Re-enters Block when the hold outlived a committed action or Staggered. */
 	void TryResumeHeldBlock();
+	void ConsumeCounter();
+	void UpdateTickEnabled();
+	ECombatHitResult ResolveParry(const FCombatHit& Hit);
 	ECombatHitResult ResolveBlockedHit(FCombatHit& Hit, const FHeroBlockData& Block);
 	/** Plays a montage that does not own the action state (block hit, block break). */
 	void PlayPresentationMontage(UAnimMontage* Montage);
@@ -197,12 +209,16 @@ private:
 	FString LastHeavyValidationError;
 	FString LastDodgeValidationError;
 	FString LastReactionValidationError;
+	FString LastParryValidationError;
 	EHeroDodgeDirection LastDodgeDirection = EHeroDodgeDirection::Backward;
 	float PreviousRootMotionScale = 1.f;
 	bool bDodgeRootMotionScaleApplied = false;
 	bool bInterruptResistanceWindowOpen = false;
 	bool bRotationAssistWindowOpen = false;
 	bool bBlockInputHeld = false;
+	bool bParryConsumed = false;
+	bool bCounterAttackPending = false;
+	float CounterTimeRemaining = 0.f;
 	float AttackIntentYaw = 0.f;
 	TWeakObjectPtr<AActor> AssistTarget;
 

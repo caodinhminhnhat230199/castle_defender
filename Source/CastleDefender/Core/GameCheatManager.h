@@ -15,6 +15,16 @@ class CASTLEDEFENDER_API UGameCheatManager : public UCheatManager
 	GENERATED_BODY()
 
 public:
+	/** Changes the enabled sandbox preset's owned enemy capacity (1-3). */
+	UFUNCTION(Exec)
+	void SetSandboxEnemyCount(int32 Count);
+	/** Fixed telemetry smoke payload {x:1, s:a}; Event defaults to test. */
+	UFUNCTION(Exec)
+	void LogPlaytestEvent(FName Event);
+	/** P0 debug spawn: archetype asset name and count (default DA_Enemy_Melee, 1). */
+	UFUNCTION(Exec, BlueprintCallable, Category = "Debug|Enemy")
+	void SpawnEnemy(FName Archetype, int32 Count);
+
 	/** Spawns an ATestDummy in front of the pawn, along the view yaw (default 400 cm). */
 	UFUNCTION(Exec)
 	void SpawnTestDummy(float Distance);
@@ -41,6 +51,8 @@ public:
 	void KillHero();
 	UFUNCTION(Exec)
 	void ReportHeroWindows();
+	UFUNCTION(Exec)
+	void HealHero(float Amount = 40.f);
 
 	/** Dispatches a synthetic FCombatHit against the controlled hero via DeliverHit. */
 	UFUNCTION(Exec)

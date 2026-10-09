@@ -40,6 +40,57 @@ struct CASTLEDEFENDER_API FHeroAttackData
 	float InterruptResistance = 0.f;
 };
 
+/** NEW-CMB-01: separate press, one successful parry, poise damage plus a counter opportunity. */
+USTRUCT(BlueprintType)
+struct CASTLEDEFENDER_API FHeroParryData
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Parry")
+	TObjectPtr<UAnimMontage> Montage = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Parry", meta = (ClampMin = "0"))
+	float StaminaCost = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Parry", meta = (ClampMin = "0"))
+	float PoiseDamage = 60.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Parry", meta = (ClampMin = "0"))
+	float CounterWindow = 1.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Parry", meta = (ClampMin = "1"))
+	float CounterDamageMultiplier = 1.5f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Parry")
+	TObjectPtr<UAnimMontage> CounterMontage = nullptr;
+};
+
+/** Lock-on rules and camera framing; all iteration values live in the class definition. */
+USTRUCT(BlueprintType)
+struct CASTLEDEFENDER_API FHeroLockOnData
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Lock On", meta = (ClampMin = "1"))
+	float Range = 1500.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Lock On", meta = (ClampMin = "1"))
+	float BreakDistance = 2000.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Lock On", meta = (ClampMin = "0"))
+	float LOSGraceTime = 1.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Lock On", meta = (ClampMin = "0.01"))
+	float ValidationInterval = 0.15f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Lock On", meta = (ClampMin = "0"))
+	float CameraInterpSpeed = 8.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Lock On", meta = (ClampMin = "-89", ClampMax = "89"))
+	float MinPitch = -60.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Lock On", meta = (ClampMin = "-89", ClampMax = "89"))
+	float MaxPitch = 45.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Lock On")
+	FName TargetSocket = TEXT("LockOn");
+
+	bool IsValid() const
+	{
+		return FMath::IsFinite(Range) && Range > 0.f && FMath::IsFinite(BreakDistance) && BreakDistance >= Range
+			&& FMath::IsFinite(LOSGraceTime) && LOSGraceTime >= 0.f
+			&& FMath::IsFinite(ValidationInterval) && ValidationInterval > 0.f
+			&& FMath::IsFinite(CameraInterpSpeed) && CameraInterpSpeed >= 0.f
+			&& FMath::IsFinite(MinPitch) && FMath::IsFinite(MaxPitch) && MinPitch >= -89.f && MaxPitch <= 89.f && MinPitch <= MaxPitch;
+	}
+};
+
 /** Hero combat actions requested by input or AI (technical-plan §5.1). */
 UENUM(BlueprintType)
 enum class EHeroAction : uint8

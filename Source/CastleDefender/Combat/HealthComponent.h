@@ -7,6 +7,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHealthDamagedSignature, const FCombatHit&, Hit, float, NewHealth);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHealthDeathSignature, const FCombatHit&, KillingHit);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHealthHealedSignature, float, Amount, float, NewHealth);
 
 /** Health for every damageable actor (D-05). Hits arrive through UCombatLibrary::DeliverHit only. */
 UCLASS(ClassGroup = (Combat), meta = (BlueprintSpawnableComponent))
@@ -26,6 +27,10 @@ public:
 	 * Ignored while the owner cannot be damaged (the engine `God` cheat).
 	 */
 	float ApplyHit(const FCombatHit& Hit);
+	float Heal(float Amount);
+
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FHealthHealedSignature OnHealed;
 
 	UFUNCTION(BlueprintPure, Category = "Combat")
 	float GetMaxHealth() const { return MaxHealth; }
@@ -38,6 +43,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Combat")
 	bool IsDead() const { return bDead; }
+
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	bool IsAlive() const { return !bDead; }
 
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FHealthDamagedSignature OnDamaged;

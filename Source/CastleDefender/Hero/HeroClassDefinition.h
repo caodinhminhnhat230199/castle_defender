@@ -18,6 +18,7 @@ public:
 	/** Same action/data validation in editor and packaged runtime, before spending stamina. */
 	bool ValidateLightAttack(int32 ChainIndex, FString& OutError) const;
 	bool ValidateHeavyAttack(FString& OutError) const;
+	bool ValidateParry(FString& OutError) const;
 	bool ValidateDodge(EHeroDodgeDirection Direction, FString& OutError) const;
 	bool ValidateHitReaction(bool bFromFront, FString& OutError) const;
 	UHeroClassDefinition();
@@ -34,6 +35,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera")
 	FHeroCameraData Camera;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera")
+	FHeroLockOnData LockOn;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	FHeroInputData Input;
@@ -53,6 +56,8 @@ public:
 	FHeroDodgeData Dodge;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
 	FHeroBlockData Block;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
+	FHeroParryData Parry;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
 	FHeroHitReactData HitReact;
 

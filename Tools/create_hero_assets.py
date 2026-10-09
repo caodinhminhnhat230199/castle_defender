@@ -92,6 +92,8 @@ def author_montage(name, clip, clip_end, duration, windows, reversed_clip=False,
             ok = unreal.HeroCombatLibrary.add_combat_hit_window_to_montage(montage, start, length)
         elif kind == "iframe":
             ok = unreal.HeroCombatLibrary.add_invulnerable_window_to_montage(montage, start, length)
+        elif kind == "parry":
+            ok = unreal.HeroCombatLibrary.add_parry_window_to_montage(montage, start, length)
         else:
             ok = unreal.HeroCombatLibrary.add_cancel_window_to_montage(montage, start, length, actions)
         assert ok, f"{name}: {kind} window rejected"
@@ -125,7 +127,7 @@ if not heavy_data.get_editor_property("montage"):
     da.set_editor_property("heavy", heavy_data)
 
 # Dodge: MM_Dash (motion ends ~0.73 s) fitted to 0.6 s; B plays it reversed. The template has no side steps,
-# so L/R reuse F until directional clips exist (only lock-on, T-CMB-10, selects them).
+# the lock-on authoring pass below replaces only those stock L/R sources with side-step clips.
 dash = anim("Unarmed/Jump/MM_Dash")
 dodge_windows = [("iframe", 0.10, 0.25, None), ("cancel", 0.40, 0.19, DODGE_CANCELS)]
 dodge_data = da.get_editor_property("dodge")
@@ -137,8 +139,8 @@ for suffix, field in [("F", "forward_montage"), ("B", "backward_montage"), ("L",
         dodge_data.set_editor_property(field, montage)
 if dodge_changed:
     dodge_data.set_editor_property("root_motion_scale", 0.4)  # [TUNABLE] ~350 cm from the 885 cm dash clip
-# L/R are the forward dash, so a camera-facing hero turns toward the input for side dodges.
-dodge_data.set_editor_property("side_clips_face_input", True)
+    # Newly authored stock L/R clips face their travel; the lock-on pass migrates them below.
+    dodge_data.set_editor_property("side_clips_face_input", True)
 da.set_editor_property("dodge", dodge_data)
 
 react_data = da.get_editor_property("hit_react")
@@ -167,6 +169,15 @@ for name, clip_path, field in [
     if not block_data.get_editor_property(field):
         block_data.set_editor_property(field, montage)
 da.set_editor_property("block", block_data)
+
+# T-CMB-09: separate high-risk press; authored 0.15 s active window, then 0.5 s whiff recovery.
+parry = da.get_editor_property("parry")
+parry_clip = anim("Unarmed/Attack/MM_Attack_01")
+parry_montage, _ = author_montage("AM_Warlord_Parry", parry_clip, 0.70, 0.70,
+                                  [("parry", 0.05, 0.15, None)])
+if not parry.get_editor_property("montage"):
+    parry.set_editor_property("montage", parry_montage)
+    da.set_editor_property("parry", parry)
 
 # Fill missing references without resetting attack numbers, states or resistance tuning.
 attack_data_list = da.get_editor_property("light_chain")
@@ -214,6 +225,48 @@ hero_cdo.set_editor_property("light_attack_action", ia_light)
 hero_cdo.set_editor_property("heavy_attack_action", ia_heavy)
 hero_cdo.set_editor_property("dodge_action", ia_dodge)
 hero_cdo.set_editor_property("block_action", ia_block)
+
+parry_path = f"{INPUT_DIR}/IA_Parry"
+if not assets.does_asset_exist(parry_path):
+    ia_parry = asset_tools.create_asset("IA_Parry", INPUT_DIR, unreal.InputAction, unreal.InputAction_Factory())
+    ia_parry.set_editor_property("value_type", unreal.InputActionValueType.BOOLEAN)
+    assets.save_loaded_asset(ia_parry)
+else:
+    ia_parry = assets.load_asset(parry_path)
+hero_cdo.set_editor_property("parry_action", ia_parry)
+imc_combat = assets.load_asset(f"{INPUT_DIR}/IMC_Combat")
+mapping_data = imc_combat.get_editor_property("default_key_mappings")
+mapping_rows = list(mapping_data.get_editor_property("mappings"))
+if not any(row.get_editor_property("action") == ia_parry for row in mapping_rows):
+    key = unreal.Key()
+    key.import_text("E")
+    mapping = unreal.EnhancedActionKeyMapping()
+    mapping.set_editor_property("action", ia_parry)
+    mapping.set_editor_property("key", key)
+    mapping_rows.append(mapping)
+    mapping_data.set_editor_property("mappings", mapping_rows)
+    imc_combat.set_editor_property("default_key_mappings", mapping_data)
+    assets.save_loaded_asset(imc_combat)
+
+# Distinct P0 Parry sound; preserve an already-authored feedback row.
+feedback_table = assets.load_asset(f"{ROOT}/Feedback/DT_Feedback")
+if feedback_table:
+    import json
+    rows = json.loads(unreal.DataTableFunctionLibrary.export_data_table_to_json_string(feedback_table))
+    for row in rows:
+        if row["Name"] == "Feedback.Combat.Parry" and "1kSineTonePing" in row.get("Sound", ""):
+            sound_path = f"{ROOT}/Feedback/SFX_Parry"
+            sound = assets.load_asset(sound_path) if assets.does_asset_exist(sound_path) else None
+            if not sound:
+                source = unreal.load_object(None, "/Engine/EditorSounds/Notifications/CompileSuccess.CompileSuccess")
+                assert source, "Engine Parry placeholder source could not be loaded"
+                sound = asset_tools.duplicate_asset("SFX_Parry", f"{ROOT}/Feedback", source)
+                assets.save_loaded_asset(sound)
+            assert sound, "Parry placeholder sound could not be created"
+            row["Sound"] = sound.get_path_name()
+            assert unreal.DataTableFunctionLibrary.fill_data_table_from_json_string(feedback_table, json.dumps(rows))
+            assets.save_loaded_asset(feedback_table)
+            break
 
 # 3.1 Visual assembly: Manny + ABP_Warlord (copy of the template ABP_Unarmed: locomotion + DefaultSlot), unarmed.
 abp_path = f"{HERO_DIR}/ABP_Warlord"
@@ -314,6 +367,9 @@ def wire_guard_layer(abp):
 
 
 wire_guard_layer(abp)
+
+# T-CMB-10: lock-on input, strafe locomotion, side-step dodges and marker overlay.
+runpy.run_path(str(Path(__file__).with_name("create_lock_on_content.py")))["setup_lock_on"](hero_bp, abp, da, anim)
 
 mesh = hero_cdo.get_editor_property("mesh")
 if not mesh.get_skeletal_mesh_asset():

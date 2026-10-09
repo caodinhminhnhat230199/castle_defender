@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "Engine/EngineTypes.h"
 #include "CombatTypes.generated.h"
 
 /** Who produced a hit. Lets Hero, Army and Tower create openings for each other (D-05). */
@@ -79,6 +80,10 @@ struct FCombatHit
 
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	FVector HitDirection = FVector::ZeroVector;
+
+	/** Physical surface returned by the attack trace; unknown callers use the row's default sound. */
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	TEnumAsByte<EPhysicalSurface> Surface = SurfaceType_Default;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	bool bIsHeavy = false;

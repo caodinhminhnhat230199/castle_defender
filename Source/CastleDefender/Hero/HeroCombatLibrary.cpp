@@ -2,6 +2,57 @@
 #include "Animation/AnimMontage.h"
 #include "Combat/CombatActionTiming.h"
 #include "Combat/AnimNotifyState_CombatHitWindow.h"
+#include "Animation/AnimSequence.h"
+#include "Animation/BlendSpace.h"
+#if WITH_EDITOR
+#include "Animation/AnimData/IAnimationDataController.h"
+#include "Animation/AnimData/IAnimationDataModel.h"
+#endif
+
+bool UHeroCombatLibrary::FinalizeStrafeBlendSpace(UBlendSpace* BlendSpace)
+{
+#if WITH_EDITOR
+	if (!BlendSpace || BlendSpace->GetNumberOfBlendSamples() == 0) { return false; }
+	BlendSpace->Modify();
+	BlendSpace->ResampleData();
+	return true;
+#else
+	return false;
+#endif
+}
+
+bool UHeroCombatLibrary::AuthorSideDodge(UAnimSequence* SideStep, UAnimSequence* Dash, float DashEndTime, bool bRight)
+{
+#if WITH_EDITOR
+	if (!SideStep || !Dash || SideStep == Dash || SideStep->GetSkeleton() != Dash->GetSkeleton()
+		|| DashEndTime <= 0.f || DashEndTime > Dash->GetPlayLength()) { return false; }
+	const IAnimationDataModel* Model = SideStep->GetDataModel();
+	const IAnimationDataModel* DashModel = Dash->GetDataModel();
+	TArray<FTransform> Keys;
+	Model->GetBoneTrackTransforms(TEXT("root"), Keys);
+	if (Keys.Num() < 2) { return false; }
+	const FVector Start = Keys[0].GetTranslation();
+	const FTransform DashStart = DashModel->EvaluateBoneTrackTransform(TEXT("root"), FFrameTime(0), EAnimInterpolationType::Linear);
+	TArray<FVector> Positions, Scales;
+	TArray<FQuat> Rotations;
+	for (int32 Index = 0; Index < Keys.Num(); ++Index)
+	{
+		const double Time = DashEndTime * Index / (Keys.Num() - 1);
+		const FTransform DashKey = DashModel->EvaluateBoneTrackTransform(TEXT("root"), DashModel->GetFrameRate().AsFrameTime(Time), EAnimInterpolationType::Linear);
+		const FVector Travel = DashKey.GetTranslation() - DashStart.GetTranslation();
+		Positions.Add(Start + FRotator(0.f, bRight ? 90.f : -90.f, 0.f).RotateVector(Travel));
+		Rotations.Add(Keys[Index].GetRotation());
+		Scales.Add(Keys[Index].GetScale3D());
+	}
+	SideStep->Modify();
+	const bool bSuccess = SideStep->GetController().SetBoneTrackKeys(TEXT("root"), Positions, Rotations, Scales, false);
+	SideStep->bEnableRootMotion = true;
+	SideStep->RootMotionRootLock = ERootMotionRootLock::AnimFirstFrame;
+	return bSuccess;
+#else
+	return false;
+#endif
+}
 
 bool UHeroCombatLibrary::AddCombatHitWindowToMontage(UAnimMontage* Montage, float StartTime, float Duration)
 {
@@ -48,6 +99,7 @@ void UHeroCombatLibrary::ClearCombatNotifiesFromMontage(UAnimMontage* Montage)
 			Event.NotifyStateClass->IsA<UAnimNotifyState_CombatHitWindow>() ||
 			Event.NotifyStateClass->IsA<UAnimNotifyState_CancelWindow>() ||
 			Event.NotifyStateClass->IsA<UAnimNotifyState_Invulnerable>() ||
+			Event.NotifyStateClass->IsA<UAnimNotifyState_ParryWindow>() ||
 			Event.NotifyStateClass->IsA<UAnimNotifyState_RotationAssist>()
 		);
 	});
@@ -65,6 +117,21 @@ bool UHeroCombatLibrary::AddInvulnerableWindowToMontage(UAnimMontage* Montage, f
 	Event.EndLink.Link(Montage, StartTime + Duration);
 	Event.EndLink.SetTime(StartTime + Duration);
 	Event.NotifyName = FName(TEXT("Invulnerable"));
+	return true;
+#else
+	return false;
+#endif
+}
+
+bool UHeroCombatLibrary::AddParryWindowToMontage(UAnimMontage* Montage, float StartTime, float Duration)
+{
+#if WITH_EDITOR
+	if (!Montage || !FMath::IsFinite(StartTime) || !FMath::IsFinite(Duration) || StartTime < 0.f || Duration <= 0.f || StartTime + Duration >= Montage->GetPlayLength()) { return false; }
+	FAnimNotifyEvent& Event = Montage->Notifies.AddDefaulted_GetRef();
+	Event.NotifyStateClass = NewObject<UAnimNotifyState_ParryWindow>(Montage, NAME_None, RF_Transactional);
+	Event.Link(Montage, StartTime); Event.SetTime(StartTime); Event.SetDuration(Duration);
+	Event.EndLink.Link(Montage, StartTime + Duration); Event.EndLink.SetTime(StartTime + Duration);
+	Event.NotifyName = FName(TEXT("ParryWindow"));
 	return true;
 #else
 	return false;

@@ -1,4 +1,5 @@
 #include "Hero/HeroCombatComponent.h"
+#include "Hero/LockOnComponent.h"
 #include "Hero/HeroCharacter.h"
 #include "Combat/CombatStateComponent.h"
 #include "Combat/HealthComponent.h"
@@ -38,6 +39,7 @@ void UHeroCombatComponent::BeginPlay()
 		if (UMeleeTraceComponent* TraceComp = HeroOwner->FindComponentByClass<UMeleeTraceComponent>())
 		{
 			TraceComp->OnHitResolved.AddDynamic(this, &UHeroCombatComponent::HandleMeleeHitResolved);
+			TraceComp->OnParryCounterConsumed.AddUObject(this, &UHeroCombatComponent::ConsumeCounter);
 		}
 	}
 }
@@ -45,7 +47,12 @@ void UHeroCombatComponent::BeginPlay()
 void UHeroCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	if (IsRegistered()) { Super::TickComponent(DeltaTime, TickType, ThisTickFunction); }
-	// D-20: component DeltaTime includes owner dilation; tick only for buffer expiry or an authored assist window.
+	// D-20: owner-dilated DeltaTime gates buffer/counter expiry and authored assist; no inactive tick.
+	if (CounterTimeRemaining > 0.f)
+	{
+		CounterTimeRemaining = FMath::Max(0.f, CounterTimeRemaining - DeltaTime);
+		UpdateTickEnabled();
+	}
 	if (bRotationAssistWindowOpen) { UpdateRotationAssist(DeltaTime); }
 	if (BufferedInput.bValid)
 	{
@@ -76,17 +83,22 @@ FString UHeroCombatComponent::GetCombatDebugString() const
 		{
 			Phase = Position < Timing.InvulnerableWindowStart ? TEXT("Startup") : Position < Timing.InvulnerableWindowEnd ? TEXT("Active") : TEXT("Recovery");
 		}
+		else if (Timing.bHasParryWindow)
+		{
+			Phase = Position < Timing.ParryWindowStart ? TEXT("Startup") : Position < Timing.ParryWindowEnd ? TEXT("Active") : TEXT("Recovery");
+		}
 		else { Phase = bCancelWindowOpen ? TEXT("Recovery/Cancel") : TEXT("Committed"); }
 	}
 	FString Cancels;
 	for (EHeroAction Action : OpenCancelActions) { Cancels += StaticEnum<EHeroAction>()->GetNameStringByValue(static_cast<int64>(Action)) + TEXT(" "); }
-	return FString::Printf(TEXT("%s | Chain %d\n%s %.3f/%.3f (%s)\nHit %d IFrame %d Parry %d Resistance %d\nCancel %d [%s]\nBuffer %s age %.3f | Stamina %.1f/%.1f\nShared [%s]\nLock-on inactive | Assist %s (window %d)\nParry consumed inactive"),
+	return FString::Printf(TEXT("%s | Chain %d\n%s %.3f/%.3f (%s)\nHit %d IFrame %d Parry %d Resistance %d\nCancel %d [%s]\nBuffer %s age %.3f | Stamina %.1f/%.1f\nShared [%s]\nLock-on %s | Assist %s (window %d)"),
 		*StaticEnum<EHeroActionState>()->GetNameStringByValue(static_cast<int64>(CurrentState)), CurrentChainIndex, *GetNameSafe(ActiveMontage), Position, Timing.TotalDuration, *Phase,
 		Hero && Hero->GetMeleeTraceComponent()->IsHitWindowActive(), bInvulnerableWindowOpen, bParryWindowOpen, bInterruptResistanceWindowOpen, bCancelWindowOpen, *Cancels,
 		BufferedInput.bValid ? *StaticEnum<EHeroAction>()->GetNameStringByValue(static_cast<int64>(BufferedInput.Action)) : TEXT("None"), BufferedInput.Age,
 		Hero ? Hero->GetStaminaComponent()->GetCurrentStamina() : 0.f, Hero ? Hero->GetStaminaComponent()->GetMaxStamina() : 0.f,
 		CombatStateComp ? *CombatStateComp->GetActiveStates().ToStringSimple() : TEXT(""),
-		*GetNameSafe(AssistTarget.Get()), bRotationAssistWindowOpen);
+		*GetNameSafe(Hero ? Hero->GetLockOnComponent()->GetLockOnTarget() : nullptr), *GetNameSafe(AssistTarget.Get()), bRotationAssistWindowOpen)
+		+ FString::Printf(TEXT("\nParry consumed %d | Counter %.3f (reserved %d)"), bParryConsumed, CounterTimeRemaining, bCounterAttackPending);
 }
 #endif
 
@@ -139,10 +151,11 @@ float UHeroCombatComponent::GetActionStaminaCost(EHeroAction Action) const
 		return Def->Dodge.StaminaCost;
 	case EHeroAction::BlockStart:
 	case EHeroAction::BlockEnd:
-	case EHeroAction::Parry:
 	case EHeroAction::Interact:
 	default:
 		return 0.f;
+	case EHeroAction::Parry:
+		return Def->Parry.StaminaCost;
 	}
 }
 
@@ -193,6 +206,18 @@ bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 
 	if (CanStartAction(Action))
 	{
+		if (Action == EHeroAction::Parry)
+		{
+			FString Error;
+			const UHeroClassDefinition* Definition = HeroOwner ? HeroOwner->GetHeroClassDefinition() : nullptr;
+			if (!Definition || !Definition->ValidateParry(Error))
+			{
+				if (!Definition) { Error = TEXT("HeroClassDefinition is missing."); }
+				if (LastParryValidationError != Error) { UE_LOG(LogGameCombat, Error, TEXT("Parry refused: %s"), *Error); LastParryValidationError = Error; }
+				return false;
+			}
+			LastParryValidationError.Reset();
+		}
 		if (Action == EHeroAction::Light)
 		{
 			const UHeroClassDefinition* Definition = HeroOwner ? HeroOwner->GetHeroClassDefinition() : nullptr;
@@ -324,7 +349,9 @@ bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 			break;
 		case EHeroAction::Parry:
 			CurrentChainIndex = 0;
-			SetActionState(EHeroActionState::Parry);
+			bParryConsumed = false; // Only a new Parry action resets consumption (R-CMB-50).
+			ConsumeCounter();
+			if (!PlayActionMontage(HeroOwner->GetHeroClassDefinition()->Parry.Montage, EHeroActionState::Parry)) { return false; }
 			break;
 		case EHeroAction::Interact:
 			// Interact does not lock into an attack state
@@ -370,6 +397,8 @@ void UHeroCombatComponent::SetActionState(EHeroActionState NewState)
 		bDodgeRootMotionScaleApplied = false;
 	}
 	CurrentState = NewState;
+	if (bCounterAttackPending && NewState != EHeroActionState::LightAttack && NewState != EHeroActionState::HeavyAttack) { ConsumeCounter(); }
+	if (HeroOwner) { HeroOwner->UpdateFacingPolicy(); }
 	if ((OldState == EHeroActionState::Block || NewState == EHeroActionState::Block) && HeroOwner)
 	{
 		// R-CMB-12: blocking regen multiplier and guard move speed follow the Block state.
@@ -507,7 +536,19 @@ void UHeroCombatComponent::BufferAction(EHeroAction Action)
 void UHeroCombatComponent::ClearBuffer()
 {
 	BufferedInput = FBufferedAction();
-	SetComponentTickEnabled(bRotationAssistWindowOpen);
+	UpdateTickEnabled();
+}
+
+void UHeroCombatComponent::UpdateTickEnabled()
+{
+	SetComponentTickEnabled(BufferedInput.bValid || bRotationAssistWindowOpen || CounterTimeRemaining > 0.f);
+}
+
+void UHeroCombatComponent::ConsumeCounter()
+{
+	CounterTimeRemaining = 0.f;
+	bCounterAttackPending = false;
+	UpdateTickEnabled();
 }
 
 bool UHeroCombatComponent::IsEligibleAssistTarget(AActor* Candidate) const
@@ -528,6 +569,14 @@ void UHeroCombatComponent::OpenRotationAssistWindow()
 	const FHeroAttackAssistData& Data = Hero->GetHeroClassDefinition()->AttackAssist;
 	if (!Data.IsValid() || Data.Distance <= 0.f || Data.RotationRate <= 0.f) { return; }
 	CloseRotationAssistWindow();
+	AActor* LockedTarget = Hero->GetLockOnComponent()->GetLockOnTarget();
+	if (IsEligibleAssistTarget(LockedTarget))
+	{
+		AssistTarget = LockedTarget;
+		bRotationAssistWindowOpen = true;
+		SetComponentTickEnabled(true);
+		return;
+	}
 	TArray<FOverlapResult> Overlaps;
 	FCollisionObjectQueryParams Objects;
 	Objects.AddObjectTypesToQuery(ECC_Pawn);
@@ -558,7 +607,7 @@ void UHeroCombatComponent::CloseRotationAssistWindow()
 {
 	bRotationAssistWindowOpen = false;
 	AssistTarget.Reset();
-	SetComponentTickEnabled(BufferedInput.bValid);
+	UpdateTickEnabled();
 }
 
 void UHeroCombatComponent::UpdateRotationAssist(float HeroDelta)
@@ -638,6 +687,12 @@ bool UHeroCombatComponent::PlayActionMontage(UAnimMontage* Montage, EHeroActionS
 	}
 
 	ForceCloseAllWindows();
+	if ((NewState == EHeroActionState::LightAttack || NewState == EHeroActionState::HeavyAttack) && HasCounterWindow())
+	{
+		bCounterAttackPending = true;
+		HeroOwner->GetMeleeTraceComponent()->SetParryCounterMultiplier(HeroOwner->GetHeroClassDefinition()->Parry.CounterDamageMultiplier);
+		if (HeroOwner->GetHeroClassDefinition()->Parry.CounterMontage) { Montage = HeroOwner->GetHeroClassDefinition()->Parry.CounterMontage; }
+	}
 	// Detach the previous owner before Montage_Play can interrupt its instance.
 	ActiveMontage = nullptr;
 	AttackIntentYaw = HeroOwner->GetActorRotation().Yaw;
@@ -684,6 +739,7 @@ void UHeroCombatComponent::HandleStateAdded(FGameplayTag StateTag, AActor* Insti
 {
 	if (StateTag.MatchesTag(GameTags::State_Combat_Staggered))
 	{
+		ConsumeCounter();
 		ForceCloseAllWindows();
 		ClearBuffer();
 
@@ -760,6 +816,7 @@ void UHeroCombatComponent::HandleOwnerDamaged(const FCombatHit& Hit, float NewHe
 
 void UHeroCombatComponent::HandleOwnerDeath(const FCombatHit& KillingHit)
 {
+	ConsumeCounter();
 	ForceCloseAllWindows();
 	ClearBuffer();
 	if (ActiveMontage && HeroOwner)
@@ -782,10 +839,12 @@ ECombatHitResult UHeroCombatComponent::InterceptHit(FCombatHit& Hit)
 		return ECombatHitResult::Evaded;
 	}
 
-	if (IsInParryWindow())
+	if (IsInParryWindow() && CurrentState == EHeroActionState::Parry && !bParryConsumed && GetHeroOwner()
+		&& GetHeroOwner()->GetHeroClassDefinition()
+		&& (Hit.Instigator.IsValid() ? AreHostile(GetHeroOwner(), Hit.Instigator.Get()) : Hit.SourceLayer == ECombatLayer::Enemy)
+		&& UCombatLibrary::IsInFrontArc(GetHeroOwner(), GetHitSourceLocation(Hit), GetHeroOwner()->GetHeroClassDefinition()->Block.ArcDegrees))
 	{
-		// TODO: T-CMB-09 full parry counter and poise damage
-		return ECombatHitResult::Parried;
+		return ResolveParry(Hit);
 	}
 
 	const AHeroCharacter* Hero = GetHeroOwner();
@@ -797,6 +856,32 @@ ECombatHitResult UHeroCombatComponent::InterceptHit(FCombatHit& Hit)
 	}
 
 	return ECombatHitResult::Hit;
+}
+
+ECombatHitResult UHeroCombatComponent::ResolveParry(const FCombatHit& Hit)
+{
+	// R-CMB-50: close and consume before any montage/state/poise delegate can deliver another hit.
+	bParryConsumed = true;
+	CloseParryWindow();
+	UAnimMontage* Interrupted = ActiveMontage;
+	ActiveMontage = nullptr;
+	if (Interrupted) { HeroOwner->StopAnimMontage(Interrupted); }
+	ForceCloseAllWindows();
+	CounterTimeRemaining = HeroOwner->GetHeroClassDefinition()->Parry.CounterWindow;
+	bCounterAttackPending = false;
+	UpdateTickEnabled();
+	SetActionState(EHeroActionState::Idle);
+	AActor* Attacker = Hit.Instigator.Get();
+	if (IsValid(Attacker))
+	{
+		if (UCombatStateComponent* State = Attacker->FindComponentByClass<UCombatStateComponent>())
+		{
+			State->ApplyPoiseDamage(HeroOwner->GetHeroClassDefinition()->Parry.PoiseDamage, HeroOwner);
+		}
+	}
+	OnParrySucceeded.Broadcast(Attacker);
+	if (CurrentState == EHeroActionState::Idle) { TryConsumeBuffer(); }
+	return ECombatHitResult::Parried;
 }
 
 ECombatHitResult UHeroCombatComponent::ResolveBlockedHit(FCombatHit& Hit, const FHeroBlockData& Block)

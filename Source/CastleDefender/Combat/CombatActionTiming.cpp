@@ -97,6 +97,9 @@ bool FCombatActionTiming::InspectMontage(const UAnimMontage* Montage, FCombatAct
 		else if (Cast<UAnimNotifyState_ParryWindow>(NotifyEvent.NotifyStateClass))
 		{
 			OutTiming.bHasParryWindow = true;
+			++OutTiming.ParryWindowCount;
+			OutTiming.ParryWindowStart = NotifyEvent.GetTime();
+			OutTiming.ParryWindowEnd = NotifyEvent.GetTime() + NotifyEvent.GetDuration();
 		}
 		else if (Cast<UAnimNotifyState_RotationAssist>(NotifyEvent.NotifyStateClass))
 		{

@@ -16,11 +16,12 @@ public:
 	int32 PlayedCount = 0;
 	FGameplayTag LastPlayed;
 	TArray<FGameplayTag> PlayedTags;
+	FFeedbackEventContext LastContext;
 	int32 LayersChangedCount = 0;
 	int32 LastLayerMask = 0;
 
 	UFUNCTION()
-	void HandlePlayed(FGameplayTag RowTag, const FFeedbackEventContext& Context) { ++PlayedCount; LastPlayed = RowTag; PlayedTags.Add(RowTag); }
+	void HandlePlayed(FGameplayTag RowTag, const FFeedbackEventContext& Context) { ++PlayedCount; LastPlayed = RowTag; PlayedTags.Add(RowTag); LastContext = Context; }
 
 	UFUNCTION()
 	void HandleLayersChanged(int32 LayerMask) { ++LayersChangedCount; LastLayerMask = LayerMask; }

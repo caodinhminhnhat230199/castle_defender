@@ -46,6 +46,9 @@ public:
 
 	/** Native: fires when a hit window opens. Enemies stop wind-up tracking here (T-ENM-03). */
 	FSimpleMulticastDelegate OnHitWindowBegin;
+	/** R-CMB-27: consume one counter payload before delivery can cause reentrant hits. */
+	FSimpleMulticastDelegate OnParryCounterConsumed;
+	void SetParryCounterMultiplier(float Multiplier);
 
 	/** Broadcast when a hit attempt on a target completes through DeliverHit. */
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
@@ -53,7 +56,7 @@ public:
 
 	/** Attempts to deliver a hit to a specific candidate actor during active hit window (AC-CMB-01). */
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	bool TryHitTarget(AActor* HitActor, const FVector& ImpactPoint = FVector::ZeroVector);
+	bool TryHitTarget(AActor* HitActor, const FVector& ImpactPoint = FVector::ZeroVector, EPhysicalSurface Surface = SurfaceType_Default);
 
 	/** Performs a manual sweep iteration between two sets of sample positions. */
 	void ProcessSweepStep(const TArray<FVector>& PreviousPositions, const TArray<FVector>& CurrentPositions);
@@ -82,6 +85,8 @@ private:
 
 	TSet<TWeakObjectPtr<AActor>> AlreadyHitActors;
 	TArray<FVector> PreviousSamplePositions;
+	float CounterBaseDamage = 0.f;
+	uint32 HitWindowGeneration = 0;
 
 	UPROPERTY()
 	TWeakObjectPtr<USceneComponent> TraceMeshComponent;

@@ -22,6 +22,13 @@ public:
 	float GetGuardAlpha() const { return GuardAlpha; }
 
 protected:
+	/** Read-only locomotion inputs for the authored strafe blendspace. */
+	UPROPERTY(BlueprintReadOnly, Category = "Locomotion")
+	bool bIsLockedOn = false;
+	UPROPERTY(BlueprintReadOnly, Category = "Locomotion")
+	float StrafeForwardSpeed = 0.f;
+	UPROPERTY(BlueprintReadOnly, Category = "Locomotion")
+	float StrafeRightSpeed = 0.f;
 	/** Weight for the foot IK pass: 1 in locomotion, 0 while a montage is active. Drives the ABP Control Rig Alpha. */
 	UPROPERTY(BlueprintReadOnly, Category = "IK")
 	float FootIKAlpha = 1.f;

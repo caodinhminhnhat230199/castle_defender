@@ -1,6 +1,7 @@
 #include "Hero/HeroAnimInstance.h"
 #include "Hero/HeroCharacter.h"
 #include "Hero/HeroCombatComponent.h"
+#include "Hero/LockOnComponent.h"
 
 void UHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
@@ -14,6 +15,10 @@ void UHeroAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		: Target;
 
 	const AHeroCharacter* Hero = Cast<AHeroCharacter>(TryGetPawnOwner());
+	bIsLockedOn = Hero && Hero->GetLockOnComponent()->GetLockOnTarget();
+	const FVector LocalVelocity = Hero ? Hero->GetActorRotation().UnrotateVector(Hero->GetVelocity()) : FVector::ZeroVector;
+	StrafeForwardSpeed = LocalVelocity.X;
+	StrafeRightSpeed = LocalVelocity.Y;
 	bIsBlocking = Hero && Hero->GetCombatComponent() && Hero->GetCombatComponent()->GetActionState() == EHeroActionState::Block;
 	const float GuardTarget = bIsBlocking ? 1.f : 0.f;
 	GuardAlpha = GuardBlendTime > 0.f

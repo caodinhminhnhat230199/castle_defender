@@ -1,6 +1,8 @@
 #include "Hero/StaminaComponent.h"
 #include "Hero/HeroCharacter.h"
 #include "Hero/HeroClassDefinition.h"
+#include "Feedback/FeedbackSubsystem.h"
+#include "Feedback/FeedbackTags.h"
 
 UStaminaComponent::UStaminaComponent()
 {
@@ -94,6 +96,13 @@ bool UStaminaComponent::TrySpend(float Cost)
 	if (!State.TrySpend(Cost, HeroActionClock))
 	{
 		OnStaminaSpendFailed.Broadcast(Cost);
+		if (UFeedbackSubsystem* Feedback = UFeedbackSubsystem::Get(this))
+		{
+			FFeedbackEventContext Context;
+			Context.Target = GetOwner();
+			Context.Location = GetOwner()->GetActorLocation();
+			Feedback->Play(FeedbackTags::Hero_StaminaInsufficient, Context);
+		}
 		return false;
 	}
 

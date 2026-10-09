@@ -48,3 +48,20 @@ float UHealthComponent::ApplyHit(const FCombatHit& Hit)
 	}
 	return Applied;
 }
+
+float UHealthComponent::Heal(float Amount)
+{
+	if (bDead || Amount <= 0.f)
+	{
+		return 0.f;
+	}
+
+	const float PrevHealth = CurrentHealth;
+	CurrentHealth = FMath::Clamp(CurrentHealth + Amount, 0.f, MaxHealth);
+	const float ActualHealed = CurrentHealth - PrevHealth;
+	if (ActualHealed > 0.f)
+	{
+		OnHealed.Broadcast(ActualHealed, CurrentHealth);
+	}
+	return ActualHealed;
+}

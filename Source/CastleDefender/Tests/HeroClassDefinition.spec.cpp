@@ -25,6 +25,7 @@ void FHeroClassDefinitionSpec::Define()
 			Definition->Dodge = Authored->Dodge;
 			Definition->HitReact = Authored->HitReact;
 			Definition->Block = Authored->Block;
+			Definition->Parry = Authored->Parry;
 		}
 	});
 

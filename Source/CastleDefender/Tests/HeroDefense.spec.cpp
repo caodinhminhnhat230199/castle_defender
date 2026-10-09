@@ -34,7 +34,8 @@ namespace HeroDefenseSpec
 			Health->InitializeHealth(200.f, 0.f);
 			UFeedbackSubsystem* Subsystem = UFeedbackSubsystem::Get(World);
 			Subsystem->SetFeedbackTable(UFeedbackTestListener::MakeTable({ FeedbackTags::Combat_Block, FeedbackTags::Combat_BlockBreak,
-				FeedbackTags::State_Staggered_Applied, FeedbackTags::State_Staggered_Removed }));
+				FeedbackTags::State_Staggered_Applied, FeedbackTags::State_Staggered_Removed, FeedbackTags::Hero_StaminaInsufficient,
+				FeedbackTags::Combat_Hit_Light, FeedbackTags::Hero_Damaged }));
 			Feedback = NewObject<UFeedbackTestListener>();
 			Subsystem->OnFeedbackPlayed.AddDynamic(Feedback, &UFeedbackTestListener::HandlePlayed);
 			Resolutions = NewObject<UCombatTestListener>();
@@ -74,8 +75,8 @@ void FHeroDefenseSpec::Define()
 		TestEqual("HP -4", F.Health->GetCurrentHealth(), 196.f);
 		TestEqual("Stamina 80", F.Stamina->GetCurrentStamina(), 80.f);
 		TestEqual("Still blocking", F.Combat->GetActionState(), EHeroActionState::Block);
-		TestEqual("One block feedback", F.Feedback->PlayedCount, 1);
-		TestEqual("Block feedback tag", F.Feedback->LastPlayed, FGameplayTag(FeedbackTags::Combat_Block));
+		TestEqual("One block feedback", F.Feedback->PlayedTags.FilterByPredicate([](const FGameplayTag& Tag) { return Tag == FeedbackTags::Combat_Block; }).Num(), 1);
+		TestTrue("Block feedback tag played", F.Feedback->PlayedTags.Contains(FeedbackTags::Combat_Block.GetTag()));
 		TestEqual("One resolution", F.Resolutions->CombatResolvedCount, 1);
 		TestTrue("Resolution marks the hit blocked", F.Resolutions->LastResolutionEvent.Hit.bWasBlocked);
 		TestEqual("Resolution keeps the original force", F.Resolutions->LastResolutionEvent.Hit.Damage, 20.f);
@@ -98,7 +99,7 @@ void FHeroDefenseSpec::Define()
 		TestEqual("Stamina unchanged", F.Stamina->GetCurrentStamina(), 100.f);
 		TestEqual("Back hit reaction leaves Block", F.Combat->GetActionState(), EHeroActionState::HitReact);
 		TestFalse("Blocking regen off", F.Stamina->IsBlocking());
-		TestEqual("No block feedback", F.Feedback->PlayedCount, 0);
+		TestFalse("No block feedback", F.Feedback->PlayedTags.Contains(FeedbackTags::Combat_Block.GetTag()));
 	});
 
 	It("breaks the guard into shared Staggered at 0 stamina and gates every action (AC-CMB-09, AC-CMB-22)", [this]()

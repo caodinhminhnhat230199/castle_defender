@@ -40,6 +40,33 @@ UHeroClassDefinition::UHeroClassDefinition()
 	Heavy.TraceRadius = 30.f;
 }
 
+bool UHeroClassDefinition::ValidateParry(FString& OutError) const
+{
+	OutError.Reset();
+	FCombatActionTiming Timing;
+	if (!FCombatActionTiming::InspectMontage(Parry.Montage, Timing, &OutError)) { return false; }
+	if (!FMath::IsFinite(Parry.StaminaCost) || Parry.StaminaCost < 0.f
+		|| !FMath::IsFinite(Parry.PoiseDamage) || Parry.PoiseDamage < 0.f
+		|| !FMath::IsFinite(Parry.CounterWindow) || Parry.CounterWindow < 0.f
+		|| !FMath::IsFinite(Parry.CounterDamageMultiplier) || Parry.CounterDamageMultiplier < 1.f
+		|| Timing.ParryWindowCount != 1 || Timing.ParryWindowEnd >= Timing.TotalDuration
+		|| Timing.bHasCancelWindow || Timing.bHasHitWindow || Timing.bHasInvulnerableWindow || Timing.bHasRotationAssistWindow)
+	{
+		OutError = TEXT("Parry requires finite nonnegative values, multiplier >= 1, one parry window followed by whiff recovery, and no attack/invulnerable/cancel windows.");
+		return false;
+	}
+	if (Parry.CounterMontage)
+	{
+		if (!FCombatActionTiming::InspectMontage(Parry.CounterMontage, Timing, &OutError)
+			|| Timing.HitWindowCount != 1 || Timing.bHasParryWindow || Timing.bHasInvulnerableWindow)
+		{
+			OutError = TEXT("Counter montage requires one valid attack hit window and no defensive windows.");
+			return false;
+		}
+	}
+	return true;
+}
+
 bool UHeroClassDefinition::ValidateLightAttack(int32 ChainIndex, FString& OutError) const
 {
 	OutError.Reset();
@@ -165,6 +192,17 @@ bool UHeroClassDefinition::ValidateHitReaction(bool bFromFront, FString& OutErro
 EDataValidationResult UHeroClassDefinition::IsDataValid(FDataValidationContext& Context) const
 {
 	EDataValidationResult Result = Super::IsDataValid(Context);
+	FString ParryError;
+	if (!ValidateParry(ParryError))
+	{
+		Context.AddError(FText::FromString(FString::Printf(TEXT("Parry: %s"), *ParryError)));
+		Result = EDataValidationResult::Invalid;
+	}
+	if (!LockOn.IsValid())
+	{
+		Context.AddError(LOCTEXT("InvalidLockOn", "LockOn: finite positive range/interval, break distance >= range, nonnegative grace/interpolation, ordered pitch within -89 to 89."));
+		Result = EDataValidationResult::Invalid;
+	}
 
 	if (MaxHealth <= 0.f)
 	{

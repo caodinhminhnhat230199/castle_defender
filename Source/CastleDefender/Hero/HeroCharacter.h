@@ -14,6 +14,7 @@ class UHealthComponent;
 class UCombatStateComponent;
 class UHeroCombatComponent;
 class UStaminaComponent;
+class ULockOnComponent;
 class UMeleeTraceComponent;
 class UStaticMeshComponent;
 class UInputAction;
@@ -59,6 +60,10 @@ public:
 
 	/** Jog/sprint speed, scaled down while the combat component holds Block. */
 	void UpdateMaxWalkSpeed();
+	/** Suppress movement-driven facing during authored actions so lock-on cannot bypass assist caps. */
+	void UpdateFacingPolicy();
+	UFUNCTION(BlueprintPure, Category = "Hero")
+	ULockOnComponent* GetLockOnComponent() const { return LockOnComponent; }
 
 	UFUNCTION(BlueprintPure, Category = "Hero")
 	FVector GetMovementInputWorldDirection() const;
@@ -124,6 +129,8 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<UStaminaComponent> StaminaComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<ULockOnComponent> LockOnComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	TObjectPtr<UMeleeTraceComponent> MeleeTraceComponent;
@@ -165,6 +172,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> ParryAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> LockOnAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> LockOnSwitchAction;
 
 	void Move(const FInputActionValue& Value);
 	void StopMove(const FInputActionValue& Value);
@@ -177,6 +188,8 @@ protected:
 	void OnBlockStarted(const FInputActionValue& Value);
 	void OnBlockCompleted(const FInputActionValue& Value);
 	void OnParry(const FInputActionValue& Value);
+	void OnLockOn(const FInputActionValue& Value);
+	void OnLockOnSwitch(const FInputActionValue& Value);
 
 private:
 	UFUNCTION()

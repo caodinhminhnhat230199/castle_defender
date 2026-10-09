@@ -7,6 +7,9 @@
 
 class UInputAction;
 class UInputMappingContext;
+class UUserWidget;
+class ULockOnComponent;
+class UGameHUDWidget;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerModeChangedSignature, EPlayerMode, OldMode, EPlayerMode, NewMode);
 
@@ -48,6 +51,8 @@ class CASTLEDEFENDER_API AHeroPlayerController : public APlayerController
 
 public:
 	AHeroPlayerController();
+	UFUNCTION(BlueprintPure, Category = "HUD")
+	UGameHUDWidget* GetGameHUD() const { return GameHUD; }
 
 	UFUNCTION(BlueprintCallable, Category = "Player Mode")
 	void PushMode(EPlayerMode Mode, FName Reason);
@@ -63,6 +68,15 @@ public:
 	FPlayerModeChangedSignature OnPlayerModeChanged;
 
 protected:
+	virtual void BeginPlay() override;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UGameHUDWidget> GameHUDClass;
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	/** CMB presentation hosted by the HUD's LockOn slot. */
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> LockOnMarkerClass;
 	virtual void ReceivedPlayer() override;
 	virtual void SetupInputComponent() override;
 
@@ -79,6 +93,15 @@ protected:
 	TObjectPtr<UInputAction> DebugToggleBuildAction;
 
 private:
+	void EnsureGameHUD();
+	UPROPERTY(Transient)
+	TObjectPtr<UGameHUDWidget> GameHUD;
+	UFUNCTION()
+	void HandleLockOnTargetChanged(AActor* Target);
+	void DetachLockOnUI();
+	UPROPERTY(Transient)
+	TObjectPtr<UUserWidget> LockOnMarker;
+	TWeakObjectPtr<ULockOnComponent> ObservedLockOn;
 	void OnModeStackChanged(EPlayerMode OldMode, FName Reason);
 	void ApplyMode(EPlayerMode Mode);
 

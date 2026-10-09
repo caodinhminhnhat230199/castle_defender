@@ -39,6 +39,12 @@ struct CASTLEDEFENDER_API FCombatActionTiming
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
 	bool bHasParryWindow = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	int32 ParryWindowCount = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	float ParryWindowStart = 0.f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
+	float ParryWindowEnd = 0.f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat Timing")
 	bool bHasHitWindow = false;

@@ -5,6 +5,10 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
+#include "Blueprint/UserWidget.h"
+#include "Hero/HeroCharacter.h"
+#include "Hero/LockOnComponent.h"
+#include "UI/GameHUDWidget.h"
 
 namespace
 {
@@ -17,6 +21,60 @@ namespace
 AHeroPlayerController::AHeroPlayerController()
 {
 	CheatClass = UGameCheatManager::StaticClass();
+}
+
+void AHeroPlayerController::OnPossess(APawn* InPawn)
+{
+	DetachLockOnUI();
+	Super::OnPossess(InPawn);
+	EnsureGameHUD();
+	if (const AHeroCharacter* Hero = Cast<AHeroCharacter>(InPawn))
+	{
+		ObservedLockOn = Hero->GetLockOnComponent();
+		ObservedLockOn->OnLockOnTargetChanged.AddDynamic(this, &AHeroPlayerController::HandleLockOnTargetChanged);
+		HandleLockOnTargetChanged(ObservedLockOn->GetLockOnTarget());
+	}
+}
+
+void AHeroPlayerController::HandleLockOnTargetChanged(AActor* Target)
+{
+	if (!Target)
+	{
+		if (GameHUD) { GameHUD->SetLockOnMarker(nullptr); }
+		if (LockOnMarker) { LockOnMarker->RemoveFromParent(); LockOnMarker = nullptr; }
+	}
+	else if (IsLocalController() && GetLocalPlayer() && LockOnMarkerClass && !LockOnMarker)
+	{
+		LockOnMarker = CreateWidget<UUserWidget>(this, LockOnMarkerClass);
+		if (LockOnMarker)
+		{
+			if (GameHUD) { GameHUD->SetLockOnMarker(LockOnMarker); }
+			else { LockOnMarker->AddToViewport(); }
+		}
+	}
+}
+
+void AHeroPlayerController::DetachLockOnUI()
+{
+	if (ObservedLockOn.IsValid()) { ObservedLockOn->OnLockOnTargetChanged.RemoveDynamic(this, &AHeroPlayerController::HandleLockOnTargetChanged); }
+	ObservedLockOn.Reset();
+	HandleLockOnTargetChanged(nullptr);
+}
+
+void AHeroPlayerController::OnUnPossess() { DetachLockOnUI(); Super::OnUnPossess(); }
+void AHeroPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	DetachLockOnUI();
+	if (GameHUD) { GameHUD->RemoveFromParent(); GameHUD = nullptr; }
+	Super::EndPlay(EndPlayReason);
+}
+
+void AHeroPlayerController::BeginPlay() { Super::BeginPlay(); EnsureGameHUD(); }
+void AHeroPlayerController::EnsureGameHUD()
+{
+	if (GameHUD || !GameHUDClass || !IsLocalController() || !GetLocalPlayer()) { return; }
+	GameHUD = CreateWidget<UGameHUDWidget>(this, GameHUDClass);
+	if (GameHUD) { GameHUD->AddToViewport(); }
 }
 
 void AHeroPlayerController::PushMode(EPlayerMode Mode, FName Reason)
@@ -98,6 +156,7 @@ void AHeroPlayerController::ApplyMode(EPlayerMode Mode)
 void AHeroPlayerController::ReceivedPlayer()
 {
 	Super::ReceivedPlayer();
+	EnsureGameHUD();
 	ApplyMode(GetMode());
 }
 

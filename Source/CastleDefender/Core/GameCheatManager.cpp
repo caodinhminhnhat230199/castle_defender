@@ -13,6 +13,80 @@
 #include "Hero/StaminaComponent.h"
 #include "Player/HeroPlayerController.h"
 #include "TimerManager.h"
+#include "Core/SandboxEnemyRespawner.h"
+#include "EngineUtils.h"
+#include "Feedback/PlaytestLogSubsystem.h"
+#include "Enemy/EnemyCharacter.h"
+#include "Components/CapsuleComponent.h"
+#include "NavigationSystem.h"
+
+void UGameCheatManager::SpawnEnemy(FName Archetype, int32 Count)
+{
+#if UE_WITH_CHEAT_MANAGER
+	const FString Name = Archetype.IsNone() ? TEXT("DA_Enemy_Melee") : Archetype.ToString();
+	if (Name.Contains(TEXT("/")) || Name.Contains(TEXT("\\")) || Name.Contains(TEXT("."))) { return; }
+	UEnemyArchetypeDefinition* Definition = LoadObject<UEnemyArchetypeDefinition>(nullptr,
+		*FString::Printf(TEXT("/Game/CastleDefender/Enemy/%s.%s"), *Name, *Name));
+	FString Error;
+	if (!Definition || !Definition->ValidateDefinition(Error))
+	{
+		UE_LOG(LogGameAI, Warning, TEXT("SpawnEnemy: invalid archetype %s: %s"), *Name, *Error);
+		return;
+	}
+	APlayerController* Controller = GetOuterAPlayerController();
+	const APawn* Pawn = Controller->GetPawn();
+	if (!Pawn) { return; }
+	const FRotator Facing(0.f, Controller->GetControlRotation().Yaw, 0.f);
+	const AEnemyCharacter* DefaultEnemy = Definition->EnemyClass.GetDefaultObject();
+	const float Spacing = DefaultEnemy->GetCapsuleComponent()->GetScaledCapsuleRadius() * 2.f;
+	// shortcut: P0 debug spawns are capped at five, extend when the crowd benchmark opens.
+	Count = FMath::Clamp(Count, 1, 5);
+	UNavigationSystemV1* Navigation = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		FVector Location = Pawn->GetActorLocation() + Facing.Vector() * 400.f
+			+ FRotationMatrix(Facing).GetUnitAxis(EAxis::Y) * ((Index - (Count - 1) * 0.5f) * Spacing);
+		FNavLocation Point;
+		if (Navigation && Navigation->ProjectPointToNavigation(Location, Point, INVALID_NAVEXTENT, &DefaultEnemy->GetNavAgentPropertiesRef()))
+		{
+			Location = Point.Location + FVector(0.f, 0.f, DefaultEnemy->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+		}
+		const FTransform Transform(FRotator(0.f, Facing.Yaw + 180.f, 0.f), Location);
+		if (AEnemyCharacter* Enemy = GetWorld()->SpawnActorDeferred<AEnemyCharacter>(Definition->EnemyClass, Transform,
+			nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn))
+		{
+			Enemy->InitFromSpawn(Definition, FEnemySpawnParams());
+			Enemy->FinishSpawning(Transform);
+			UE_LOG(LogGameAI, Log, TEXT("SpawnEnemy: %s (%s)"), *Enemy->GetName(), *Name);
+		}
+	}
+#endif
+}
+
+void UGameCheatManager::LogPlaytestEvent(FName Event)
+{
+#if UE_WITH_CHEAT_MANAGER
+	UPlaytestLogSubsystem::LogEventForWorld(this, Event.IsNone() ? FName(TEXT("test")) : Event,
+		{ {TEXT("x"), 1.f} }, { {TEXT("s"), TEXT("a")} });
+#endif
+}
+
+void UGameCheatManager::SetSandboxEnemyCount(int32 Count)
+{
+#if UE_WITH_CHEAT_MANAGER
+	for (TActorIterator<ASandboxEnemyRespawner> It(GetWorld()); It; ++It)
+	{
+		if (It->bEnabled)
+		{
+			It->SetCount(Count);
+			UE_LOG(LogGameCombat, Log, TEXT("SetSandboxEnemyCount: %s capacity=%d alive=%d pending=%d"),
+				*It->GetName(), It->Count, It->GetAliveCount(), It->GetPendingCount());
+			return;
+		}
+	}
+	UE_LOG(LogGameCombat, Log, TEXT("SetSandboxEnemyCount: no enabled sandbox preset"));
+#endif
+}
 
 void UGameCheatManager::SpawnTestDummy(float Distance)
 {
@@ -130,6 +204,20 @@ void UGameCheatManager::KillHero()
 #endif
 }
 
+void UGameCheatManager::HealHero(float Amount)
+{
+#if UE_WITH_CHEAT_MANAGER
+	APlayerController* PC = GetOuterAPlayerController();
+	if (AHeroCharacter* Hero = PC ? Cast<AHeroCharacter>(PC->GetPawn()) : nullptr)
+	{
+		if (UHealthComponent* Health = Hero->GetHealthComponent())
+		{
+			Health->Heal(Amount);
+		}
+	}
+#endif
+}
+
 void UGameCheatManager::ReportHeroWindows()
 {
 #if UE_WITH_CHEAT_MANAGER && !UE_BUILD_SHIPPING
@@ -161,6 +249,8 @@ void UGameCheatManager::ReportHeroWindows()
 	Report(TEXT("HitReact Front"), Def->HitReact.FrontMontage);
 	Report(TEXT("HitReact Back"), Def->HitReact.BackMontage);
 	Report(TEXT("Death"), Def->HitReact.DeathMontage);
+	Report(TEXT("Parry"), Def->Parry.Montage);
+	if (Def->Parry.CounterMontage) { Report(TEXT("Parry Counter"), Def->Parry.CounterMontage); }
 	UE_LOG(LogGameCombat, Log, TEXT("%s"), *Hero->GetCombatComponent()->GetCombatDebugString());
 #endif
 }

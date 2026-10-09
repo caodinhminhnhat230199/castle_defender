@@ -1,4 +1,5 @@
 #include "Feedback/FeedbackSubsystem.h"
+#include "Feedback/FeedbackTags.h"
 
 #include "Core/GameDebug.h"
 #include "Core/GameLog.h"
@@ -13,6 +14,11 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 #include "NiagaraFunctionLibrary.h"
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
 #include "Sound/SoundBase.h"
+#include "Hero/HeroCharacter.h"
+#include "HAL/PlatformTime.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Camera/CameraShakeBase.h"
+#include "GameFramework/PlayerController.h"
 
 namespace
 {
@@ -61,6 +67,8 @@ void UFeedbackSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UFeedbackSubsystem::Deinitialize()
 {
+	RestoreHitStops();
+	StopCameraShakes();
 	SetFeedbackTable(nullptr);
 	Super::Deinitialize();
 }
@@ -132,7 +140,7 @@ bool UFeedbackSubsystem::Play(FGameplayTag Tag, const FFeedbackEventContext& Con
 	return true;
 }
 
-void UFeedbackSubsystem::PlayOutputs(const FFeedbackRow& Row, const FFeedbackEventContext& Context) const
+void UFeedbackSubsystem::PlayOutputs(const FFeedbackRow& Row, const FFeedbackEventContext& Context)
 {
 	AActor* Target = Context.Target.Get();
 	const FVector Location = !Context.Location.IsZero() ? Context.Location
@@ -168,6 +176,114 @@ void UFeedbackSubsystem::PlayOutputs(const FFeedbackRow& Row, const FFeedbackEve
 			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, Row.Niagara, Location, Rotation);
 		}
 	}
+	ApplyHitStop(Row, Context);
+	ApplyCameraShake(Row, Context, Location);
+}
+
+void UFeedbackSubsystem::ApplyCameraShake(const FFeedbackRow& Row, const FFeedbackEventContext& Context, const FVector& Location)
+{
+	if (!Row.CameraShake) { return; }
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	APlayerCameraManager* Camera = PC && PC->IsLocalController() ? PC->PlayerCameraManager.Get() : nullptr;
+	if (!Camera) { return; }
+	if (FCameraShake* Previous = CameraShakes.Find(Row.Tag))
+	{
+		if (Previous->Camera.IsValid() && Previous->Instance.IsValid())
+		{
+			Previous->Camera->StopCameraShake(Previous->Instance.Get(), true);
+		}
+		CameraShakes.Remove(Row.Tag);
+	}
+	float Scale = Row.ShakeScale * UGameTuningSettings::Get()->CameraShakeScale;
+	if (!FMath::IsFinite(Scale) || Scale <= 0.f) { return; }
+	if (Row.ShakeOuterRadius <= 0.f && Row.ShakeInnerRadius <= 0.f)
+	{
+		const APawn* Hero = Cast<AHeroCharacter>(PC->GetPawn());
+		if (!Hero || (Context.Instigator.Get() != Hero && Context.Target.Get() != Hero)) { return; }
+	}
+	else
+	{
+		const float Distance = FVector::Distance(Camera->GetCameraLocation(), Location);
+		// Engine 5.8 radial falloff at exponent 1; PlayWorldCameraShake returns no instance or global scale.
+		// Use the returned-instance API so R-UXF-10 can replace precisely this tag's shake.
+		Scale *= Row.ShakeInnerRadius < Row.ShakeOuterRadius
+			? 1.f - FMath::Clamp((Distance - Row.ShakeInnerRadius) / (Row.ShakeOuterRadius - Row.ShakeInnerRadius), 0.f, 1.f)
+			: (Distance < Row.ShakeInnerRadius ? 1.f : 0.f);
+	}
+	if (Scale > 0.f)
+	{
+		if (UCameraShakeBase* Instance = Camera->StartCameraShake(Row.CameraShake, Scale))
+		{
+			CameraShakes.Add(Row.Tag, { Camera, Instance });
+		}
+	}
+}
+
+void UFeedbackSubsystem::StopCameraShakes()
+{
+	for (const auto& Pair : CameraShakes)
+	{
+		if (Pair.Value.Camera.IsValid() && Pair.Value.Instance.IsValid())
+		{
+			Pair.Value.Camera->StopCameraShake(Pair.Value.Instance.Get(), true);
+		}
+	}
+	CameraShakes.Empty();
+}
+
+void UFeedbackSubsystem::ApplyHitStop(const FFeedbackRow& Row, const FFeedbackEventContext& Context)
+{
+	const bool bHeroInvolved = Cast<AHeroCharacter>(Context.Instigator.Get()) || Cast<AHeroCharacter>(Context.Target.Get());
+	// R-UXF-07: a row cannot opt minor hits or non-Hero fights into hit stop.
+	const bool bLargeImpact = Row.Tag.MatchesTag(FeedbackTags::Combat_Hit_Heavy) || Row.Tag == FeedbackTags::Combat_Parry ||
+		Row.Tag == FeedbackTags::Combat_BlockBreak || Row.Tag == FeedbackTags::State_Staggered_Applied;
+	const UGameTuningSettings* Settings = UGameTuningSettings::Get();
+	if (!bLargeImpact || !bHeroInvolved || !FMath::IsFinite(Row.HitStopSeconds) || Row.HitStopSeconds <= 0.f ||
+		!FMath::IsFinite(Settings->MaxHitStopSeconds) || Settings->MaxHitStopSeconds <= 0.f || !FMath::IsFinite(Settings->HitStopDilation)) { return; }
+	const double EndTime = FPlatformTime::Seconds() + FMath::Min(Row.HitStopSeconds, Settings->MaxHitStopSeconds);
+	const float Dilation = FMath::Clamp(Settings->HitStopDilation, 0.f, 1.f);
+	StopActor(Context.Instigator.Get(), EndTime, Dilation);
+	StopActor(Context.Target.Get(), EndTime, Dilation);
+}
+
+void UFeedbackSubsystem::StopActor(AActor* Actor, double EndTime, float Dilation)
+{
+	if (!IsValid(Actor) || Actor->IsActorBeingDestroyed()) { return; }
+	const TWeakObjectPtr<AActor> WeakActor(Actor);
+	if (FHitStop* Existing = HitStops.Find(WeakActor))
+	{
+		Existing->EndTime = FMath::Max(Existing->EndTime, EndTime);
+		Actor->CustomTimeDilation = Dilation;
+		return;
+	}
+	FHitStop& Stop = HitStops.Add(WeakActor);
+	Stop.OriginalDilation = Actor->CustomTimeDilation;
+	Stop.EndTime = EndTime;
+	Actor->CustomTimeDilation = Dilation;
+	const TWeakObjectPtr<UFeedbackSubsystem> WeakThis(this);
+	// D-20: per-frame only while this actor is stopped; real-time restore ignores world/actor dilation.
+	Stop.Handle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([WeakThis, WeakActor](float)
+	{
+		UFeedbackSubsystem* Subsystem = WeakThis.Get();
+		if (!Subsystem) { return false; }
+		FHitStop* Pending = Subsystem->HitStops.Find(WeakActor);
+		if (!Pending) { return false; }
+		if (!WeakActor.IsValid()) { Subsystem->HitStops.Remove(WeakActor); return false; }
+		if (FPlatformTime::Seconds() < Pending->EndTime) { return true; }
+		WeakActor->CustomTimeDilation = Pending->OriginalDilation;
+		Subsystem->HitStops.Remove(WeakActor);
+		return false;
+	}));
+}
+
+void UFeedbackSubsystem::RestoreHitStops()
+{
+	for (const auto& Pair : HitStops)
+	{
+		FTSTicker::GetCoreTicker().RemoveTicker(Pair.Value.Handle);
+		if (AActor* Actor = Pair.Key.Get()) { Actor->CustomTimeDilation = Pair.Value.OriginalDilation; }
+	}
+	HitStops.Empty();
 }
 
 void UFeedbackSubsystem::SetHUDLayerActive(EHUDLayer Layer, bool bActive)

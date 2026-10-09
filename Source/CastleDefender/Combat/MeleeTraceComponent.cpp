@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "Components/MeshComponent.h"
 #include "GameFramework/Character.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 UMeleeTraceComponent::UMeleeTraceComponent()
 {
@@ -43,18 +44,21 @@ void UMeleeTraceComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 		return;
 	}
 
+	const uint32 SweepGeneration = HitWindowGeneration;
 	const TArray<FVector> CurrentPositions = ComputeSamplePositions();
 	if (PreviousSamplePositions.Num() == CurrentPositions.Num() && CurrentPositions.Num() > 0)
 	{
 		ProcessSweepStep(PreviousSamplePositions, CurrentPositions);
 	}
 
-	PreviousSamplePositions = CurrentPositions;
+	// DeliverHit may close or replace this window; never overwrite the new window's starting samples.
+	if (SweepGeneration == HitWindowGeneration && bHitWindowActive) { PreviousSamplePositions = CurrentPositions; }
 }
 
 void UMeleeTraceComponent::SetPendingAttack(const FCombatHit& Template, float Radius, FName StartSocket, FName EndSocket, int32 SamplePoints)
 {
 	PendingHitTemplate = Template;
+	CounterBaseDamage = Template.Damage;
 	TraceRadius = Radius;
 	SocketStart = StartSocket;
 	SocketEnd = EndSocket;
@@ -63,6 +67,7 @@ void UMeleeTraceComponent::SetPendingAttack(const FCombatHit& Template, float Ra
 
 void UMeleeTraceComponent::BeginHitWindow()
 {
+	++HitWindowGeneration;
 	bHitWindowActive = true;
 	AlreadyHitActors.Reset();
 	PreviousSamplePositions = ComputeSamplePositions();
@@ -70,8 +75,15 @@ void UMeleeTraceComponent::BeginHitWindow()
 	OnHitWindowBegin.Broadcast();
 }
 
+void UMeleeTraceComponent::SetParryCounterMultiplier(float Multiplier)
+{
+	PendingHitTemplate.bIsParryCounter = true;
+	PendingHitTemplate.Damage = CounterBaseDamage * Multiplier;
+}
+
 void UMeleeTraceComponent::EndHitWindow()
 {
+	++HitWindowGeneration;
 	bHitWindowActive = false;
 	SetComponentTickEnabled(false);
 	PreviousSamplePositions.Empty();
@@ -149,6 +161,7 @@ void UMeleeTraceComponent::ProcessSweepStep(const TArray<FVector>& PreviousPosit
 	#endif
 
 	FCollisionQueryParams QueryParams(TEXT("MeleeTraceSweep"), false, GetOwner());
+	QueryParams.bReturnPhysicalMaterial = true;
 	QueryParams.AddIgnoredActor(GetOwner());
 
 	FCollisionObjectQueryParams ObjectQueryParams;
@@ -156,9 +169,11 @@ void UMeleeTraceComponent::ProcessSweepStep(const TArray<FVector>& PreviousPosit
 	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
 	ObjectQueryParams.AddObjectTypesToQuery(ECC_PhysicsBody);
 
+	const uint32 SweepGeneration = HitWindowGeneration;
 	const int32 SampleCount = FMath::Min(PreviousPositions.Num(), CurrentPositions.Num());
 	for (int32 i = 0; i < SampleCount; ++i)
 	{
+		if (!bHitWindowActive || SweepGeneration != HitWindowGeneration) { return; }
 		const FVector& PrevPos = PreviousPositions[i];
 		const FVector& CurrPos = CurrentPositions[i];
 
@@ -183,12 +198,14 @@ void UMeleeTraceComponent::ProcessSweepStep(const TArray<FVector>& PreviousPosit
 
 		for (const FHitResult& Hit : HitResults)
 		{
-			TryHitTarget(Hit.GetActor(), FVector(Hit.ImpactPoint));
+			TryHitTarget(Hit.GetActor(), FVector(Hit.ImpactPoint), UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get()));
+			// Parry/Staggered callbacks can clear the aliased sample array synchronously.
+			if (!bHitWindowActive || SweepGeneration != HitWindowGeneration) { return; }
 		}
 	}
 }
 
-bool UMeleeTraceComponent::TryHitTarget(AActor* HitActor, const FVector& ImpactPoint)
+bool UMeleeTraceComponent::TryHitTarget(AActor* HitActor, const FVector& ImpactPoint, EPhysicalSurface Surface)
 {
 	if (!bHitWindowActive)
 	{
@@ -209,7 +226,14 @@ bool UMeleeTraceComponent::TryHitTarget(AActor* HitActor, const FVector& ImpactP
 	AlreadyHitActors.Add(HitActor);
 
 	FCombatHit HitToSend = PendingHitTemplate;
+	if (HitToSend.bIsParryCounter)
+	{
+		PendingHitTemplate.bIsParryCounter = false;
+		PendingHitTemplate.Damage = CounterBaseDamage;
+		OnParryCounterConsumed.Broadcast();
+	}
 	HitToSend.Instigator = GetOwner();
+	HitToSend.Surface = Surface;
 	HitToSend.HitLocation = ImpactPoint.IsNearlyZero() ? HitActor->GetActorLocation() : ImpactPoint;
 	HitToSend.HitDirection = (HitActor->GetActorLocation() - (GetOwner() ? GetOwner()->GetActorLocation() : HitToSend.HitLocation)).GetSafeNormal();
 

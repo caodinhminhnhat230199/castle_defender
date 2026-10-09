@@ -41,6 +41,22 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Feedback", meta = (ClampMin = "0.01", Units = "s"))
 	float DefaultBurstWindow = 0.25f;
 
+	/** UXF approved global shake scale; telemetry records the actual session value. */
+	UPROPERTY(Config, EditAnywhere, Category = "Feedback", meta = (ClampMin = "0"))
+	float CameraShakeScale = 1.f;
+	UPROPERTY(Config, EditAnywhere, Category = "Feedback", meta = (ClampMin = "0", ClampMax = "1"))
+	float HitStopDilation = 0.05f;
+	UPROPERTY(Config, EditAnywhere, Category = "Feedback", meta = (ClampMin = "0", Units = "s"))
+	float MaxHitStopSeconds = 0.15f;
+
+	/** R-UXF-03c, AC-UXF-09: ratio of MaxHealth below which low health feedback triggers. */
+	UPROPERTY(Config, EditAnywhere, Category = "Feedback", meta = (ClampMin = "0", ClampMax = "1"))
+	float HeroLowHealthThreshold = 0.30f;
+
+	/** Ratio of MaxHealth above which low health latch is re-armed and pulse stops. */
+	UPROPERTY(Config, EditAnywhere, Category = "Feedback", meta = (ClampMin = "0", ClampMax = "1"))
+	float HeroLowHealthRearmThreshold = 0.40f;
+
 	/** R-ENM-05: shortest allowed wind-up (attack start → first hit window). Enemy definitions warn below it. User default 2026-10-06. */
 	UPROPERTY(Config, EditAnywhere, Category = "Enemy", meta = (ClampMin = "0", Units = "s"))
 	float MinEnemyTelegraphTime = 0.4f;
