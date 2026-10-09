@@ -14,7 +14,13 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 - **Next:** next task ID
 ```
 
----
+### 2026-10-09: Antigravity: P0 poise break, parry stagger and poise regen tests [T-SYN-08]
+- **Tasks:** T-SYN-08 Todo → Done.
+- **Changed:** `Source/CastleDefender/Tests/PoiseStagger.spec.cpp` (poise break via Heavy + Light + Light interrupting attack montage, MaxPoise 0 regression guard, parry stagger on attack hit window, poise regen timing at 2s delay + 1s regen to 35), `Tools/create_synergy_assets.py/.bat/.ps1` (idempotent test map `L_Test_CombatStates` and functional test actor `BP_FT_CombatStates`), `Content/CastleDefender/Maps/Test/L_Test_CombatStates.umap`, `Content/CastleDefender/Maps/Test/BP_FT_CombatStates.uasset`, `ai/game/04-battlefield-synergy/tasks.md`.
+- **Verified:** `Tools\build.bat` passes with 0 errors; `Tools\create_synergy_assets.bat` exits 0 with 0 errors; focused suite `Tools\run_tests.bat -Filter "CastleDefender.Combat.States"` passes 15/15 tests, 0 warnings, 0 failures, editor exit code 0; full suite `Tools\run_tests.bat` passes 198/198 tests, 0 warnings, 0 failures, editor exit code 0 (including `Project.Functional Tests.CastleDefender.Maps.Test.L_Test_CombatStates.FT_PoiseBreakStagger`).
+- **Manual steps for the user:** None.
+- **Open questions / blockers:** None.
+- **Next:** Next eligible P0 task (e.g. T-CMB-15 Combat automation/functional test suite, or T-UXF-09 Feedback contract audit tooling).
 
 ### 2026-10-09: Antigravity: hero low-HP feedback and damage vignette complete [T-UXF-10]
 - **Tasks:** T-UXF-10 Todo → Done.

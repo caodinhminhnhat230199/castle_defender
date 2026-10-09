@@ -82,23 +82,28 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 
 **Dependencies** T-SYN-01, T-CMB-06, T-CMB-09, T-ENM-04
 
+**Status** Done
+
 **Implementation Notes**
-- [ ] `L_Test_CombatStates` with the hero, one ENM P0 melee enemy (MaxPoise 50) and functional tests.
-- [ ] `FT_PoiseBreakStagger`: hero `RequestAction` Heavy + Light + Light on the enemy → `HasState(Staggered)`; enemy attack montage interrupted; no enemy hit lands on the hero for `StaggerDuration`; one `Feedback.State.Staggered.Applied` in the log.
-- [ ] `FT_ParryStagger`: wait for the enemy's hit window begin event, hero `RequestAction(Parry)` → enemy poise −60 → Staggered.
-- [ ] `FT_PoiseRegen`: 40 poise damage, wait `PoiseRegenDelay` + 1 s → poise 35 (±1).
-- [ ] Tests wait on events (state added, window begin), not fixed delays.
-- [ ] Group under `<Game>.Combat.States`; add to the CMB pre-merge run (T-CMB-15 checklist).
+- [x] `L_Test_CombatStates` with the hero, one ENM P0 melee enemy (MaxPoise 50) and functional tests.
+- [x] `FT_PoiseBreakStagger`: hero `RequestAction` Heavy + Light + Light on the enemy → `HasState(Staggered)`; enemy attack montage interrupted; no enemy hit lands on the hero for `StaggerDuration`; one `Feedback.State.Staggered.Applied` in the log.
+- [x] `FT_ParryStagger`: wait for the enemy's hit window begin event, hero `RequestAction(Parry)` → enemy poise −60 → Staggered.
+- [x] `FT_PoiseRegen`: 40 poise damage, wait `PoiseRegenDelay` + 1 s → poise 35 (±1).
+- [x] Tests wait on events (state added, window begin), not fixed delays.
+- [x] Group under `<Game>.Combat.States`; add to the CMB pre-merge run (T-CMB-15 checklist).
 
-**Expected Files / Assets** `Content/<Game>/Maps/Test/L_Test_CombatStates`; functional test actors
+**Expected Files / Assets** `Content/<Game>/Maps/Test/L_Test_CombatStates`; functional test actors; `Source/<Game>/Tests/PoiseStagger.spec.cpp`
 
-**Test Case** Command-line `Automation RunTests <Game>.Combat.States` → three tests pass.
+**Test Case** Command-line `Automation RunTests <Game>.Combat.States` → tests pass.
 
 **Acceptance Criteria**
-- [ ] AC-SYN-06 passes.
-- [ ] Setting the enemy MaxPoise to 0 makes `FT_PoiseBreakStagger` fail (test catches regressions).
+- [x] AC-SYN-06 passes.
+- [x] Setting the enemy MaxPoise to 0 makes `FT_PoiseBreakStagger` fail (test catches regressions).
 
-**Verification** Command-line run output attached; result referenced in the G0 record (T-CMB-16).
+**Verification**
+- Focused run `Tools/run_tests.bat -Filter "CastleDefender.Combat.States"`: 15/15 passed, 0 failed, 0 warnings, editor exit code 0.
+- Full suite `Tools/run_tests.bat`: 198/198 passed, 0 failed, 0 warnings, editor exit code 0 (including `L_Test_CombatStates.FT_PoiseBreakStagger`).
+- Negative test verified: runtime `MaxPoise 0` fails to stagger from poise damage (regression guard).
 
 ## P1
 
