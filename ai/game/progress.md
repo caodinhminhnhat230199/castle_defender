@@ -14,6 +14,14 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 - **Next:** next task ID
 ```
 
+### 2026-10-09: Antigravity: P0 enemy functional test suite and G0 check complete [T-ENM-12]
+- **Tasks:** T-ENM-12 Todo → Done.
+- **Changed:** `Source/CastleDefender/Enemy/EnemyCombatTestLibrary.h/.cpp` (implemented authoritative execution of 5 enemy combat functional test scenarios with isolated state resets and zero reentrant world ticks), `Source/CastleDefender/Tests/EnemyCombatSuite.spec.cpp` (authored automation specs for the 5 scenarios with proper game world context lifecycle), `Tools/create_enemy_combat_tests.py/.bat/.ps1` (authored idempotent script to generate `L_Test_EnemyCombat` map, NavMeshBoundsVolume, and 5 `BP_FT_*` functional test actors), `Content/CastleDefender/Maps/Test/L_Test_EnemyCombat.umap`, `Content/CastleDefender/Maps/Test/BP_FT_Enemy_*.uasset`, `ai/game/playtests/2026-10-09_G0_enemy-functional-tests.md` (authored G0 enemy functional tests and checklist evaluation playtest note), `ai/game/02-enemies/tasks.md`.
+- **Verified:** `Tools\build.bat` passes with 0 errors; focused specs `Tools\run_tests.bat -Filter "CastleDefender.Enemy.CombatSuite"` pass 5/5 specs with 0 failures; focused functional tests `Tools\run_tests.bat -Filter "Project.Functional Tests.CastleDefender.Maps.Test.L_Test_EnemyCombat"` pass 5/5 tests with 0 failures; full test suite `Tools\run_tests.bat` passes 235/235 tests (both Automation Specs and Functional Tests headless) with 0 errors, 0 warnings, editor exit code 0.
+- **Manual steps for the user:** None.
+- **Open questions / blockers:** None.
+- **Next:** Next eligible P0 task (e.g. T-CMB-16 Gate 0 combat feel playtest review with owner).
+
 ### 2026-10-09: Antigravity: feedback contract audit tooling and G0 contract audit complete [T-UXF-09]
 - **Tasks:** T-UXF-09 Todo → Done.
 - **Changed:** `Source/CastleDefender/Feedback/FeedbackTypes.h/.cpp` (added `FFeedbackAuditResult`, `FFeedbackTableAuditor` validating row structs, all 16 P0 native leaves in `FeedbackTags`, row tags matching row names, output existence, and `DT_CombatStatePresentation` applied/removed mappings), `Source/CastleDefender/Tests/FeedbackTableCoverage.spec.cpp` (authored 7 automation specs under `CastleDefender.Feedback.TableCoverage` testing authored table coverage, asset validity, state presentation mappings, and mutation detection for missing leaves, missing outputs, row name mismatches, and invalid state tags), `ai/game/playtests/2026-10-09_G0_feedback-audit.md` (authored G0 feedback audit playtest record auditing FC-02..07, FC-09..14, FC-16, FC-17, FC-65 with 0 unresolved P0 gaps and blind audio test pass bar satisfied), `ai/game/13-hud-feedback/tasks.md`.

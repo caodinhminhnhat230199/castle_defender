@@ -17,7 +17,7 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 | T-ENM-03 | Melee attack with telegraph | GAMEPLAY | P0 | Must | T-ENM-02, T-CMB-04, T-UXF-01 | Done |
 | T-ENM-04 | Hit reaction + Staggered behavior | GAMEPLAY | P0 | Must | T-ENM-03, T-SYN-01, T-UXF-01 | Done |
 | T-ENM-11 | P0 melee enemy content + sandbox tuning pass | DESIGN | P0 | Must | T-ENM-03, T-ENM-04, T-CMB-01 | Review |
-| T-ENM-12 | P0 Functional Tests + G0 enemy check | QA | P0 | Must | T-ENM-11, T-FND-10, T-CMB-08, T-CMB-09, T-UXF-03 | Todo |
+| T-ENM-12 | P0 Functional Tests + G0 enemy check | QA | P0 | Must | T-ENM-11, T-FND-10, T-CMB-08, T-CMB-09, T-UXF-03 | Done |
 | T-ENM-13 | Waypoint route following + sandbox goal (P1 advance) | AI | P1 | Must | T-ENM-02 | Todo |
 | T-ENM-05 | Swarm archetype | GAMEPLAY | P1 | Must | T-ENM-13, T-ENM-04, T-SQD-02 | Todo |
 | T-ENM-06 | Armored archetype | GAMEPLAY | P1 | Must | T-ENM-13, T-ENM-04, T-SYN-02 | Todo |
@@ -190,19 +190,19 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 - **Dependencies:** T-ENM-11, T-FND-10, T-CMB-08, T-CMB-09, T-UXF-03
 
 **Implementation Notes**
-- [ ] `L_Test_EnemyCombat` with Functional Tests: `FT_Enemy_AggroChase`, `FT_Enemy_TelegraphGap`, `FT_Enemy_StaggerCancel`, `FT_Enemy_DeathReportOnce`, `FT_Enemy_ParryStaggers` (Hero parry via test input helper from CMB, or direct parry-success call if CMB exposes one).
-- [ ] Each test waits on events with a timeout; no fixed sleeps.
-- [ ] Run G0 checklist item "one melee enemy is enough for 3–5 minutes" (master plan §3 G0) together with the CMB gate playtest; record KEEP / CHANGE / DELETE for the enemy.
+- [x] `L_Test_EnemyCombat` with Functional Tests: `FT_Enemy_AggroChase`, `FT_Enemy_TelegraphGap`, `FT_Enemy_StaggerCancel`, `FT_Enemy_DeathReportOnce`, `FT_Enemy_ParryStaggers` (Hero parry via test input helper from CMB, or direct parry-success call if CMB exposes one).
+- [x] Each test waits on events with a timeout; no fixed sleeps.
+- [x] Run G0 checklist item "one melee enemy is enough for 3–5 minutes" (master plan §3 G0) together with the CMB gate playtest; record KEEP / CHANGE / DELETE for the enemy.
 
 **Expected Files / Assets:** `Content/<Game>/Maps/Test/L_Test_EnemyCombat`; `ai/game/playtests/G0_*.md` (enemy section).
 
 **Test Case:** `-ExecCmds="Automation RunTests <Game>.Enemy"` → all P0 enemy tests pass.
 
 **Acceptance Criteria**
-- [ ] All listed Functional Tests pass from the command line.
-- [ ] G0 enemy item recorded with a decision.
+- [x] All listed Functional Tests pass from the command line.
+- [x] G0 enemy item recorded with a decision.
 
-**Verification:** Command-line automation run log attached to the playtest note.
+**Verification:** Command-line automation run log attached to the playtest note (`ai/game/playtests/2026-10-09_G0_enemy-functional-tests.md`). Focused suite `Tools\run_tests.bat -Filter "CastleDefender.Enemy.CombatSuite"` passes 5/5 specs with 0 failures; functional test map suite `Tools\run_tests.bat -Filter "Project.Functional Tests.CastleDefender.Maps.Test.L_Test_EnemyCombat"` passes 5/5 functional tests with 0 failures; full test suite passes 235/235 tests with editor exit code 0. Status: Done.
 
 ## P1
 
