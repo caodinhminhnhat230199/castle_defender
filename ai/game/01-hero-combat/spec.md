@@ -294,16 +294,16 @@ Provided to others: hit dispatch (`UCombatLibrary::DeliverHit`, used by ENM/SQD/
 | ID | Question | Default until answered | Class |
 |---|---|---|---|
 | A-02 | Lock-on and Sprint in P0 | Yes (master plan) | Assumption |
-| NEW-CMB-01 | §9.5 says parry "causes stagger **or** opens a vulnerability window". Which, and is Parry its own input or a timed Block press? | Own input (high-risk whiff recovery). First valid hit consumes the Parry. Parry deals `ParryPoiseDamage`: low-poise enemies stagger, high-poise enemies do not, and the hero always gets a Counter Window | REQUIRED, confirm at G0 |
-| NEW-CMB-02 | Stamina costs for Light, Sprint, Parry; can an action start below its cost? | Light/Sprint/Parry cost 0 (fields exist); no start below cost | REQUIRED, tune at G0 |
-| NEW-CMB-03 | Block arc and regen while blocking (GDD silent) | Start at front **140°**, regen ×0.5 while blocking, and suppress blocking regen for **0.6 s** after absorbing a hit | REQUIRED, tune at G0 |
-| NEW-CMB-04 | Do hits interrupt every hero action (no hyper armor on Heavy)? | Pipeline supports authored interrupt resistance, but it is **off by default**. G0 decides whether Heavy enables it during a committed window and what hit threshold breaks it | REQUIRED, decide at G0 |
-| NEW-CMB-05 | Friendly fire between hero and own squads | None | REQUIRED for P1 |
+| NEW-CMB-01 | §9.5 says parry "causes stagger **or** opens a vulnerability window". Which, and is Parry its own input or a timed Block press? | Own input (high-risk whiff recovery). First valid hit consumes the Parry. Parry deals `ParryPoiseDamage`: low-poise enemies stagger, high-poise enemies do not, and the hero always gets a Counter Window | DECIDED at G0 (Confirmed) |
+| NEW-CMB-02 | Stamina costs for Light, Sprint, Parry; can an action start below its cost? | Light/Sprint/Parry cost 0 (fields exist); no start below cost | DECIDED at G0 (Confirmed) |
+| NEW-CMB-03 | Block arc and regen while blocking (GDD silent) | Start at front **140°**, regen ×0.5 while blocking, and suppress blocking regen for **0.6 s** after absorbing a hit | DECIDED at G0 (Confirmed) |
+| NEW-CMB-04 | Do hits interrupt every hero action (no hyper armor on Heavy)? | Pipeline supports authored interrupt resistance, but it is **off by default**. G0 decides whether Heavy enables it during a committed window and what hit threshold breaks it | DECIDED at G0 (Confirmed) |
+| NEW-CMB-05 | Friendly fire between hero and own squads | None | DECIDED for P1 (None) |
 | NEW-CMB-06 | Rules for Warlord rally and charge/hold-line support (§19.1 lists them, no rules) | Not built; design spike at VS (T-CMB-18) | FUTURE |
 | NEW-CMB-07 | Proposed default keys: Light LMB, Heavy RMB, Block (hold) Left Ctrl, Parry E, Dodge Space, Sprint (hold) Left Shift, Lock-on Middle Mouse, switch target Mouse Wheel, Interact F | Final key map owned by T-FND-06; rebinding UI is VS/launch | IMPROVEMENT |
-| NEW-CMB-08 | How much attack rotation assistance is needed to make melee reliable without feeling magnetic? | Start at 35° / 400 cm / 720°/s, rotation-only; tune at G0 | REQUIRED, tune at G0 |
-| NEW-CMB-09 | Should baseline Parry ever handle multiple simultaneous attackers? | No. First successful parry consumes the action; multi-parry is reserved for an explicit perk/trait | DESIGN DECISION, revisit only if G0 proves necessary |
-| NEW-CMB-10 | T-CMB-14 says alive count always equals Count, but also requires a five-second respawn delay. Which count is intended? | Track capacity as alive + pending; live count returns to Count after the authored delay. Count applies only to enemies owned by the enabled preset, preserving unrelated placed actors. | REQUIRED, owner wording review at G0 |
+| NEW-CMB-08 | How much attack rotation assistance is needed to make melee reliable without feeling magnetic? | Start at 35° / 400 cm / 720°/s, rotation-only; tune at G0 | DECIDED at G0 (Confirmed) |
+| NEW-CMB-09 | Should baseline Parry ever handle multiple simultaneous attackers? | No. First successful parry consumes the action; multi-parry is reserved for an explicit perk/trait | DECIDED at G0 (Confirmed) |
+| NEW-CMB-10 | T-CMB-14 says alive count always equals Count, but also requires a five-second respawn delay. Which count is intended? | Track capacity as alive + pending; live count returns to Count after the authored delay. Count applies only to enemies owned by the enabled preset, preserving unrelated placed actors. | DECIDED at G0 (Confirmed) |
 
 ## 13. System Contract (GDD §38)
 

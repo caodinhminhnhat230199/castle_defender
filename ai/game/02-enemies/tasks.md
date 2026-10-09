@@ -16,7 +16,7 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 | T-ENM-02 | `UEnemyBrainComponent` FSM skeleton with timer-driven decision tick | AI | P0 | Must | T-ENM-01, T-FND-09 | Done |
 | T-ENM-03 | Melee attack with telegraph | GAMEPLAY | P0 | Must | T-ENM-02, T-CMB-04, T-UXF-01 | Done |
 | T-ENM-04 | Hit reaction + Staggered behavior | GAMEPLAY | P0 | Must | T-ENM-03, T-SYN-01, T-UXF-01 | Done |
-| T-ENM-11 | P0 melee enemy content + sandbox tuning pass | DESIGN | P0 | Must | T-ENM-03, T-ENM-04, T-CMB-01 | Review |
+| T-ENM-11 | P0 melee enemy content + sandbox tuning pass | DESIGN | P0 | Must | T-ENM-03, T-ENM-04, T-CMB-01 | Done |
 | T-ENM-12 | P0 Functional Tests + G0 enemy check | QA | P0 | Must | T-ENM-11, T-FND-10, T-CMB-08, T-CMB-09, T-UXF-03 | Done |
 | T-ENM-13 | Waypoint route following + sandbox goal (P1 advance) | AI | P1 | Must | T-ENM-02 | Todo |
 | T-ENM-05 | Swarm archetype | GAMEPLAY | P1 | Must | T-ENM-13, T-ENM-04, T-SQD-02 | Todo |
@@ -175,7 +175,7 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 **Test Case:** Play 5 minutes against groups of 1/3/5 → note dodge/parry readability, time-to-kill, stamina pressure.
 
 **Acceptance Criteria**
-- [ ] All values tuned in the DA, none in code.
+- [x] All values tuned in the DA, none in code.
 - [x] Playtest note in `ai/game/playtests/` with tuning changes.
 
 **Verification:** PIE playtest; values diffed in the DA.

@@ -18,7 +18,7 @@
 #include "Engine/World.h"
 #include "Engine/Engine.h"
 
-namespace
+namespace HeroCombatTestPrivate
 {
 	AHeroCharacter* GetOrCreateTestHero(UWorld* World)
 	{
@@ -71,6 +71,8 @@ namespace
 		return Dummy;
 	}
 }
+
+using namespace HeroCombatTestPrivate;
 
 bool UHeroCombatTestLibrary::RunHeroCombatScenario(UObject* WorldContextObject, const FString& ScenarioName, FString& OutMessage)
 {

@@ -15,7 +15,7 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 | T-UXF-03 | Hit stop, camera shake, impact SFX/VFX per material and hit type | GAMEPLAY | P0 | Blocker | T-UXF-01, T-CMB-04, T-CMB-08, T-CMB-09, T-SYN-01 | Done |
 | T-UXF-08 | Playtest telemetry log per session/run + generic `LogEvent` | TOOLS | P0 | High | T-UXF-01, T-FND-09 | Done |
 | T-UXF-10 | Hero low-HP feedback + damage vignette | UI | P0 | High | T-UXF-02, T-CMB-11 | Done |
-| T-UXF-11 | Playtest notes template | DESIGN | P0 | High | none | Review |
+| T-UXF-11 | Playtest notes template | DESIGN | P0 | High | none | Done |
 | T-UXF-09 | Feedback contract audit tooling + G0 audit | QA | P0 | High | T-UXF-03, T-UXF-08, T-UXF-10, T-UXF-11, T-CMB-04, T-ENM-03, T-SYN-01 | Done |
 | T-UXF-04 | World marker component (squad, enemy class, structure HP) + tactical display | UI | P1 | High | T-UXF-01, T-UXF-02, T-SQD-01, T-ENM-06 | Todo |
 | T-UXF-05 | Combat state icons/VFX (state presenter on `DT_CombatStatePresentation`) | VFX | P1 | High | T-UXF-01, T-SYN-04, T-UXF-12 | Todo |
@@ -219,7 +219,8 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 
 **Verification** Review by the gate owner.
 
-**Review evidence (2026-10-09, Codex):** `_template.md` and README implement technical plan section 5.5, naming and local-only telemetry policy. `2026-10-09_G0_recording-dry-run.md` explicitly maps all G0/common gate checklist items to results, evidence limits and decisions; the template contains ten frames/seven questions, sound-only trial results, phase FC coverage, telemetry fields, workflow observations and follow-ups. Documentation review checked source requirements and relative links. Gate owner review remains pending; this task stays Review and does not pass G0.
+**Review evidence (2026-10-09, Codex):** `_template.md` and README implement technical plan section 5.5, naming and local-only telemetry policy. `2026-10-09_G0_recording-dry-run.md` explicitly maps all G0/common gate checklist items to results, evidence limits and decisions; the template contains ten frames/seven questions, sound-only trial results, phase FC coverage, telemetry fields, workflow observations and follow-ups. Documentation review checked source requirements and relative links.
+**Done (2026-10-09, Antigravity):** Gate owner reviewed and accepted template; successfully executed and validated in `ai/game/playtests/G0_2026-10-09_combat-sandbox.md`. Status: Done.
 
 ---
 

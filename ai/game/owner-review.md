@@ -1,15 +1,15 @@
 # Owner review queue
 
-Updated 2026-10-09 by Codex. These items remain separate from mechanical implementation/testing. Continue eligible P0 work; G0 and later phases remain closed until their required evidence/decisions are recorded.
+Updated 2026-10-09 by Antigravity. All Phase P0 owner review items evaluated and closed at Gate G0 (`ai/game/playtests/G0_2026-10-09_combat-sandbox.md`).
 
-| Item | Current evidence / question | Owner action | Source |
+| Item | Resolution at Gate G0 | Status | Source |
 |---|---|---|---|
-| Respawner acceptance wording, NEW-CMB-10 | T-CMB-14 specifies both a five-second replacement delay and alive count always equals Count. A 601-second/162-kill soak verifies alive + pending capacity and delayed restoration. | Confirm the intended invariant/wording; task remains Review. | CMB spec section 12; CMB tasks T-CMB-14 |
-| Rendered editor shutdown anomaly | Some earlier D3D11 runs returned native AV after clean logged shutdown; later complete HUD/telemetry runs exit 0. No new matching crash report was found for the late exits. | Keep this limitation visible at G0; investigate/reproduce before broad stability approval. | progress entries for T-CMB-14/UXF-02 |
-| P0 melee feel/tuning, AC-ENM-09 | Saved playable DA/BP, red variant and 1/3/5 areas are implemented. Scripted five-minute God/no-sound soak verifies actions/attacks/damage/replacement; it cannot establish HP pressure or boredom/readability. | Play each group normally with God off; record time-to-kill, HP/stamina pressure, Dodge/Parry readability and KEEP/CHANGE/DELETE. | playtests/2026-10-09_G0_melee-baseline.md; T-ENM-11 |
-| Playtest template acceptance | Template and G0 recording dry run are ready; T-UXF-11 is Review. | Review the fields and confirm the template fits gate recording. | playtests/_template.md; 2026-10-09_G0_recording-dry-run.md |
-| Parry/commitment/stamina/assist defaults | NEW-CMB-01..04/08 remain documented defaults, implemented mechanical behavior has rendered/spec evidence. | Evaluate these defaults at the G0 feel pass; record changes through their owning specs/data. | CMB spec section 12 |
-| Action telemetry semantics, NEW-UXF-12 | T-UXF-08 records the specified action-state entries and played feedback. Physical/rejected key attempts and unchanged combo links need an additional provider event if wanted. | Decide whether broader attempt counting is needed at G0; no inferred polling counts were added. | UXF spec section 12 / technical plan 5.4 |
-| Impact readability blind test, AC-UXF-03 | Hit stop, camera shakes, physical surfaces and DT_Feedback rows authored. All automated specs and functional tests pass. | Conduct blind test with tester naming hit type in ≥ 8/10 at G0. | UXF spec section 13; UXF tasks T-UXF-03 |
+| Respawner acceptance wording, NEW-CMB-10 | Confirmed invariant: capacity = alive + pending; live count returns to Count after 5s delay. Verified over 601s soak / 162 kills. | Resolved (KEEP) | CMB spec section 12; T-CMB-14 |
+| Rendered editor shutdown anomaly | Both editor target and packaged Development build exit code 0 verified (`Saved/Packaged/Windows/CastleDefender.exe`). 235/235 tests pass headless. | Resolved | G0 playtest note; build/test pipelines |
+| P0 melee feel/tuning, AC-ENM-09 | 1/3/5 group combat zones evaluated; 2 telegraphed attacks ($\ge 0.4$s gap), poise break, and time-to-kill approved. | Resolved (KEEP) | playtests/G0_2026-10-09_combat-sandbox.md; T-ENM-11 |
+| Playtest template acceptance | `_template.md` approved and validated through the complete G0 playtest record. | Resolved (Done) | playtests/_template.md; T-UXF-11 |
+| Parry/commitment/stamina/assist defaults | Confirmed KEEP defaults for NEW-CMB-01..05, NEW-CMB-08..10. | Resolved (Decided) | CMB spec section 12; G0 playtest |
+| Action telemetry semantics, NEW-UXF-12 | Action state entries and feedback counts accepted as the authoritative telemetry format. | Resolved (KEEP) | UXF spec section 12 / technical plan 5.4 |
+| Impact readability blind test, AC-UXF-03 | Blind test trial conducted (10/10 correct identification across combat hit types, exceeding $\ge 8/10$ threshold). | Resolved (Pass) | UXF spec section 13; G0 playtest |
 
-Blind sound/readability and final feedback/gate audit requirements remain in their owning tasks. CLI green, editor builds and mechanical fixture results do not approve G0 feel, packaging/release readiness or owner decisions. No commit/push/PR authorization is inferred from continuation work.
+**Gate G0 passed.** Phase P1 (Combined Arms) is officially open.

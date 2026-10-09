@@ -25,7 +25,7 @@
 #include "Engine/World.h"
 #include "Engine/Engine.h"
 
-namespace
+namespace EnemyCombatTestPrivate
 {
 	void EnsureFloor(UWorld* World)
 	{
@@ -138,6 +138,8 @@ namespace
 		return Enemy;
 	}
 }
+
+using namespace EnemyCombatTestPrivate;
 
 bool UEnemyCombatTestLibrary::RunEnemyCombatScenario(UObject* WorldContextObject, const FString& ScenarioName, FString& OutMessage)
 {

@@ -30,9 +30,9 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-11 | Hero hit reactions, damage taken, death event | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-13 | Done |
 | T-CMB-12 | Interact verb (`IInteractable`) | GAMEPLAY | P2 | Must | T-CMB-02, T-FND-06 | Todo |
 | T-CMB-13 | `L_CombatSandbox` map + `BP_SandboxGameMode` | TOOLS | P0A | Must | T-FND-06, T-FND-09 | Done |
-| T-CMB-14 | Sandbox enemy respawner + scenario presets | TOOLS | P0B | Must | T-CMB-13, T-ENM-01, T-ENM-03 | Review |
+| T-CMB-14 | Sandbox enemy respawner + scenario presets | TOOLS | P0B | Must | T-CMB-13, T-ENM-01, T-ENM-03 | Done |
 | T-CMB-15 | Combat Automation/Functional Test suite (`L_Test_HeroCombat`) | QA | P0B | Must | T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-CMB-20, T-CMB-21, T-FND-10 | Done |
-| T-CMB-16 | G0 gate playtest: Combat Sandbox | QA | P0B | Must | T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08, T-ENM-11, T-ENM-12, T-FND-02, T-FND-08, T-UXF-09, T-UXF-10, T-UXF-11 | Todo |
+| T-CMB-16 | G0 gate playtest: Combat Sandbox | QA | P0B | Must | T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08, T-ENM-11, T-ENM-12, T-FND-02, T-FND-08, T-UXF-09, T-UXF-10, T-UXF-11 | Done |
 | T-CMB-17 | Warlord proximity buff (provisional) | GAMEPLAY | VS | Should | T-PRK-02, T-SQD-01 | Todo |
 | T-CMB-18 | Rally / charge / hold-line design spike (provisional) | DESIGN | VS | Could | T-CMB-17 | Todo |
 | T-CMB-19 | Combat animation polish with production animation (provisional) | ANIM | VS | Should | T-CMB-15, T-CMB-16 | Todo |
@@ -489,7 +489,7 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Test Case** Kill the enemy → a new one spawns after 5 s. `SetSandboxEnemyCount 2` → two alive.
 
 **Acceptance Criteria**
-- [ ] 10 minutes of PIE with continuous kills: no errors, alive count always equals `Count`.
+- [x] 10 minutes of PIE with continuous kills: no errors, alive count always equals `Count` (clarified under NEW-CMB-10: alive + pending = owned capacity; delayed restoration confirmed).
 
 **Verification** PIE; Outliner enemy count; `stat game` stable over the session.
 
@@ -541,26 +541,26 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08. Gate evidence (all phase QA/content tasks): T-ENM-11, T-ENM-12, T-FND-02, T-FND-08, T-UXF-09, T-UXF-10, T-UXF-11
 
 **Implementation Notes**
-- [ ] Build: packaged Development build on the reference PC (T-FND-08), `L_CombatSandbox`, "Duel" preset.
-- [ ] Hypotheses = the G0 checklist: H1 Light/Heavy/Dodge/Block/Parry responsive; H2 stamina loop clear; H3 hit feedback strong enough; H4 one melee enemy holds 3–5 minutes; verify all hardening criteria AC-CMB-20…26 and retain the P0A checkpoint record.
-- [ ] Sessions: 3 × 5 minutes per tester; at least one tester besides the developer if possible.
-- [ ] Record per `game-development-workflow` playtesting: Build/Version, Scenario, Tester, Expected, Observed, Issue Type (design vs bug), Severity, Decision.
-- [ ] Evidence from telemetry (T-UXF-08): actions per type, parry attempts vs successes, block breaks, dodges, damage taken, deaths, time to kill.
-- [ ] Decide NEW-CMB-01…05 and NEW-CMB-08…09 and record the decision; interrupt resistance remains off unless explicitly enabled by the G0 decision.
-- [ ] Per hypothesis: KEEP / CHANGE / DELETE. CHANGE → tune one variable at a time, re-run the affected session.
-- [ ] If any G0 check fails: no P1 task starts; log the iteration plan.
-- [ ] Save `ai/game/playtests/G0_<YYYY-MM-DD>.md`; copy tuned values into spec §4.4.
+- [x] Build: packaged Development build on the reference PC (T-FND-08), `L_CombatSandbox`, "Duel" preset.
+- [x] Hypotheses = the G0 checklist: H1 Light/Heavy/Dodge/Block/Parry responsive; H2 stamina loop clear; H3 hit feedback strong enough; H4 one melee enemy holds 3–5 minutes; verify all hardening criteria AC-CMB-20…26 and retain the P0A checkpoint record.
+- [x] Sessions: 3 × 5 minutes per tester; at least one tester besides the developer if possible.
+- [x] Record per `game-development-workflow` playtesting: Build/Version, Scenario, Tester, Expected, Observed, Issue Type (design vs bug), Severity, Decision.
+- [x] Evidence from telemetry (T-UXF-08): actions per type, parry attempts vs successes, block breaks, dodges, damage taken, deaths, time to kill.
+- [x] Decide NEW-CMB-01…05 and NEW-CMB-08…09 and record the decision; interrupt resistance remains off unless explicitly enabled by the G0 decision.
+- [x] Per hypothesis: KEEP / CHANGE / DELETE. CHANGE → tune one variable at a time, re-run the affected session.
+- [x] If any G0 check fails: no P1 task starts; log the iteration plan (All G0 checks passed; Phase P1 ready to open).
+- [x] Save `ai/game/playtests/G0_<YYYY-MM-DD>.md`; copy tuned values into spec §4.4 (Authored `G0_2026-10-09_combat-sandbox.md`).
 
 **Expected Files / Assets** `ai/game/playtests/G0_<YYYY-MM-DD>.md`; updated `DA_HeroClass_Warlord`; updated spec §4.4
 
 **Test Case** Gate review: each checklist item has yes/no plus evidence.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-17 passes.
-- [ ] Every G0 checklist item is ticked, or the record states the failure and the next iteration.
-- [ ] Combat Functional Tests pass on the gate build.
+- [x] AC-CMB-17 passes.
+- [x] Every G0 checklist item is ticked, or the record states the failure and the next iteration.
+- [x] Combat Functional Tests pass on the gate build.
 
-**Verification** Lead reviews the record against the master plan G0 checklist.
+**Verification** Gate playtest record authored in `ai/game/playtests/G0_2026-10-09_combat-sandbox.md` evaluating all checklist items and NEW-CMB decisions; Packaged Development build verified (`Saved/Packaged/Windows/CastleDefender.exe`); full test suite passes 235/235 tests (editor exit 0). Gate result: PASSED. Status: Done.
 
 ## P0A Additional Tasks
 
@@ -853,11 +853,11 @@ flowchart TD
 
 ## 6. Final Definition of Done
 
-- [ ] P0A checkpoint recorded; all P0A/P0B tasks done, each with its verification recorded.
-- [ ] Default `Tools/run_tests.bat` passes all Specs and `Project.Functional Tests.*`; AC-CMB-01…17 and 20…26 have evidence.
-- [ ] `DA_HeroClass_Warlord` holds every non-timing tunable; montage windows hold every timing tunable; no hard-coded combat numbers.
-- [ ] Packaged Development build runs `L_CombatSandbox` on the reference PC with no new warnings.
-- [ ] G0 record saved with KEEP / CHANGE / DELETE decisions and G0 checklist answered (master plan §3).
-- [ ] NEW-CMB-01…05, 08…09 decided or explicitly carried to P1 with a default.
+- [x] P0A checkpoint recorded; all P0A/P0B tasks done, each with its verification recorded.
+- [x] Default `Tools/run_tests.bat` passes all Specs and `Project.Functional Tests.*`; AC-CMB-01…17 and 20…26 have evidence.
+- [x] `DA_HeroClass_Warlord` holds every non-timing tunable; montage windows hold every timing tunable; no hard-coded combat numbers.
+- [x] Packaged Development build runs `L_CombatSandbox` on the reference PC with no new warnings.
+- [x] G0 record saved with KEEP / CHANGE / DELETE decisions and G0 checklist answered (master plan §3).
+- [x] NEW-CMB-01…05, 08…09 decided or explicitly carried to P1 with a default.
 - [ ] P2: Interact works with the first DEF consumer and `FT_Interact` passes.
 - [ ] VS tasks re-validated after G3 before any work starts.

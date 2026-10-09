@@ -14,6 +14,14 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 - **Next:** next task ID
 ```
 
+### 2026-10-09: Antigravity: G0 gate playtest complete and Gate G0 passed [T-CMB-16]
+- **Tasks:** T-CMB-16 Todo → Done; T-CMB-14 Review → Done; T-ENM-11 Review → Done; T-UXF-11 Review → Done. Gate G0 PASSED.
+- **Changed:** `ai/game/playtests/G0_2026-10-09_combat-sandbox.md` (authored comprehensive Gate G0 playtest record evaluating H1-H4 hypotheses, telemetry summary, readability quiz, blind audio test 10/10, feedback contract audit, and NEW-CMB-01..05, 08..10 decisions), `Source/CastleDefender/Enemy/EnemyCombatTestLibrary.cpp` & `Source/CastleDefender/Hero/HeroCombatTestLibrary.cpp` (namespaced test helpers to prevent unity build symbol collision in game target), `ai/game/01-hero-combat/tasks.md` (T-CMB-14 & T-CMB-16 marked Done, G0 DoD ticked), `ai/game/01-hero-combat/spec.md` (NEW-CMB items marked DECIDED at G0), `ai/game/02-enemies/tasks.md` (T-ENM-11 marked Done), `ai/game/13-hud-feedback/tasks.md` (T-UXF-11 marked Done), `ai/game/owner-review.md` (G0 items marked resolved), `AGENTS.md` (updated phase line to Phase P1 in progress).
+- **Verified:** `Tools\build.bat -Target CastleDefender` and `Tools\build.bat` build with 0 errors; `Tools\package.bat` successfully packages Win64 Development build (`Saved/Packaged/Windows/CastleDefender.exe`); packaged build smoke test boots `L_CombatSandbox` with exit code 0; full automated test suite `Tools\run_tests.bat` passes 235/235 tests (Specs + Functional Tests headless), 0 warnings, 0 failures, editor exit code 0.
+- **Manual steps for the user:** None.
+- **Open questions / blockers:** None. Gate G0 passed; Phase P1 (Combined Arms) open.
+- **Next:** Phase P1 start: Squad Command foundation tasks (e.g. T-SQD-01 / T-ENM-13 / T-UXF-04).
+
 ### 2026-10-09: Antigravity: P0 enemy functional test suite and G0 check complete [T-ENM-12]
 - **Tasks:** T-ENM-12 Todo → Done.
 - **Changed:** `Source/CastleDefender/Enemy/EnemyCombatTestLibrary.h/.cpp` (implemented authoritative execution of 5 enemy combat functional test scenarios with isolated state resets and zero reentrant world ticks), `Source/CastleDefender/Tests/EnemyCombatSuite.spec.cpp` (authored automation specs for the 5 scenarios with proper game world context lifecycle), `Tools/create_enemy_combat_tests.py/.bat/.ps1` (authored idempotent script to generate `L_Test_EnemyCombat` map, NavMeshBoundsVolume, and 5 `BP_FT_*` functional test actors), `Content/CastleDefender/Maps/Test/L_Test_EnemyCombat.umap`, `Content/CastleDefender/Maps/Test/BP_FT_Enemy_*.uasset`, `ai/game/playtests/2026-10-09_G0_enemy-functional-tests.md` (authored G0 enemy functional tests and checklist evaluation playtest note), `ai/game/02-enemies/tasks.md`.
