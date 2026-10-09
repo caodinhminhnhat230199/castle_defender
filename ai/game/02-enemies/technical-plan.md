@@ -217,7 +217,7 @@ All [TUNABLE] values: `UEnemyArchetypeDefinition` (per archetype) or `UGameTunin
 2. **Brain skeleton (P0):** timer with random start offset, FSM, hostile scan, chase, debug draw, Visual Logger.
 3. **Attack (P0):** attack selection (range, weight, cooldowns), telegraph feedback at montage start, `SetFocus` tracking during wind-up and `ClearFocus` at hit window, hit payload for the CMB-04 helper, commitment.
 4. **Reactions (P0):** hit reaction presentation event; Staggered enter/exit (stop montage, stop movement, play stagger, resume).
-5. **Archetypes (P1/P2):** Swarm, Armored, Siege Data Assets + BP children + placeholder looks.
+5. **Archetypes/content (P0/P1/P2):** P0 DA_Enemy_Melee + BP_Enemy_Melee inherit base presentation, with red Quinn materials and separate 1/3/5 areas (T-ENM-11). Initial data is seeded from the fixed fixture and recorded in the G0 melee-baseline note; owner accepts final tuning/feel. Swarm/Armored/Siege stay behind P1/P2 gates.
 6. **Waypoint following (P1):** route copy + progress; sandbox goal waypoints.
 7. **Lane route (P2):** lane query, re-query triggers, checkpoint handling, objective at route end.
 8. **Local Aggro + leash (P2):** priority list, leash anchor, ReturnToRoute with aggro suppression until rejoin.
@@ -278,6 +278,7 @@ Rule: no pooling, Mass or custom scheduler unless T-ENM-16 / T-DEF-12 shows the 
 ### Other cross-feature asks
 - T-CMB-04: hit-window notify + trace/dispatch helper must be owner-agnostic (enemy supplies its own hit payload and team filter).
 - T-FND-09: enemy spawn cheat accepts archetype name and count (ENM adds lane parameter in P2).
+- T-ENM-11 implements SpawnEnemy in the existing GameCheatManager: validates the DA, InitFromSpawn before FinishSpawning, P0 per-call cap of five. The Blueprint/dev entry point supports QA replacements without repeated console lookups. Lane support stays P2.
 - T-DIR-01: spawner uses `SpawnActorDeferred` + `InitFromSpawn` and binds `OnEnemyRemoved`.
 
 ### Risks

@@ -201,6 +201,7 @@ DeliverHit(Target, Hit, Multipliers = {}) -> ECombatHitResult   // Multipliers a
   if target survives: apply poise and AppliedStates via CombatState
   finalize exactly once with final result/context and publish OnCombatResolved
   choose one matching UXF hit-outcome feedback, or none for silent outcomes
+  positive Hero HP loss -> Feedback.Hero.Damaged (separate HUD event; Magnitude = actual HP loss)
   return result (Ignored | Evaded | Parried | Blocked | BlockBroken | Hit | Killed)
 ```
 
@@ -284,6 +285,12 @@ The component enables Tick only while `current < Max` or sprint-draining; it bro
 
 ### 5.4 Clock domains and input modes
 
+T-CMB-09: the first frontal hostile hit consumes Parry and closes its window before any montage/state/poise/success callbacks. It stops the owned montage, applies attacker poise through SYN, opens the hero-clock counter and broadcasts `OnParrySucceeded(Attacker)`; no automatic Block resume on success. Anonymous debug hits with Enemy source layer can demonstrate damage negation/counter, but have no actor to receive poise. A Light/Heavy started inside the deadline reserves the counter for that attack; the multiplier is snapshotted in the trace payload, so a committed startup finishing after the deadline retains its first-hit reward. The trace consumes its counter flag and restores base damage before delivering the first hit, notifying the hero to close the deadline; reentrant/other targets get normal damage. A whiff/interruption ends that reserved attack's opportunity. Optional CounterMontage is validated as an attack; the main Parry montage has exactly one active window, a positive whiff recovery, and no cancel windows. All values come from `.Parry`; default separate-input interpretation stays NEW-CMB-01 for G0 review.
+
+T-CMB-10: `ULockOnComponent` owns the weak target, world-time validation timer and target death/destruction bindings. Acquire/switch/removal are the only candidate scans (Pawn plus WorldDynamic for the existing sandbox dummy); filter live hostiles and Visibility LOS to `TargetSocket` (default `LockOn`), otherwise capsule centre. Acquisition sorts by camera angle then distance; target removal retargets by distance; switching uses screen positions. `.LockOn` exposes range, break distance, LOS grace, validation interval, camera interpolation and pitch limits. Movement facing is enabled only for Idle/Block: committed attacks turn only through bounded authored assist; Dodge retains montage root motion. Release restores the definition's free-camera locomotion preference. The native anim instance mirrors lock state and local forward/right velocity into the Blueprint-authored strafe graph.
+
+`AHeroPlayerController` observes `OnLockOnTargetChanged(Target)` and creates `WBP_LockOnMarker` only while locked. T-UXF-02 hosts it in `WBP_GameHUD`'s full-screen LockOn canvas; unconfigured controllers retain viewport fallback. `ULockOnMarkerWidget` projects the socket/capsule location with DPI-aware widget coordinates; Blueprint owns its brush/layout. Possession changes and EndPlay detach listeners and remove it. The widget's editor-only root setter bridges a field unavailable to UE 5.8 Python, using the existing UMG dependency. The HUD observes the layer matrix and hides the marker in Build/Focus/Spirit/Modal.
+
 D-20: montage windows, input buffer age, chain/cancel, counter deadline, assist rotation and hero stamina/action deadlines use the hero's dilated time. Use one pawn action-clock accumulator only while action/deadline work is active; verify against actual montage progress under per-actor hit stop, avoiding double-applied dilation. World timers (SYN state expiry, respawn and lock-on LOS grace) use world game time. UI animation uses real time. UXF changes only per-actor dilation; only TFM changes global dilation. Do not use a world TimerManager deadline for the hero buffer/counter without adapting it to the hero clock. D-19: input remains under `AHeroPlayerController` mode stack; CMB binds verbs, never changes mapping contexts/UI input mode itself.
 
 ## 6. Main Implementation Areas
@@ -299,6 +306,8 @@ D-20: montage windows, input buffer age, chain/cancel, counter deadline, assist 
 | Lock-on | T-CMB-10 |
 | Hit reactions, damage, death event | T-CMB-11 |
 | Sandbox map, respawner | T-CMB-13, T-CMB-14 |
+
+T-CMB-14: `ASandboxEnemyRespawner` owns only its spawned `AEnemyCharacter` instances, in 1-3 slots. `BP_SandboxEnemyRespawner` and Duel/Pair level instances expose the archetype, count, delay, radius and enabled flag. It calls `InitFromSpawn` before `FinishSpawning` and consumes the existing `OnEnemyRemoved` contract (death plus explicit/out-of-world removal), rather than adding a second lifecycle observer. Each empty slot has an independent world-game-time timer; changing count or disabling a preset cancels removed slots and despawns only owned enemies. Radius placement selects NavData for the enemy's agent and a navigable-radius point using the existing navigation system; unavailable navigation leaves capacity pending. Zero delay schedules next tick, avoiding recursive spawn callbacks. The cheat changes the first enabled preset; only one preset is enabled in the authored scenarios. Authoring adds missing presets without clearing the map. No Tick or subsystem is needed.
 | Rotation assist (P0A) | T-CMB-20; locked preference integrated by T-CMB-10 |
 | Combat debugger/trace visualization (P0A, expanded in P0B) | T-CMB-21 |
 | P0A checkpoint; final QA / single G0 at end of P0B | Individual P0A verification, T-CMB-15, T-CMB-16 |

@@ -157,7 +157,7 @@ Play(Tag, Ctx):
   Sound: Row.SurfaceSounds[Ctx.Surface] ?? Row.Sound → 2D or at Ctx.Location (concurrency/class on the asset)
   Niagara: at Ctx.Location or attached to Ctx.Target
   heroInvolved = local Hero is Ctx.Instigator or Ctx.Target
-  if Row.HitStopSeconds > 0 and (heroInvolved or !Row.bHeroOnly): HitStop({Instigator, Target}, Row.HitStopSeconds)
+  if Row.HitStopSeconds > 0 and heroInvolved and tag is a large impact (R-UXF-07): HitStop({Instigator, Target}, Row.HitStopSeconds)
   if Row.CameraShake: radius 0 → direct shake if heroInvolved; else world shake with radii; stop previous instance of this tag
   broadcast OnFeedbackPlayed(Tag, Ctx)
 ```
@@ -174,10 +174,14 @@ sequenceDiagram
   FS->>A: CustomTimeDilation = HitStopDilation (only these two actors)
   FS->>FS: restore at now_real + min(HitStopSeconds, MaxHitStopSeconds) (extend if already stopped)
   Note over FS: global time dilation never written (D-13)
-  FS->>A: restore CustomTimeDilation = 1 (skip destroyed actors)
+  FS->>A: restore saved original CustomTimeDilation (skip destroyed actors)
 ```
 
 Restore timing in real time (NEW-UXF-7): use a timer whose duration is scaled by the current global time dilation, or a core ticker on real time (verify which is reliable in the pinned UE version). Convention: only `UFeedbackSubsystem` writes `CustomTimeDilation`.
+
+Implementation (UE 5.8.3): core ticker checks a monotonic real-time deadline only while an actor is stopped. Overlaps extend that deadline and preserve the original actor dilation. R-UXF-07 takes precedence over the earlier generic row pseudocode: only Heavy (including Armored), Parry, BlockBreak or Staggered.Applied with Hero involvement can stop actors; bHeroOnly cannot opt other fights into hit stop.
+
+Camera shakes use StartCameraShake with a retained weak instance per resolved row tag and stop that exact previous instance. Radius rows reproduce the pinned Engine linear radial attenuation, then multiply row ShakeScale by CameraShakeScale. PlayWorldCameraShake returns no instance and has no global/row scale parameter, so its void helper cannot meet replacement/scale requirements directly. Local single-player camera ownership is unchanged.
 
 ### 4.3 State presenter
 
@@ -253,6 +257,8 @@ Implementation notes (T-UXF-01):
 
 ### 5.3 HUD layout and layer matrix
 
+T-UXF-02 implementation: `AHeroPlayerController::GetGameHUD()` exposes the single local `WBP_GameHUD`. The shell observes `OnHUDLayersChanged`, applies the current vitals/lock-on matrix and forwards `ApplyLayers(Flags)` to Blueprint for feature panels. Fourteen Named Slots are authored in `Tools/create_hud_assets.py`; empty extensions collapse. `UHeroVitalsWidget` observes `OnPossessedPawnChanged`, detaches old health/stamina callbacks and snapshots the new pawn. Startup possession can precede Hero BeginPlay, so one next-frame synchronization reads initialized values; HP is never polled per frame. Stamina lerps only its cached delegate target. Insufficient-spend presentation originates in the stamina owner and the widget's one-shot Core ticker restores flash color in real time. Widget lerp/flash/dim values are Blueprint tuning; layout, labels and bar styling are content. The lock-on marker now projects into the full-screen LockOn canvas, retaining viewport fallback for unconfigured controllers.
+
 | Panel (slot) | Owner task | Phase | Combat | Wheel | Build | Focus | Spirit | Modal |
 |---|---|---|---|---|---|---|---|---|
 | Hero vitals (bottom-left) | UXF `T-UXF-02` | P0 | ✓ | ✓ | ✓ | dim | ✗ | ✗ |
@@ -282,13 +288,15 @@ File: `Saved/Playtest/<yyyyMMdd_HHmmss>_<MapName>.jsonl` (local only, never comm
 |---|---|---|
 | `session_start` | `map`, `build`, `engine`, `date`, `shake_scale` | Subsystem begin play |
 | `fb` | `tag`, `loc` [x,y,z], `inst`, `tgt` (classes), `d` (detail), `lane` | `OnFeedbackPlayed` |
-| `hero_action` | `action` (Light/Heavy/Dodge/Block/Parry attempt) | Binds `UHeroCombatComponent::OnActionStateChanged` of the possessed Hero (rebinds on pawn change) |
+| `hero_action` | `action` (Light/Heavy/Dodge/Block/Parry state entry) | Binds `UHeroCombatComponent::OnActionStateChanged` of the possessed Hero (rebinds on pawn change) |
 | `hero_damaged` | `amount`, `hp` | Hero `UHealthComponent::OnDamaged` |
 | `core_hp` | `hp` (0–1) | Sampler every `TelemetryCoreSampleSeconds` while a Core exists (P2+) |
 | feature events | any (`run_start`, `step_end`, `run_end` RUN `T-RUN-14`; per order SQD `T-SQD-05`; boss rows BOS `T-BOS-08`; `perk_seed` PRK `T-PRK-07`; CSM `T-CSM-10`) | `LogEvent` |
 | `summary` | `duration`, `result` (from `Feedback.Run.Victory/Defeat`, else Aborted/Session), `hero_deaths`, `parries`, `block_breaks`, `focus_seconds`, `focus_pct`, `perks_offered` [[ids]], `perks_picked` [ids], `core_hp_min`, `core_hp_end`, `structures_destroyed`, `squads_wiped`, `actions` {type: n}, `counts` {tag: n} | `FPlaytestSummary` on run result or world teardown |
 
 Wave and step times come from RUN's `step_end` events (no duplicate). Focus time = `Feedback.Focus.Enter` → `Exit`/`Depleted` intervals (open interval closed at end). Perks from `Feedback.Perk.Offered/Chosen` details.
+
+T-UXF-08 P0 implementation: game/PIE worlds with a game instance record once per world. `UPlaytestLogSubsystem::LogEventForWorld` is the Blueprint/static wrapper; `GetLogPath` supports development inspection. Native action-state/damage delegates rebind through `OnPossessedPawnChanged`; no gameplay polling. `FPlaytestSummary` counts the recorded played-feedback tags and action-state entries. Physical input attempts/unchanged LightAttack combo links require an additional provider event if desired (NEW-UXF-12); later run/Core/Focus/perk fields remain T-UXF-16. Envelope `ev/t/rt` is protected, numeric payload fields take priority over duplicate string names, and nonfinite payload numbers become JSON null. Use the engine's header-only condensed writer/reader through existing Engine includes; no dependency change. Standard UTF-8 file archive appends/flushes each line and permits readers; one write warning latches recording off for that world. Same-second filename collisions get a numeric suffix. CVar off/on keeps one file and writes the closing summary if the session ever recorded. Isolated automation worlds without a game instance do not open session files. Shipping excludes logger state/CVar/I/O and prevents subsystem creation.
 
 ### 5.5 Playtest notes template (created by `T-UXF-11` at `ai/game/playtests/_template.md`)
 

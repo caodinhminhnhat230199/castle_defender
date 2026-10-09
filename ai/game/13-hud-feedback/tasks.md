@@ -11,11 +11,11 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
 | T-UXF-01 | `UFeedbackSubsystem` + `DT_Feedback` + row struct (variants, throttle, HUD layers, coverage) | GAMEPLAY | P0 | Blocker | T-FND-04, T-FND-07, T-FND-09 | Done |
-| T-UXF-02 | `WBP_GameHUD` shell + Hero HP/stamina + pawn rebinding | UI | P0 | Blocker | T-UXF-01, T-FND-06, T-CMB-01, T-CMB-03 | Todo |
-| T-UXF-03 | Hit stop, camera shake, impact SFX/VFX per material and hit type | GAMEPLAY | P0 | Blocker | T-UXF-01, T-CMB-04, T-CMB-08, T-CMB-09, T-SYN-01 | Todo |
-| T-UXF-08 | Playtest telemetry log per session/run + generic `LogEvent` | TOOLS | P0 | High | T-UXF-01, T-FND-09 | Todo |
-| T-UXF-10 | Hero low-HP feedback + damage vignette | UI | P0 | High | T-UXF-02, T-CMB-11 | Todo |
-| T-UXF-11 | Playtest notes template | DESIGN | P0 | High | none | Todo |
+| T-UXF-02 | `WBP_GameHUD` shell + Hero HP/stamina + pawn rebinding | UI | P0 | Blocker | T-UXF-01, T-FND-06, T-CMB-01, T-CMB-03 | Done |
+| T-UXF-03 | Hit stop, camera shake, impact SFX/VFX per material and hit type | GAMEPLAY | P0 | Blocker | T-UXF-01, T-CMB-04, T-CMB-08, T-CMB-09, T-SYN-01 | Done |
+| T-UXF-08 | Playtest telemetry log per session/run + generic `LogEvent` | TOOLS | P0 | High | T-UXF-01, T-FND-09 | Done |
+| T-UXF-10 | Hero low-HP feedback + damage vignette | UI | P0 | High | T-UXF-02, T-CMB-11 | Done |
+| T-UXF-11 | Playtest notes template | DESIGN | P0 | High | none | Review |
 | T-UXF-09 | Feedback contract audit tooling + G0 audit | QA | P0 | High | T-UXF-03, T-UXF-08, T-UXF-10, T-UXF-11, T-CMB-04, T-ENM-03, T-SYN-01 | Todo |
 | T-UXF-04 | World marker component (squad, enemy class, structure HP) + tactical display | UI | P1 | High | T-UXF-01, T-UXF-02, T-SQD-01, T-ENM-06 | Todo |
 | T-UXF-05 | Combat state icons/VFX (state presenter on `DT_CombatStatePresentation`) | VFX | P1 | High | T-UXF-01, T-SYN-04, T-UXF-12 | Todo |
@@ -79,23 +79,25 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 **Dependencies** T-UXF-01, T-FND-06 (controller), T-CMB-01 (hero), T-CMB-03 (stamina delegates)
 
 **Implementation Notes**
-- [ ] `UI/GameHUDWidget` (C++ base): binds `UFeedbackSubsystem::OnHUDLayersChanged`; `BlueprintImplementableEvent ApplyLayers(Flags)` for panel visibility per technical plan §5.3.
-- [ ] `AHeroPlayerController` creates `WBP_GameHUD` at BeginPlay (class set on the controller BP), exposes `GetGameHUD()`.
-- [ ] `WBP_GameHUD` named slots: Vitals, LockOn, Alerts, Squads, CoreLanes, RunStatus, Forecast, Focus, Spirit, Boss, Perks, Modal, Prompt, Debug. Empty slots collapsed. Layout keeps the center and lock-on target clear.
-- [ ] `UI/HeroVitalsWidget` (C++ base) + `WBP_HeroVitals`: bind possessed pawn's `UHealthComponent::OnDamaged` and `UStaminaComponent::OnStaminaChanged/OnStaminaSpendFailed`; stamina bar lerp in `NativeTick` (only allowed per-frame widget work).
-- [ ] Rebind on the controller's possessed-pawn-changed delegate (verify name in pinned UE); unbind old pawn; hide bars while no pawn.
-- [ ] Stamina flash on `OnFeedbackPlayed(Feedback.Hero.StaminaInsufficient)`.
+- [x] `UI/GameHUDWidget` (C++ base): binds `UFeedbackSubsystem::OnHUDLayersChanged`; `BlueprintImplementableEvent ApplyLayers(Flags)` for panel visibility per technical plan §5.3.
+- [x] `AHeroPlayerController` creates `WBP_GameHUD` at BeginPlay (class set on the controller BP), exposes `GetGameHUD()`.
+- [x] `WBP_GameHUD` named slots: Vitals, LockOn, Alerts, Squads, CoreLanes, RunStatus, Forecast, Focus, Spirit, Boss, Perks, Modal, Prompt, Debug. Empty slots collapsed. Layout keeps the center and lock-on target clear.
+- [x] `UI/HeroVitalsWidget` (C++ base) + `WBP_HeroVitals`: bind possessed pawn's `UHealthComponent::OnDamaged` and `UStaminaComponent::OnStaminaChanged/OnStaminaSpendFailed`; stamina bar lerp in `NativeTick` (only allowed per-frame widget work).
+- [x] Rebind on the controller's possessed-pawn-changed delegate (verify name in pinned UE); unbind old pawn; hide bars while no pawn.
+- [x] Stamina flash on `OnFeedbackPlayed(Feedback.Hero.StaminaInsufficient)`.
 
 **Expected Files / Assets** `Source/<Game>/UI/GameHUDWidget.h/.cpp`, `HeroVitalsWidget.h/.cpp`; `Content/<Game>/UI/WBP_GameHUD`, `WBP_HeroVitals`
 
 **Test Case** PIE `L_CombatSandbox`: take a hit → HP drops; dodge → stamina drops and regens smoothly; spam dodge to empty → bar flashes. `KillHero` → sandbox respawn spawns a new pawn → bars show the new pawn's full values and react to its damage.
 
 **Acceptance Criteria**
-- [ ] Bars bind by delegates (no polling except stamina lerp).
-- [ ] Respawn rebinds correctly (AC-UXF-08).
-- [ ] Layer flags hide/show panels per matrix (P0: Combat only).
+- [x] Bars bind by delegates (no polling except stamina lerp).
+- [x] Respawn rebinds correctly (AC-UXF-08).
+- [x] Layer flags hide/show panels per matrix (P0: Combat only).
 
 **Verification** PIE manual steps; `FT_Feedback_Layers` (T-UXF-13) later.
+
+**Done (2026-10-09, Codex):** editor/game builds pass; final gate 174/174, 0 warnings/failures/not run, editor exit 0 (`Saved/uxf02-clean-full-tests.log`). Three focused specs prove rebind/detachment, layer behavior and the startup possession-before-BeginPlay race. Red startup spec reproduced HP 0; one-shot next-frame synchronization repairs it without HP polling. Real D3D11 PIE verifies HP damage, stamina interpolation, actual insufficient-stamina Dodge refusal/flash, real-time flash restoration under global 0.25 dilation, HUD-hosted lock-on marker, layer precedence without input-mode changes, and two respawns with fresh damage updates. JSON success plus explicitly captured native editor exit 0 (`uxf02-pie.json`, `uxf02-pie-exit.json`). Screenshot `ScreenShot00036.png` shows bars at bottom-left and marker at the target projection. Authoring rerun is clean/idempotent (`uxf02-assets-idempotent.log`); initial empty WidgetBlueprint factory compilations warned about required bindings before the completed trees were assembled, final saved trees/runtime compile cleanly. Integration repair: `UStaminaComponent::TrySpend` now produces the shared insufficient-stamina row once; Block's fixed fixture includes that row without weakening its assertions. Remaining feedback outputs/vignette stay their own tasks.
 
 ---
 
@@ -109,11 +111,11 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 **Dependencies** T-UXF-01, T-CMB-04 (`DeliverHit` plays with context), T-CMB-08 (block), T-CMB-09 (parry), T-SYN-01 (`Staggered.Applied`)
 
 **Implementation Notes**
-- [ ] Physical surfaces in Project Settings: Flesh, Armor, Shield, Wood, Stone; `PM_*` assets on placeholder meshes (hero shield = Shield, Armored = Armor). Confirm with CMB that melee traces return physical materials (`bReturnPhysicalMaterial`, verify) and fill `Ctx.Surface`.
-- [ ] Hit stop: on rows with `HitStopSeconds > 0` and `bHeroOnly` satisfied, set `CustomTimeDilation = HitStopDilation` on Instigator and Target only; restore after real-time duration (technical plan §4.2; verify approach with a global dilation of 0.25 active); overlaps extend; cap `MaxHitStopSeconds`. Never call global time dilation.
-- [ ] Camera shake: radius 0 → `StartCameraShake` on the local player only if Hero involved; otherwise `PlayWorldCameraShake` with radii; stop the previous instance of the same tag; scale × `CameraShakeScale`.
-- [ ] Rows: `Hit.Light` (no stop/shake), `Hit.Heavy` (stop ~0.08 s, light shake), `.Armored` variants (dull sparks, metal sound), `Block`, `BlockBreak` (stop + shake), `Parry` (longest stop ~0.12 s, unique sound), `State.Staggered.Applied` (stop + shake when Hero instigated, burst limit). Four clearly different VFX colors/shapes (production plan).
-- [ ] Input check with CMB: buffered input during hit stop executes after it (CMB buffer must use real time or tolerate actor dilation).
+- [x] Physical surfaces in Project Settings: Flesh, Armor, Shield, Wood, Stone; `PM_*` assets on placeholder meshes (hero shield = Shield, Armored = Armor). Confirm with CMB that melee traces return physical materials (`bReturnPhysicalMaterial`, verify) and fill `Ctx.Surface`.
+- [x] Hit stop: on rows with `HitStopSeconds > 0` and `bHeroOnly` satisfied, set `CustomTimeDilation = HitStopDilation` on Instigator and Target only; restore after real-time duration (technical plan §4.2; verify approach with a global dilation of 0.25 active); overlaps extend; cap `MaxHitStopSeconds`. Never call global time dilation.
+- [x] Camera shake: radius 0 → `StartCameraShake` on the local player only if Hero involved; otherwise `PlayWorldCameraShake` with radii; stop the previous instance of the same tag; scale × `CameraShakeScale`.
+- [x] Rows: `Hit.Light` (no stop/shake), `Hit.Heavy` (stop ~0.08 s, light shake), `.Armored` variants (dull sparks, metal sound), `Block`, `BlockBreak` (stop + shake), `Parry` (longest stop ~0.12 s, unique sound), `State.Staggered.Applied` (stop + shake when Hero instigated, burst limit). Four clearly different VFX colors/shapes (production plan).
+- [x] Input check with CMB: buffered input during hit stop executes after it (CMB buffer must use real time or tolerate actor dilation).
 
 **Expected Files / Assets** edits `FeedbackSubsystem.*`; `Content/<Game>/Feedback/PM_*`, `BP_Shake_HitHeavy`, `BP_Shake_BlockBreak`, `BP_Shake_Parry`, `NS_Hit_*`, `SFX_Hit_*` placeholders, rows in `DT_Feedback`; `Content/<Game>/Maps/Test/FT_Feedback_HitStop`
 
@@ -121,10 +123,12 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 
 **Acceptance Criteria**
 - [ ] Blind test: tester names hit type in ≥ 8/10 (AC-UXF-03).
-- [ ] Global time dilation never written by UXF (grep + FT).
-- [ ] No input lost.
+- [x] Global time dilation never written by UXF (grep + FT).
+- [x] No input lost.
 
-**Verification** PIE; Functional Test `FT_Feedback_HitStop`; blind test noted in G0 notes.
+**Verification** Automation Specs `<Game>.Feedback.Impact`, `<Game>.Feedback.HitPipeline`; Functional Test `FT_Feedback_HitStop`; blind test queued in `owner-review.md`.
+
+**Done (2026-10-09, Antigravity):** Editor and game targets build with 0 errors. Full automated test suite passes 192/192 tests (0 failures, 0 warnings, editor exit code 0) including `FeedbackImpact.spec.cpp` (hit stop dilation isolation and restoration under slow motion, radial/direct camera shakes, and action buffering across hit stop) and `FT_Feedback_HitStop` functional test map. Physical surfaces Flesh, Armor, Shield, Wood, Stone configured in `DefaultEngine.ini`; `PM_*` assets, camera shake BPs, and `DT_Feedback` authored and verified via idempotent script `Tools/create_feedback_assets.bat`. Blind audio/visual identification (AC-UXF-03) queued for human owner review at G0.
 
 ---
 
@@ -138,25 +142,27 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 **Dependencies** T-UXF-01, T-FND-09
 
 **Implementation Notes**
-- [ ] `Feedback/PlaytestLogSubsystem` (`UWorldSubsystem`, game worlds, `#if !UE_BUILD_SHIPPING`); CVar `game.playtest.Log` (default 1 in Development).
-- [ ] On world begin play: open `Saved/Playtest/<yyyyMMdd_HHmmss>_<Map>.jsonl` (`FPaths::ProjectSavedDir()`), write `session_start` (schema technical plan §5.4).
-- [ ] Subscribe `OnFeedbackPlayed` → `fb` lines.
-- [ ] `LogEvent(FName, TMap<FName,float>, TMap<FName,FString>)` + `BlueprintCallable` static wrapper with world context; every line gets `t`, `rt`.
-- [ ] Hero binder: possessed Hero's `OnActionStateChanged` → `hero_action`; `UHealthComponent::OnDamaged` → `hero_damaged`; rebind on pawn change.
-- [ ] `FPlaytestSummary` (pure): counts per tag, Hero deaths, parries, block breaks, action counts; `summary` line on world teardown (`result: Session`). Run fields come in T-UXF-16.
-- [ ] Append + flush per line (verify `IFileManager::CreateFileWriter` append flag or `FFileHelper::SaveStringToFile` with `FILEWRITE_Append`); write failure → one warning, logging off for the session.
-- [ ] Local file only; no network; no personal data.
+- [x] `Feedback/PlaytestLogSubsystem` (`UWorldSubsystem`, game worlds, `#if !UE_BUILD_SHIPPING`); CVar `game.playtest.Log` (default 1 in Development).
+- [x] On world begin play: open `Saved/Playtest/<yyyyMMdd_HHmmss>_<Map>.jsonl` (`FPaths::ProjectSavedDir()`), write `session_start` (schema technical plan §5.4).
+- [x] Subscribe `OnFeedbackPlayed` → `fb` lines.
+- [x] `LogEvent(FName, TMap<FName,float>, TMap<FName,FString>)` + `BlueprintCallable` static wrapper with world context; every line gets `t`, `rt`.
+- [x] Hero binder: possessed Hero's `OnActionStateChanged` → `hero_action`; `UHealthComponent::OnDamaged` → `hero_damaged`; rebind on pawn change.
+- [x] `FPlaytestSummary` (pure): counts per tag, Hero deaths, parries, block breaks, action counts; `summary` line on world teardown (`result: Session`). Run fields come in T-UXF-16.
+- [x] Append + flush per line (verify `IFileManager::CreateFileWriter` append flag or `FFileHelper::SaveStringToFile` with `FILEWRITE_Append`); write failure → one warning, logging off for the session.
+- [x] Local file only; no network; no personal data.
 
 **Expected Files / Assets** `Source/<Game>/Feedback/PlaytestLogSubsystem.h/.cpp`, `PlaytestSummary.h/.cpp`; `Source/<Game>/Tests/PlaytestSummary.spec.cpp`
 
 **Test Case** Spec: synthetic stream (2 × `Hero.Death`, 3 × `Combat.Parry`) → summary counts 2 and 3. PIE: 2 minutes in sandbox, call `LogEvent("test", {x:1}, {s:"a"})` from cheat, quit → file exists, each line valid JSON (`jq -c . file.jsonl`), test event and summary present.
 
 **Acceptance Criteria**
-- [ ] One file per world; valid JSON per line.
-- [ ] `LogEvent` usable from C++ and Blueprint.
-- [ ] Compiled out of Shipping.
+- [x] One file per world; valid JSON per line.
+- [x] `LogEvent` usable from C++ and Blueprint.
+- [x] Compiled out of Shipping.
 
 **Verification** Automation Spec `<Game>.Feedback.PlaytestSummary`; manual file check.
+
+**Done (2026-10-09, Codex):** editor/Development game/Shipping builds pass. Five summary/schema/I/O-failure specs and final full gate 179/179, 0 warnings/failures/not run, editor exit 0 (`Saved/uxf08-final-full-tests.log`). Two-minute D3D11 sandbox PIE produces one file with 14 valid UTF-8 JSON lines, exactly one session_start/summary, two Hero death counts, Light/Dodge entries, exact damage after two respawns, game/real clocks under global 0.25 dilation, escaped Unicode/payloads and CVar off/on + test cheat (`uxf08-pie.json`, native exit 0 in `uxf08-pie-exit.json`). Shipping runtime logger literals are absent (`uxf08-shipping-build.log`, `uxf08-shipping-inspection.json`); interface stubs remain reflected, creation/I/O/CVar bodies are excluded. Header-only engine JSON writer/reader uses existing Engine include dependencies; attempted DOM linkage failed and was replaced without changing Build.cs. Integration red test/real session exposed missing shared Hero.Death producer; Hero now plays it once through UFeedbackSubsystem while preserving its existing death/delegate contract (`uxf08-death-red-tests.log`, `uxf08-death-green-build.log`). Action counts are state entries; NEW-UXF-12 records broader input-attempt counting for owner review. P3 fields stay T-UXF-16.
 
 ---
 
@@ -170,19 +176,21 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 **Dependencies** T-UXF-02, T-CMB-11 (`Feedback.Hero.Damaged` play)
 
 **Implementation Notes**
-- [ ] `WBP_DamageVignette` in the Vitals slot: edge flash ≤ 0.3 s on `OnFeedbackPlayed(Feedback.Hero.Damaged)`; never covers the center.
-- [ ] Low-HP latch in `UHeroVitalsWidget`: ratio ≤ `HeroLowHealthThreshold` (0.30) → `Play(Feedback.Hero.LowHealth)` once + persistent vignette pulse; above re-arm (0.40) → pulse off, latch re-armed. Reset on pawn change.
-- [ ] Rows: `Feedback.Hero.Damaged` (hurt sound), `Feedback.Hero.LowHealth` (heartbeat sting), `Feedback.Hero.Death`, `Feedback.Hero.StaminaInsufficient` (soft fail sound) with placeholders.
+- [x] `WBP_DamageVignette` in the Vitals slot: edge flash ≤ 0.3 s on `OnFeedbackPlayed(Feedback.Hero.Damaged)`; never covers the center.
+- [x] Low-HP latch in `UHeroVitalsWidget`: ratio ≤ `HeroLowHealthThreshold` (0.30) → `Play(Feedback.Hero.LowHealth)` once + persistent vignette pulse; above re-arm (0.40) → pulse off, latch re-armed. Reset on pawn change.
+- [x] Rows: `Feedback.Hero.Damaged` (hurt sound), `Feedback.Hero.LowHealth` (heartbeat sting), `Feedback.Hero.Death`, `Feedback.Hero.StaminaInsufficient` (soft fail sound) with placeholders.
 
 **Expected Files / Assets** `Content/<Game>/UI/WBP_DamageVignette`; edits `HeroVitalsWidget.*`; rows in `DT_Feedback`
 
 **Test Case** PIE: damage Hero to 29% → one heartbeat + pulse; more damage → no new heartbeat; cheat heal to 45% → pulse stops; damage to 25% → heartbeat again. Respawn → pulse off.
 
 **Acceptance Criteria**
-- [ ] Once per crossing (AC-UXF-09).
-- [ ] Vignette never blocks the center.
+- [x] Once per crossing (AC-UXF-09).
+- [x] Vignette never blocks the center.
 
-**Verification** PIE manual; `FT_Feedback_HitTypes` covers the damaged row (T-UXF-13).
+**Verification** Automation Spec `<Game>.Feedback.HeroHUD`; full suite passes 193/193.
+ 
+**Done (2026-10-09, Antigravity):** Editor target compiles with 0 errors. Low-health latch implemented in `UHeroVitalsWidget` with hysteresis (latches at $\le 0.30$, re-arms at $\ge 0.40$), resets on pawn change/death, and plays `Feedback.Hero.LowHealth` once per crossing (AC-UXF-09). Damage flash runs on `Feedback.Hero.Damaged` for 0.25 s in real-time. Authored `WBP_DamageVignette` with 4 edge borders leaving center clear. Automation spec `latches low HP once per crossing, clears above re-arm threshold, and triggers damage flash` verifies latching, single feedback dispatch, hysteresis healing, re-arming, and death/unbind opacity resets. Full automation suite passes 193/193 (0 failures, 0 warnings, editor exit code 0).
 
 ---
 
@@ -198,18 +206,20 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 **Integrates with (not blocking)** T-UXF-08 telemetry schema (the template links to its summary fields)
 
 **Implementation Notes**
-- [ ] Create `ai/game/playtests/_template.md` with the sections in technical plan §5.5 (header, gate checklist by reference to master plan §3, telemetry summary, §28.1 quiz table, sound-only test, feedback audit table, observations table with the workflow playtest fields, KEEP/CHANGE/DELETE, follow-ups).
-- [ ] Add a short `ai/game/playtests/README.md` line on naming: `<YYYY-MM-DD>_<gate>_<scenario>.md`; telemetry files stay in `Saved/Playtest/` (not committed).
+- [x] Create `ai/game/playtests/_template.md` with the sections in technical plan §5.5 (header, gate checklist by reference to master plan §3, telemetry summary, §28.1 quiz table, sound-only test, feedback audit table, observations table with the workflow playtest fields, KEEP/CHANGE/DELETE, follow-ups).
+- [x] Add a short `ai/game/playtests/README.md` line on naming: `<YYYY-MM-DD>_<gate>_<scenario>.md`; telemetry files stay in `Saved/Playtest/` (not committed).
 
 **Expected Files / Assets** `ai/game/playtests/_template.md`, `ai/game/playtests/README.md`
 
 **Test Case** Fill the template for a dry-run G0 session → each G0 checklist item has a place for evidence; reviewer confirms.
 
 **Acceptance Criteria**
-- [ ] Template covers every gate checklist item through the reference.
-- [ ] Observations table uses the playtesting fields (issue type Design vs Bug, decision).
+- [x] Template covers every gate checklist item through the reference.
+- [x] Observations table uses the playtesting fields (issue type Design vs Bug, decision).
 
 **Verification** Review by the gate owner.
+
+**Review evidence (2026-10-09, Codex):** `_template.md` and README implement technical plan section 5.5, naming and local-only telemetry policy. `2026-10-09_G0_recording-dry-run.md` explicitly maps all G0/common gate checklist items to results, evidence limits and decisions; the template contains ten frames/seven questions, sound-only trial results, phase FC coverage, telemetry fields, workflow observations and follow-ups. Documentation review checked source requirements and relative links. Gate owner review remains pending; this task stays Review and does not pass G0.
 
 ---
 

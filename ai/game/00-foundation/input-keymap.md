@@ -31,7 +31,9 @@ Defaults from NEW-CMB-07.
 | `IA_HeavyAttack` | Bool | Right Mouse Button |
 | `IA_Dodge` | Bool | Space |
 | `IA_Block` | Bool (hold) | Left Ctrl |
+| `IA_Parry` | Bool (press) | E |
 | `IA_LockOn` | Bool | Middle Mouse Button |
+| `IA_LockOnSwitch` | Axis1D | Mouse Wheel Up (+1/right) / Down (-1/left) |
 | `IA_Interact` | Bool | F |
 
 ## Reserved keys (not bound yet)
@@ -40,8 +42,6 @@ Combat bindings must never use these keys (GDD §29.2, R-CMB-36, AC-CMB-14). The
 
 | Key | Reserved for | Owner |
 |---|---|---|
-| E | `IA_Parry` (separate key or timed block: NEW-CMB-01) | CMB |
-| Mouse Wheel Up / Down | `IA_LockOnSwitch` in combat; command cycling inside the wheel | CMB, SQD |
 | Q (hold) | `IA_CommandWheel` | SQD |
 | 1 / 2 / 3 | Squad selection | SQD |
 | Tab (hold) | `IA_TacticalFocus` | TFM |

@@ -1,11 +1,11 @@
 # Hero Combat — WIP và handoff
 
-## Current handoff (2026-10-06, Claude Code)
+## Current handoff (2026-10-09, Codex)
 
-This section supersedes the historical snapshot below. Branch: `feat/01-hero-combat`. CMB now has **11 Done, 0 Review, 10 Todo**.
+This section supersedes the historical snapshot below. Branch: `feat/01-hero-combat`. CMB now has **14 Done, 1 Review, 6 Todo**. Current uncommitted session work/evidence is recorded in [progress.md](../progress.md); no commit/push requested in this session.
 
 - **T-CMB-20 Done** and **T-ENM-01 Done** after Windows build, 119/119 Automation and user PIE sign-off. The P0A checkpoint is recorded in [tasks.md](tasks.md); P0B is open.
-- **Remaining P0 CMB:** 08 and 10 are ready; 09 needs 08; 14 needs T-ENM-03; 15/16 close P0B and G0.
+- **Remaining P0 CMB:** 14 is implemented with a successful ten-minute rendered soak, Review for NEW-CMB-10 wording and shutdown-exit audit; 15 has combat prerequisites Done and owns final Functional Tests; 16 closes P0B/G0 after enemy/synergy/feedback/telemetry/content gates. T-UXF-02 HUD and T-UXF-08 telemetry are Done; T-UXF-11 template and T-ENM-11 playable melee content/feel await owner review. Latest full gate: 180/180, editor/game builds pass; telemetry also has Shipping exclusion evidence. Owner queue: `../owner-review.md`.
 - **Later phases:** 12 (P2) and 17/18/19 (VS) remain closed by phase gates.
 - **Delivery:** source commits `b0c6057` (T-CMB-20) and `22eaaf1` (T-ENM-01). User authorized pushing `feat/01-hero-combat` for continuation on the Windows PC. See the latest progress entry for remote verification. Existing user instruction/log edits preserved.
 

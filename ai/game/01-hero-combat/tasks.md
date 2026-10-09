@@ -24,13 +24,13 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-05 | Light attack 3-hit chain | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04 | Done |
 | T-CMB-06 | Heavy attack with high poise damage + Armor Broken hook | GAMEPLAY | P0A | Must | T-CMB-03, T-CMB-04, T-SYN-01 | Done |
 | T-CMB-07 | Dodge with i-frames | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Done |
-| T-CMB-08 | Block + block break | GAMEPLAY | P0B | Must | T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Review |
-| T-CMB-09 | Parry + counter / vulnerability window | GAMEPLAY | P0B | Must | T-CMB-08, T-SYN-01 | Todo |
-| T-CMB-10 | Lock-on | GAMEPLAY | P0B | Must | T-CMB-01, T-FND-09, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Todo |
+| T-CMB-08 | Block + block break | GAMEPLAY | P0B | Must | T-CMB-02, T-CMB-03, T-CMB-04, T-SYN-01, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Done |
+| T-CMB-09 | Parry + counter / vulnerability window | GAMEPLAY | P0B | Must | T-CMB-08, T-SYN-01 | Done |
+| T-CMB-10 | Lock-on | GAMEPLAY | P0B | Must | T-CMB-01, T-FND-09, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21 | Done |
 | T-CMB-11 | Hero hit reactions, damage taken, death event | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-13 | Done |
 | T-CMB-12 | Interact verb (`IInteractable`) | GAMEPLAY | P2 | Must | T-CMB-02, T-FND-06 | Todo |
 | T-CMB-13 | `L_CombatSandbox` map + `BP_SandboxGameMode` | TOOLS | P0A | Must | T-FND-06, T-FND-09 | Done |
-| T-CMB-14 | Sandbox enemy respawner + scenario presets | TOOLS | P0B | Must | T-CMB-13, T-ENM-01, T-ENM-03 | Todo |
+| T-CMB-14 | Sandbox enemy respawner + scenario presets | TOOLS | P0B | Must | T-CMB-13, T-ENM-01, T-ENM-03 | Review |
 | T-CMB-15 | Combat Automation/Functional Test suite (`L_Test_HeroCombat`) | QA | P0B | Must | T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-CMB-20, T-CMB-21, T-FND-10 | Todo |
 | T-CMB-16 | G0 gate playtest: Combat Sandbox | QA | P0B | Must | T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08, T-ENM-11, T-ENM-12, T-FND-02, T-FND-08, T-UXF-09, T-UXF-10, T-UXF-11 | Todo |
 | T-CMB-17 | Warlord proximity buff (provisional) | GAMEPLAY | VS | Should | T-PRK-02, T-SQD-01 | Todo |
@@ -327,10 +327,12 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Test Case** Stamina 100, hold Block, `DebugHitHero 20 0 1` → HP −4, stamina 80, `Feedback.Combat.Block`. `DebugHitHero 20 0 0` (behind) → HP −20, stamina unchanged. Stamina set to 10, frontal 20 → HP −4, block break, Staggered 1.2 s, all inputs ignored until it ends.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-08 and AC-CMB-09 pass.
-- [ ] Releasing Block returns to Idle in the same frame.
+- [x] AC-CMB-08 and AC-CMB-09 pass.
+- [x] Releasing Block returns to Idle in the same frame.
 
 **Verification** PIE; `FT_BlockReduce`, `FT_BlockBreak` in T-CMB-15.
+
+**Done (2026-10-08, Codex):** accepted the source/tests against the requirements and ran D3D11 sandbox PIE with real IA_Block hold/release. Verified front 20 → HP -4 / stamina -20, back 20 → full damage / no stamina drain, break at stamina 10 → shared Staggered with action rejection, guard resumes after shared expiry while held, release restores Idle and jog speed. A placed ENM melee enemy's real attack also produces HP damage 2/4 and stamina damage 10/20 while held. Final full gate 155/155 includes Block reduction/break, repeated regen suppression and same-frame release cases. Evidence: `Saved/cmb08-pie.json`, `cmb08-pie-engine.log`, `enemy-defense-pie.json` (real-enemy Block portion), `cmb10-final-full-tests.log`. No implementation changes to Block. ENM Heavy scenario verification remains separate from this task.
 **Review handoff (2026-10-07, Claude Code):** `FHeroBlockData` on `UHeroClassDefinition::Block` (0.8 / 1.0 / 140° / 0.6 s / 1.2 s / ×0.5, validated). `InterceptHit` blocks only in Block state and inside the arc (source = instigator, else opposite `HitDirection`); reduces damage, drains stamina from the original force, restarts suppression; at 0 stamina it drops to Idle, applies shared Staggered for `BlockBreakStaggerDuration` and fires `OnBlockBroken(Attacker)`. Entering/leaving Block drives `Stamina.SetBlocking` and guard speed. Block is a hold: the press is remembered (not buffered) and Block resumes when a committed action, cancel window or Staggered ends while still held. `DeliverHit` plays one `Feedback.Combat.Block` / `BlockBreak` per blocked attempt (from the interceptor result, so a lethal block still reads as a block). Content via `Tools/create_hero_assets.bat`: `AM_Warlord_BlockHit` (`MM_HitReact_Front_Lgt_01`), `AM_Warlord_BlockBreak` (`MM_HitReact_Front_Hvy_01`) as presentation montages; `ABP_Warlord` guard layer = layered blend from `spine_01` of `MM_Attack_01` frame 0, weighted by `UHeroAnimInstance::GuardAlpha` (0.1 s fade). Spec `CastleDefender.Combat.Hero.Block` (6 cases). Open: PIE with `DebugHitHero` and the ENM enemy.
 
 ---
@@ -346,22 +348,24 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-08, T-SYN-01
 
 **Implementation Notes**
-- [ ] `FHeroParryData`: montage, stamina cost (0), `ParryPoiseDamage`, `CounterWindow`, `CounterDamageMultiplier`, optional `CounterMontage`.
-- [ ] `IA_Parry` → state Parry → `AM_Warlord_Parry` with an early `_ParryWindow` and no cancel window before the end of recovery (whiff = no block, no dodge).
-- [ ] `InterceptHit` while parry window open, not yet consumed, and `IsInFrontArc` (block arc): atomically mark this action consumed before any callbacks or poise damage; instigator's `UCombatStateComponent::ApplyPoiseDamage(ParryPoiseDamage, Hero)`; return Parried; on the first success stop the parry montage, go Idle, start the Counter Window on the hero's dilated clock (D-20), broadcast `OnParrySucceeded(Attacker)`.
-- [ ] Reset consumed-parry only when a new Parry action starts. Further same-frame/reentrant/later hits resolve normally; no automatic Block takeover, and no baseline multi-parry.
-- [ ] Counter: the first Light/Heavy started inside the Counter Window plays `CounterMontage` if set; its hit has `bIsParryCounter = true` and damage × `CounterDamageMultiplier`; the window ends after that hit or on timeout.
-- [ ] Note the NEW-CMB-01 reading in the header comment; G0 decides.
+- [x] `FHeroParryData`: montage, stamina cost (0), poise damage (`.PoiseDamage`), `CounterWindow`, `CounterDamageMultiplier`, optional `CounterMontage`.
+- [x] `IA_Parry` → state Parry → `AM_Warlord_Parry` with an early `_ParryWindow` and no cancel window before the end of recovery (whiff = no block, no dodge).
+- [x] `InterceptHit` while parry window open, not yet consumed, and `IsInFrontArc` (block arc): atomically mark this action consumed before any callbacks or poise damage; instigator's `UCombatStateComponent::ApplyPoiseDamage(ParryPoiseDamage, Hero)`; return Parried; on the first success stop the parry montage, go Idle, start the Counter Window on the hero's dilated clock (D-20), broadcast `OnParrySucceeded(Attacker)`.
+- [x] Reset consumed-parry only when a new Parry action starts. Further same-frame/reentrant/later hits resolve normally; no automatic Block takeover, and no baseline multi-parry.
+- [x] Counter: the first Light/Heavy started inside the Counter Window plays `CounterMontage` if set; its first hit has `bIsParryCounter = true` and damage × `CounterDamageMultiplier`; the window ends after that hit or on timeout. The trace consumes metadata before callbacks, so nested/other targets get base damage.
+- [x] Note the NEW-CMB-01 reading in the header comment; G0 decides.
 
 **Expected Files / Assets** `HeroCombatComponent.cpp`; `Content/<Game>/Hero/AM_Warlord_Parry`, `AM_Warlord_ParryCounter` (optional)
 
 **Test Case** `DebugHitHero 20 0.1 1`, Parry at t=0 → HP unchanged, test instigator poise −60, `Feedback.Combat.Parry` logged, `OnParrySucceeded` fired; Light within 1 s → 15 damage flagged counter. Parry with no hit, press Block during recovery → ignored. Against the ENM P0 enemy (MaxPoise 50) a parry staggers it.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-10 passes.
-- [ ] AC-CMB-24: first of two same-frame or successive hostile hits is parried, OnParrySucceeded fires once, second resolves normally; repeat with reentrant callbacks. Counter/buffer windows survive actor hit stop.
+- [x] AC-CMB-10 passes.
+- [x] AC-CMB-24: first of two same-frame or successive hostile hits is parried, OnParrySucceeded fires once, second resolves normally; repeat with reentrant callbacks. Counter/buffer windows survive actor hit stop.
 
 **Verification** PIE with `DebugHitHero` and with the ENM enemy (after T-ENM-03); `FT_Parry` in T-CMB-15.
+
+**Done (2026-10-08, Codex):** editor/game targets pass; final full gate 165/165, 0 warnings/failures/not run, editor exit 0. Ten focused Parry specs cover arc, single-use/reentrant success, poise, feedback, hero-clock counter/buffer, first counter payload, timing validation and sender-window close/reopen callbacks. D3D11 sandbox PIE: real E input opens the authored window, DebugHitHero negates damage, real counter Light deals 15, whiff rejects Block/Dodge until recovery; a timed parry against AM_Enemy_Melee_Light causes enemy Staggered and cancels its trace, with no hero damage. Final rendered editor exit 0 (`Saved/cmb09-pie.json`, `cmb09-pie-final-engine.log`). A real integration crash was reproduced by an isolated red test and fixed in shared melee sweep lifecycle: callbacks can close/reopen a window, so old sweeps stop and cannot access cleared samples or overwrite new-window samples. Distinct SFX_Parry is game-content copy of a licensed engine sample. Logs: `cmb09-final-full-tests.log`, `cmb09-final-game-build.log`, `cmb09-sweep-green-tests.log`, `cmb09-sweep-red-tests.log`. Owner still reviews NEW-CMB-01/tuning at G0; final FT_Parry belongs to T-CMB-15.
 
 ---
 
@@ -376,25 +380,27 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-01, T-FND-09, T-CMB-07, T-CMB-11, T-CMB-20, T-CMB-21
 
 **Implementation Notes**
-- [ ] `FHeroLockOnData` in the DA: `Range`, `BreakDistance`, `LOSGraceTime`.
-- [ ] `ULockOnComponent::Toggle()`: overlap sphere (Pawn) within Range → hostile, alive (`UHealthComponent`), LOS (Visibility trace to socket `LockOn`, else capsule centre) → lowest angle to camera forward, then distance.
-- [ ] `Switch(Direction)`: project candidates to screen, choose nearest on that side.
-- [ ] Validity timer 0.15 s: distance > BreakDistance → release; LOS lost longer than grace → release.
-- [ ] Bind target `OnDeath` / `OnDestroyed` → acquire nearest valid in range, else release.
-- [ ] While locked: control rotation interpolates to the target (yaw, clamped pitch); `bUseControllerDesiredRotation` on, orient-to-movement off; strafe blendspace in `ABP_Warlord`. Sprint and Dodge use input direction. Restore on release.
-- [ ] `IA_LockOn` (toggle), `IA_LockOnSwitch` (mouse wheel axis); mouse look does not rotate the camera while locked.
-- [ ] `WBP_LockOnMarker` projects the marker on the target; ticks only while locked; added to `WBP_GameHUD` if T-UXF-02 is done, else added to the viewport directly.
-- [ ] `OnLockOnTargetChanged` delegate. Integrate T-CMB-20 assist: locked target preferred only if valid and inside assist limits; locked facing cannot bypass the attack-window rotation cap. Verify AC-CMB-21 locked preference.
+- [x] `FHeroLockOnData` in the DA: `Range`, `BreakDistance`, `LOSGraceTime`.
+- [x] `ULockOnComponent::Toggle()`: overlap sphere (Pawn + WorldDynamic for existing debug dummies) within Range → hostile, alive (`UHealthComponent`), LOS (Visibility trace to socket `LockOn`, else capsule centre) → lowest angle to camera forward, then distance.
+- [x] `Switch(Direction)`: project candidates to screen, choose nearest on that side.
+- [x] Validity timer 0.15 s (exposed in data): distance > BreakDistance → release; LOS lost longer than grace → release.
+- [x] Bind target `OnDeath` / `OnDestroyed` → acquire nearest valid in range, else release.
+- [x] While locked: control rotation interpolates to the target (yaw, clamped pitch); `bUseControllerDesiredRotation` on for locomotion, orient-to-movement off; strafe blendspace in `ABP_Warlord`. Sprint and Dodge use input direction. Restore on release. Authored actions suppress movement-driven facing so assist remains bounded.
+- [x] `IA_LockOn` (toggle), `IA_LockOnSwitch` (mouse wheel axis); mouse look does not rotate the camera while locked.
+- [x] `WBP_LockOnMarker` projects the marker on the target; ticks only while locked; added directly to the viewport until T-UXF-02.
+- [x] `OnLockOnTargetChanged` delegate. Integrate T-CMB-20 assist: locked target preferred only if valid and inside assist limits; locked facing cannot bypass the attack-window rotation cap. Verify AC-CMB-21 locked preference.
 
 **Expected Files / Assets** `Source/<Game>/Hero/LockOnComponent.h/.cpp`; `Content/<Game>/Hero/BS_Warlord_Strafe`; `Content/<Game>/UI/WBP_LockOnMarker`; `IA_LockOn`, `IA_LockOnSwitch`
 
 **Test Case** Three hostile dummies 5 m away at left / centre / right: lock → centre; wheel up → right; walk 21 m away → release; lock, kill target with cheat → lock moves to nearest remaining; put a pillar between hero and target for 2 s → release after 1 s.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-11 passes.
-- [ ] Lock-on never selects an ally or a dead actor.
+- [x] AC-CMB-11 passes.
+- [x] Lock-on never selects an ally or a dead actor.
 
 **Verification** PIE; `FT_LockOnBreak` in T-CMB-15.
+
+**Done (2026-10-08, Codex):** editor and Development game targets pass; final full gate 155/155 (11 lock-on specs), editor exit 0. D3D11 sandbox PIE uses real Enhanced Input to acquire centre/switch right, tracks camera yaw, suppresses mouse look, verifies lateral Dodge (right ~296 cm, left ~291 cm), immediate death retarget, timer-driven distance break and marker viewport cleanup. Screenshot `Saved/Screenshots/WindowsEditor/ScreenShot00004.png` confirms the yellow outline and animated idle on the preserved custom Warlord mesh. LOS grace under hero hit stop, allies/dead/occluded candidates, destruction, free-facing restoration and locked assist caps are covered by focused specs. A red saved-pose regression caught missing BlendSpace triangulation; authoring now explicitly resamples before saving. Logs: `Saved/cmb10-final-full-tests.log`, `cmb10-visual-final-build.log`, `cmb10-final-game-build.log`, `cmb10-pie-engine.log`, `cmb10-pie.json`. Only known engine C4996/toolchain notices and crowd-manager map-teardown warnings remain. Production side-dodge polish stays T-CMB-19; no task/phase gate beyond T-CMB-10 is passed here.
 
 ---
 
@@ -474,9 +480,9 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-13, T-ENM-01, T-ENM-03
 
 **Implementation Notes**
-- [ ] `BP_SandboxEnemyRespawner`: enemy class (default ENM P0 melee enemy), `Count` (1–3), `RespawnDelay` (5 s), spawn radius; binds each enemy's `UHealthComponent::OnDeath` → respawn after delay.
-- [ ] Cheat `SetSandboxEnemyCount <N>` finds the respawner and changes `Count` live.
-- [ ] Presets as respawner instances in the map: "Duel" (1, enabled by default), "Pair" (2, disabled).
+- [x] `BP_SandboxEnemyRespawner`: enemy archetype/class (default ENM P0 melee enemy), `Count` (1–3), `RespawnDelay` (5 s), spawn radius; consumes each enemy's `OnEnemyRemoved` contract (which includes health death) → respawn after delay, plus safe despawn/out-of-world replacement.
+- [x] Cheat `SetSandboxEnemyCount <N>` finds the respawner and changes `Count` live.
+- [x] Presets as respawner instances in the map: "Duel" (1, enabled by default), "Pair" (2, disabled).
 
 **Expected Files / Assets** `Content/<Game>/Core/BP_SandboxEnemyRespawner`; `L_CombatSandbox` placement; cheat in `UGameCheatManager`
 
@@ -486,6 +492,8 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 - [ ] 10 minutes of PIE with continuous kills: no errors, alive count always equals `Count`.
 
 **Verification** PIE; Outliner enemy count; `stat game` stable over the session.
+
+**Review evidence (2026-10-09, Codex):** six isolated specs pass; editor/game build and 171/171 full gate pass at the initial implementation checkpoint. Real D3D11 PIE completed 601 game/real seconds with 162 continuous kills, independent five-second replacement deadlines, Count 1/2/3/1, Pair enabled transiently, and Duel restored. Counts/actor bounds remain stable; stat game screenshots at minute five/ten show world tick about 1.2 ms and no growing actor/timer population. `Saved/cmb14-pie.json`, `cmb14-pie-engine.log`, `ScreenShot00029.png` / `00030.png`. The first rendered runs exposed unreliable reachable-point selection; spawner now selects the enemy agent's NavData explicitly and uses a navigable-radius point, after which the complete soak succeeds. Wrapper returned nonzero after logged clean shutdown with no new crash report; fresh native exit-code verification is required. NEW-CMB-10 also needs owner wording review: live count is below Count during the required five-second delay, while alive + pending equals owned capacity. The literal acceptance checkbox remains open; task stays Review. Existing placed enemies/content preserved. Tools: `create_sandbox_respawner.bat`.
 
 ---
 

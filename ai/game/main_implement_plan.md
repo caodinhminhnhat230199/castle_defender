@@ -455,13 +455,17 @@ Agreements between features that one feature defines and another consumes. When 
 | `FCombatResolutionEvent` / `OnCombatResolved` (spec v2, proposed): one resolution ID/context/result per hit attempt, participant roles; separate from conditional UXF feedback, no global bus | T-CMB-04 | CMB debugger T-CMB-21, T-UXF-08 telemetry, ENM/SQD/DEF/BOS hit producers; T-CMB-15 verifies counts |
 | `FCombatHit` interrupt strength/category + per-action authored resistance (spec v2, proposed); resistance defaults off, damage still applies, SYN Staggered remains authoritative | T-CMB-04 (hit data), T-CMB-06/11 (hero consumer) | ENM/SQD/DEF/BOS attack data, T-CMB-15 threshold tests |
 | `FCombatHit.bWasBlocked` resolved metadata (overwritten by DeliverHit before OnDamaged); `AHeroCharacter.OnFeedbackRequested(Tag, Hit)` for non-hit death presentation | T-CMB-04/11 | Hero hit-reaction suppression; UXF death feedback consumer (T-UXF-01/03). Never replay hit feedback from OnDamaged. OnHeroDeath observers see committed Dead state. |
+| `FCombatHit.Surface` (`EPhysicalSurface`, default unknown); `UMeleeTraceComponent::TryHitTarget(Target, ImpactPoint, Surface)` optional third argument; `DeliverHit` fills `FFeedbackEventContext.Surface/Magnitude` and emits one impact outcome plus `Hero.Damaged` only for positive Hero HP loss | T-UXF-03 with T-CMB-04 | UXF per-surface sound, armored variant and damage HUD; melee sweeps request physical materials. Existing two-argument callers remain valid. Damage magnitude is actual applied HP loss, not incoming force. |
 | `UMeleeTraceComponent` (+ native `OnHitWindowBegin`, T-ENM-03), `ICombatHitInterceptor` | T-CMB-04 | T-ENM-03, soldier melee (T-SQD-10), boss |
+| `UHeroCombatComponent::OnParrySucceeded(Attacker)`, `HasCounterWindow()`, `GetCounterTimeRemaining()`, `IsParryConsumed()`; hero clock, one success per action | T-CMB-09 | T-CMB-21 debugger, T-CMB-15 tests, T-PRK-03 future parry consumers |
+| `UMeleeTraceComponent::SetParryCounterMultiplier(float)` and native `OnParryCounterConsumed`: first counter payload consumed before DeliverHit callbacks; later targets get base damage | T-CMB-09 | Hero counter owner; T-CMB-15 counter/reentrancy tests |
 | `ACombatProjectile` base | T-SQD-10 | T-DEF-09 tower projectiles; pierce extension for T-PRK-11 / T-CNV-* |
 | `FCombatStateConfig` + `BaseArmor` in every combatant definition | T-SYN-01 | T-ENM-01, T-SQD-01, T-BOS-01, hero class data |
 | `DT_CombatStatePresentation` + `OnStateAdded/Removed` | T-SYN-01, T-SYN-04 | T-UXF-05, T-PRK-03 |
 | Target scorer: priority tier + numeric score term | T-SQD-07 | T-SYN-05 (state weights) |
 | `IInteractable` (`Core/Interactable.h`) | T-CMB-12 | T-DEF-07 `ABuildZone` |
 | `UStaminaComponent::Restore(float)` | T-CMB-03 (added by T-PRK-03, CMB review) | T-PRK-03 |
+| `ULockOnComponent::GetLockOnTarget()`, `GetTargetLocation()` (socket or capsule centre), `OnLockOnTargetChanged(Target)` (null on release); pawn owns selection, UI observes | T-CMB-10 | T-CMB-20 bounded locked preference, T-CMB-21 debugger, T-UXF-02 marker/pawn rebinding, T-CMB-15 lock-on tests |
 | Hero `FellOutOfWorld` → boundary recovery instead of death | T-RUN-07 | T-CMB-01 |
 | Hero death event → Commander Spirit (replaces sandbox respawn) | T-CMB-11 | T-CSM-01 |
 | Hide Follow command while Hero is dead | T-SQD-05 | T-CSM-02 |
@@ -481,9 +485,9 @@ Agreements between features that one feature defines and another consumes. When 
 | Perk pawn-side effects re-apply on pawn change | T-PRK-01 | T-CSM-03 respawn |
 | `FFeedbackEventContext` (Instigator, Target, `bIsHeavy`, `bTargetArmored`, Variant, Lane), per-row cooldown/burst limit | T-UXF-01 | All features playing `Feedback.*` |
 | Hit stop uses per-actor time dilation only | T-UXF-03 | Protects T-TFM-01 global dilation (D-13) |
-| HUD rebinds on pawn change; tactical display mode for markers | T-UXF-02, T-UXF-04 | T-CSM-03, T-TFM-03 |
+| `AHeroPlayerController::GetGameHUD()`; `UGameHUDWidget::ApplyLayers(Flags)` and named feature slots; vitals rebind on pawn change; tactical display mode for markers | T-UXF-02, T-UXF-04 | Feature HUD panels, T-CSM-03, T-TFM-03 |
 | `ULaneDangerSubsystem` (`GetLaneDanger`, `PulseLane`, `OnLaneDangerChanged`) | T-UXF-07 | DEF (path opened, Core attacked), T-DIR (lane incoming), T-BOS-03, T-TFM-03 |
-| `UPlaytestLogSubsystem::LogEvent` | T-UXF-08 | Every gate playtest task, T-BOS-08, T-TFM-12 |
+| `UPlaytestLogSubsystem::LogEvent(FName, const TMap<FName,float>&, const TMap<FName,FString>&)`; static Blueprint `LogEventForWorld(WorldContext, ...)`, development `GetLogPath()` | T-UXF-08 | Every gate playtest task, T-BOS-08, T-TFM-12 |
 | Boss Focus restriction stored in boss phase data | T-BOS-07 | T-TFM-05 |
 
 ### Feature-level open questions

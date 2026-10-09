@@ -207,6 +207,7 @@ Feedback subsystem + table + tags + variants + cooldown/burst throttle; HUD laye
 | NEW-UXF-9 | Pass bars for blind sound tests and §28.1 quiz | TUNABLE | 8/10 hit types, 9/10 §28.3 events, 8/10 quiz frames |
 | NEW-UXF-10 | `Feedback.Combat.Hit.StateBonus` needs `DeliverHit` to flag hits whose state multiplier > 1 (SYN `T-SYN-07`) | IMPROVEMENT | Requested; row skipped if the flag never comes |
 | NEW-UXF-11 | Row cooldown and burst window (R-UXF-03) measured in real time or game time under Focus | REQUIRED | Real time, like hit stop (NEW-UXF-7): spam is heard in real time |
+| NEW-UXF-12 | Should action telemetry count every physical/requested input, including refused inputs and unchanged combo states? | IMPROVEMENT, owner review at G0 | Count the documented OnActionStateChanged entries now. Broader attempt counts require a CMB request event; do not infer presses from polling. |
 | Q-13 | Art direction | Master plan | Placeholder; R-UXF-15..18 hold for any art |
 | Q-16 | Leaving Siege Site boundary | Master plan | RUN rows FC-49 |
 

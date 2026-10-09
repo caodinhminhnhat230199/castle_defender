@@ -114,6 +114,7 @@ FCombatHit
   FGameplayTagContainer AppliedStates   (e.g. State.Combat.ArmorBroken)
   float StateDuration          (seconds; 0 = definition default)
   FVector HitLocation, HitDirection
+  EPhysicalSurface Surface     (trace result; unknown = row default sound, T-UXF-03)
   bool bIsHeavy, bIsParryCounter
 
 UHealthComponent

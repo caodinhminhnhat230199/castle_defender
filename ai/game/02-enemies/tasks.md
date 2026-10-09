@@ -15,8 +15,8 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 | T-ENM-01 | `AEnemyCharacter` + `UEnemyArchetypeDefinition` + health/combat-state wiring + team + death/despawn | GAMEPLAY | P0 | Must | T-FND-04, T-FND-05, T-FND-07 | Done |
 | T-ENM-02 | `UEnemyBrainComponent` FSM skeleton with timer-driven decision tick | AI | P0 | Must | T-ENM-01, T-FND-09 | Done |
 | T-ENM-03 | Melee attack with telegraph | GAMEPLAY | P0 | Must | T-ENM-02, T-CMB-04, T-UXF-01 | Done |
-| T-ENM-04 | Hit reaction + Staggered behavior | GAMEPLAY | P0 | Must | T-ENM-03, T-SYN-01, T-UXF-01 | Review |
-| T-ENM-11 | P0 melee enemy content + sandbox tuning pass | DESIGN | P0 | Must | T-ENM-03, T-ENM-04, T-CMB-01 | Todo |
+| T-ENM-04 | Hit reaction + Staggered behavior | GAMEPLAY | P0 | Must | T-ENM-03, T-SYN-01, T-UXF-01 | Done |
+| T-ENM-11 | P0 melee enemy content + sandbox tuning pass | DESIGN | P0 | Must | T-ENM-03, T-ENM-04, T-CMB-01 | Review |
 | T-ENM-12 | P0 Functional Tests + G0 enemy check | QA | P0 | Must | T-ENM-11, T-FND-10, T-CMB-08, T-CMB-09, T-UXF-03 | Todo |
 | T-ENM-13 | Waypoint route following + sandbox goal (P1 advance) | AI | P1 | Must | T-ENM-02 | Todo |
 | T-ENM-05 | Swarm archetype | GAMEPLAY | P1 | Must | T-ENM-13, T-ENM-04, T-SQD-02 | Todo |
@@ -153,6 +153,8 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 - [x] After Staggered ends, the enemy acts again within one decision interval.
 
 **Verification:** Functional Test `FT_Enemy_StaggerCancel`; PIE with Hero Heavy attacks.
+
+**Done (2026-10-08, Codex):** inspected the inherited implementation/specs and completed D3D11 sandbox PIE. A normal Hero hit leaves the real enemy Attacking; poise break during wind-up immediately enters Staggered, closes the trace and plays `AM_Enemy_Melee_Stagger`, with no cancelled-swing damage; SYN expiry resumes decisions. Two real Hero Heavy presses through Enhanced Input and montage sweeps deal 60 total damage and break poise into Staggered (enemy HP 98 → 38 after the earlier test hits). Initial Heavy misses were a fixture error: PauseDecisions does not cancel an already-playing attack, which interrupted the hero. Stopping that montage in the fixture resolved it; no game code changed. Full gate 155/155 includes the Enemy.Stagger cases. Evidence: `Saved/enemy-defense-pie.json`, `enemy-defense-pie-engine.log`, `cmb10-final-full-tests.log`. `FT_Enemy_StaggerCancel` remains part of T-ENM-12 final coverage; normal-hit impact presentation remains T-UXF-03.
 **Review handoff (2026-10-06, Claude Code):** `AEnemyCharacter`: `OnHitReactPresentation(FCombatHit)` on every damaging hit while alive (presentation only), `OnStaggerPresentation(bool)`. `UEnemyBrainComponent` binds `OnStateAdded/Removed`: on `State.Combat.Staggered` it stops the attack montage with no blend-out and closes the hit window at once (no reliance on `NotifyEnd` during blend-out), stops movement, clears focus, enters `Staggered`; on removal it re-engages (or Idles) and decides immediately. Duration is the DA's `StaggerDuration` through `UCombatStateComponent`; no ENM timer. `BP_Enemy_Base` plays `AM_Enemy_Melee_Stagger` (placeholder `MM_HitReact_Front_Hvy_01`) on true and stops it on false (wired by `Tools/create_enemy_assets.bat`). `OnHitReactPresentation` has no BP content yet: the placeholder rig has only a full-body slot, and a flinch montage there would interrupt the attack (R-ENM-08); impact feedback is T-UXF-03. Verification moved from `FT_Enemy_StaggerCancel` to Automation Spec `CastleDefender.Enemy.Stagger` (real world tick): poise break in the wind-up → no damage, stagger montage, no state change/telegraph/movement during the state, acts again in ≤ one decision interval; break at hit-window start → no damage; hit without break → attack still lands. Full gate 137/137 (twice). Open: PIE with Hero Heavy in `progress.md`.
 
 ### T-ENM-11 — P0 melee enemy content + sandbox tuning pass
@@ -163,10 +165,10 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 - **Dependencies:** T-ENM-03, T-ENM-04, T-CMB-01
 
 **Implementation Notes**
-- [ ] `DA_Enemy_Melee` + `BP_Enemy_Melee` (placeholder mesh/anim from `Placeholder/`, see production-plan).
-- [ ] Two attacks to start: one light (short wind-up), one heavy (long, distinct wind-up). Add more only if the G0 playtest says the enemy is boring (NEW-ENM-1).
-- [ ] Place 1, 3 and 5 enemies in separate sandbox areas to test single and group fights.
-- [ ] Record the tuning values used and why in the playtest note.
+- [x] `DA_Enemy_Melee` + `BP_Enemy_Melee` (placeholder mesh/anim from `Placeholder/`, see production-plan).
+- [x] Two attacks to start: one light (short wind-up), one heavy (long, distinct wind-up). Add more only if the G0 playtest says the enemy is boring (NEW-ENM-1).
+- [x] Place 1, 3 and 5 enemies in separate sandbox areas to test single and group fights.
+- [x] Record the tuning values used and why in the playtest note.
 
 **Expected Files / Assets:** `DA_Enemy_Melee`, `BP_Enemy_Melee`, montages; `L_CombatSandbox` placements.
 
@@ -174,9 +176,11 @@ Rules with no task by design: R-ENM-31, R-ENM-32 ([DEFERRED] flying and biome sp
 
 **Acceptance Criteria**
 - [ ] All values tuned in the DA, none in code.
-- [ ] Playtest note in `ai/game/playtests/` with tuning changes.
+- [x] Playtest note in `ai/game/playtests/` with tuning changes.
 
 **Verification:** PIE playtest; values diffed in the DA.
+
+**Review evidence (2026-10-09, Codex):** playable DA/BP and red Quinn material variant inherit existing base presentation and approved 0.5/0.8-second Light/Heavy windows. Added nine 1/3/5 actors non-destructively and migrated Duel/Pair's known fixture references; original five fixture actors preserved. Saved content/tint/timing spec passes; editor/game builds pass; full gate 180/180, 0 warnings/failures/not run, editor exit 0 (`Saved/enm11-full-tests.log`). Clean D3D11 300.003-second soak observes both attacks and real combat/Parry input in all groups, 25 shared-helper replacements, native exit 0 (`enm11-pie.json`, `enm11-pie-exit.json`). First soak had a repeated console lookup notice; fixture now performs one console smoke then direct Blueprint/dev calls, final log has only known engine crowd teardown warnings. Snapshot/limits/owner hypotheses in `playtests/2026-10-09_G0_melee-baseline.md`; actor/source-license provenance recorded. All numeric gameplay values remain in DA/montages; initial seed is not accepted final balance. God/no-sound automation cannot evaluate HP pressure, readable cues or AC-ENM-09's engagement verdict. Owner must play each group normally for five minutes and record KEEP/CHANGE/DELETE; task stays Review and does not open ENM-12/G0.
 
 ### T-ENM-12 — P0 Functional Tests + G0 enemy check
 

@@ -171,6 +171,7 @@ Placeholders so the first data asset can be authored. **Not GDD numbers.** Tune 
 | AttackAssistMaxAngle / Distance / RotationRate | **35° / 400 cm / 720°/s** | `.AttackAssist` |
 | Interrupt resistance | Off by default | per-action data / authored notify window |
 | LockOnRange / BreakDistance / LOS grace | 1500 / 2000 cm / 1.0 s | `.LockOn` |
+| Lock-on validation interval / camera interpolation speed / pitch limits | 0.15 s / 8 / -60° to 45° | `.LockOn` (P0 camera starting values; tune at G0) |
 | Sandbox respawn delay | 3 s | `BP_SandboxGameMode` variable |
 | InteractRange (P2) | 250 cm | `.Interact` |
 
@@ -302,6 +303,7 @@ Provided to others: hit dispatch (`UCombatLibrary::DeliverHit`, used by ENM/SQD/
 | NEW-CMB-07 | Proposed default keys: Light LMB, Heavy RMB, Block (hold) Left Ctrl, Parry E, Dodge Space, Sprint (hold) Left Shift, Lock-on Middle Mouse, switch target Mouse Wheel, Interact F | Final key map owned by T-FND-06; rebinding UI is VS/launch | IMPROVEMENT |
 | NEW-CMB-08 | How much attack rotation assistance is needed to make melee reliable without feeling magnetic? | Start at 35° / 400 cm / 720°/s, rotation-only; tune at G0 | REQUIRED, tune at G0 |
 | NEW-CMB-09 | Should baseline Parry ever handle multiple simultaneous attackers? | No. First successful parry consumes the action; multi-parry is reserved for an explicit perk/trait | DESIGN DECISION, revisit only if G0 proves necessary |
+| NEW-CMB-10 | T-CMB-14 says alive count always equals Count, but also requires a five-second respawn delay. Which count is intended? | Track capacity as alive + pending; live count returns to Count after the authored delay. Count applies only to enemies owned by the enabled preset, preserving unrelated placed actors. | REQUIRED, owner wording review at G0 |
 
 ## 13. System Contract (GDD §38)
 
