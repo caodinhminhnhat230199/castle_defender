@@ -27,6 +27,8 @@ The 2 internal skills (`game-development-workflow`, `ue5-project-architecture`) 
 
 If both the skill folder and the zip are missing, stop and ask the user to get the zip from the lead.
 
+The five adapted UE5 skills (`ue5-combat-components`, `ue5-dodge-parry`, `ue5-animation-combat`, `ue5-abilities-scope`, `ue5-vfx-impact`) also ship in `.claude/skills/`. Their project-specific versions must come from the checkout. Do not install the unadapted root uploads as replacements; see [integration decisions](ai/game/skill-integration.md). If an adapted skill is missing, report it and recover it from the project's source-control copy without overwriting other work.
+
 ### 2. Install skills into `.claude/skills/`
 
 ```bash
@@ -44,6 +46,17 @@ install_dir() { # $1 = skill name, $2 = source directory
 # Internal skills (zip files at the project root)
 for z in game-development-workflow ue5-project-architecture; do
   if [ -d "$DEST/$z" ]; then echo "SKIP  $z (already installed)"; else unzip -q "$ROOT/$z-skill.zip" -d "$DEST" && echo "OK    $z"; fi
+done
+
+# Adapted project skills ship with the checkout; do not replace them with uploads.
+for s in ue5-combat-components ue5-dodge-parry ue5-animation-combat \
+         ue5-abilities-scope ue5-vfx-impact; do
+  if [ -f "$DEST/$s/SKILL.md" ]; then
+    echo "SKIP  $s (project guide already installed)"
+  else
+    echo "FAIL  $s (restore the adapted project guide from source control)"
+    exit 1
+  fi
 done
 
 # addyosmani/agent-skills: install only the skills this project needs
@@ -114,13 +127,15 @@ claude plugin install ponytail@ponytail --scope project
 codegraph --version && grep -q '"codegraph"' ~/.claude.json && echo "PASS  codegraph (CLI + MCP)" || echo "FAIL  codegraph"
 for s in game-development-workflow ue5-project-architecture code-review-and-quality \
          debugging-and-error-recovery documentation-and-adrs git-workflow-and-versioning \
-         idea-refine source-driven-development planning-with-files stop-slop; do
+         idea-refine source-driven-development planning-with-files stop-slop \
+         ue5-combat-components ue5-dodge-parry ue5-animation-combat \
+         ue5-abilities-scope ue5-vfx-impact; do
   f=".claude/skills/$s/SKILL.md"
   if [ -f "$f" ] && grep -q "^name: $s" "$f"; then echo "PASS  $s"; else echo "FAIL  $s"; fi
 done
 ```
 
-All 11 lines must be `PASS`. If the project already has code, also run `codegraph status`; it must show an initialized index. Report the result to the user and remind them to **start a new Claude Code session** so the new skills load.
+All 16 lines must be `PASS` for a complete setup (15 skills + CodeGraph). If the project already has code, also run `codegraph status`; it must show an initialized index. Report the result to the user and remind them to **start a new Claude Code session** so the new skills load. A skill-only update does not authorize installing CodeGraph or creating its index; report those checks separately when the tool is unavailable.
 
 ---
 
@@ -130,6 +145,11 @@ All 11 lines must be `PASS`. If the project already has code, also run `codegrap
 |---|---|---|
 | `game-development-workflow` | internal zip | Requirements, spec, planning, prototyping, vertical slice, playtesting, QA, release, quality gates |
 | `ue5-project-architecture` | internal zip | UE5 architecture: modules/plugins, Gameplay Framework, C++/Blueprint, GAS, AI, UI, world, performance, save |
+| `ue5-combat-components` | user upload, adapted in repo | Component combat, montage windows, shared hits and buffering |
+| `ue5-dodge-parry` | user upload, adapted in repo | Current directional dodge, stamina, i-frames, Block and Parry |
+| `ue5-animation-combat` | user upload, adapted in repo | Existing animation assembly, transition QA and timing-preserving polish |
+| `ue5-abilities-scope` | user upload, adapted in repo | Approved Warlord traits, scope intake and phase routing |
+| `ue5-vfx-impact` | user upload, adapted in repo | Existing feedback tables, Niagara, surface sounds and profiling |
 | `idea-refine` | addyosmani/agent-skills | Brainstorming and refining game ideas and mechanics |
 | `source-driven-development` | addyosmani/agent-skills | Checking work against official UE5 docs (engine APIs change often) |
 | `debugging-and-error-recovery` | addyosmani/agent-skills | Root-cause debugging for build errors, crashes, bugs |

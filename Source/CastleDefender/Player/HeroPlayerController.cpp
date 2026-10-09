@@ -1,4 +1,5 @@
 #include "Player/HeroPlayerController.h"
+#include "Player/CommandComponent.h"
 
 #include "Core/GameCheatManager.h"
 #include "Core/GameLog.h"
@@ -20,6 +21,7 @@ namespace
 
 AHeroPlayerController::AHeroPlayerController()
 {
+	Command = CreateDefaultSubobject<UCommandComponent>(TEXT("Command"));
 	CheatClass = UGameCheatManager::StaticClass();
 }
 

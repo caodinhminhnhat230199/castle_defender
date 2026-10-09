@@ -138,7 +138,7 @@ Candidate builds (R-PRK-19):
 | Squad registry (`UCommandComponent`), squad type tag, soldier attack/damage code | SQD `T-SQD-01`, `T-SQD-07`, `T-SQD-10` | Nearby-Infantry buff, Army stat reads |
 | Tower stat reads (`Stat.Tower.*`), `OnTowerShotPreparing(Tower, ShotIndex, FTowerShotParams&)`, projectile `PierceCount`, `Structure.Type.*` tags, structure placed/registered events | DEF `T-DEF-02`, `T-DEF-07`, `T-DEF-22` | Nth-shot pierce, Defense stat reads |
 | Zone bonus magnitudes and hold/release events | ZON `T-ZON-03`, `T-ZON-04` | First user of the query (P2) |
-| Feedback rows, HUD slot + Modal layer (`SetHUDLayerActive`), telemetry `LogEvent` + run summary | UXF `T-UXF-01`, `T-UXF-02`, `T-UXF-08`, `T-UXF-16` | Section 14 |
+| Feedback rows, HUD slot + Modal presentation derived from controller `OnPlayerModeChanged` (D-19), telemetry `LogEvent` + run summary | UXF `T-UXF-01`, `T-UXF-02`, `T-UXF-08`, `T-UXF-16`; FND controller `PushMode`/`PopMode` | Section 14 |
 | Cancel Tactical Focus on modal open | TFM `T-TFM-01` | Choice UI opens cleanly |
 | Tags, tuning settings, test harness | FND `T-FND-04`, `T-FND-07`, `T-FND-10` | Base |
 

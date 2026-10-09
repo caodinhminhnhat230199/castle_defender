@@ -72,10 +72,9 @@ namespace HeroCombatTestPrivate
 	}
 }
 
-using namespace HeroCombatTestPrivate;
-
 bool UHeroCombatTestLibrary::RunHeroCombatScenario(UObject* WorldContextObject, const FString& ScenarioName, FString& OutMessage)
 {
+	using namespace HeroCombatTestPrivate; // Function scope avoids leaking helper names into other unity-build sources.
 	UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull) : nullptr;
 	if (!World)
 	{

@@ -6,18 +6,20 @@
 | Architecture baseline | [00-foundation/technical-plan.md](../00-foundation/technical-plan.md) §10, §12; master plan D-10, D-11, D-13, D-15 |
 | Interfaces used | CMB `UCombatLibrary::DeliverHit` ([01-hero-combat/technical-plan.md §4.2](../01-hero-combat/technical-plan.md)); SYN `DT_CombatStatePresentation` + `OnStateAdded/OnStateRemoved` ([04-battlefield-synergy](../04-battlefield-synergy/spec.md)) |
 | Phases | P0 → P3 |
-| Status | Draft v1. Paths and types are proposals; UE API names marked "verify" must be checked against the pinned engine version |
+| Status | P0 feedback/HUD/telemetry implemented; G0 recorded passed 2026-10-09. P1+ markers, state presenter, lane danger and run UI/telemetry remain planned. Check tasks/source before treating a future type as available |
 
 ## 1. Technical Overview
 
+Supporting presentation guidance: [ue5-vfx-impact](../../../.claude/skills/ue5-vfx-impact/SKILL.md), with [integration decisions](../skill-integration.md). It routes through the existing subsystem/tables and retains current hit-stop restrictions, missing-row behavior and D-15 profiling policy.
+
 - Gameplay code calls `UFeedbackSubsystem::Play(Tag, Context)` (WorldSubsystem). The subsystem resolves the row in `DT_Feedback` (or a variant row such as `<Tag>.Armored`), applies cooldown and burst limits, then plays sound, Niagara, camera shake and hit stop, and broadcasts `OnFeedbackPlayed` for toasts, HUD flashes and telemetry. One call site per event, one table to audit (D-10).
-- CMB's `DeliverHit` already picks one tag per hit outcome and fills Instigator, Target, `bIsHeavy`, `bTargetArmored`. UXF adds surface sounds, the armored variant, hit stop and shake.
+- CMB's `DeliverHit` picks one impact tag per outcome and fills Instigator, Target, location/direction, `bIsHeavy`, `bTargetArmored`, physical `Surface` and actual HP-loss `Magnitude`. Positive Hero HP loss also emits Hero.Damaged independently; SYN owns its state cues. UXF resolves existing surface sounds/variants, hit stop and shake without duplicating producers.
 - World-level presentation state lives on the subsystem: HUD layer flags (`SetHUDLayerActive`) and the derived marker tactical display. `ULaneDangerSubsystem` owns lane danger values so TFM/CSM/BOS can read or pulse them; widgets only display.
 - HUD: `WBP_GameHUD` (C++ base `UGameHUDWidget`) with named slots; feature panels are plain UMG observing delegates (D-11).
 - State icons/VFX: `UCombatStatePresenterComponent` on every unit binds SYN's `OnStateAdded/OnStateRemoved` and spawns the row's loop VFX from `DT_CombatStatePresentation`.
-- Playtest: `UPlaytestLogSubsystem` writes JSON Lines per world from the feedback stream, a Core HP sampler, and `LogEvent` calls from features.
+- Playtest: implemented P0 `UPlaytestLogSubsystem` records played feedback, hero action-state entries, damage and generic `LogEvent` calls with pawn rebinding. Core/run/Focus/perk sampling remains T-UXF-16; raw hit-resolution subscription is not part of current P0 telemetry (NEW-UXF-12).
 
-Engine features reused instead of custom code: Sound Classes, Sound Concurrency, passive Sound Mix ducking, Niagara Effect Types/scalability + user parameters, Physical Materials (`EPhysicalSurface`), `UCameraShakeBase`, `UWidgetComponent`, per-actor `CustomTimeDilation`, Data Tables, `APlayerController` possessed-pawn-changed delegate (verify name, e.g. `OnPossessedPawnChanged`).
+Engine features reused instead of custom code: Sound Classes, Sound Concurrency, passive Sound Mix ducking, Niagara Effect Types/scalability + user parameters, Physical Materials (`EPhysicalSurface`), `UCameraShakeBase`, per-actor `CustomTimeDilation`, Data Tables and `AController::OnPossessedPawnChanged` (already used by P0 HUD/telemetry). `UWidgetComponent` is planned world-marker infrastructure.
 
 ## 2. Existing System Impact
 
@@ -39,7 +41,7 @@ Engine features reused instead of custom code: Sound Classes, Sound Concurrency,
 
 | Object | Owner | Lifetime |
 |---|---|---|
-| `UFeedbackSubsystem` | World (game/PIE only via `ShouldCreateSubsystem`) | Map |
+| `UFeedbackSubsystem` | World (game/PIE only via implemented `DoesSupportWorldType`) | Map |
 | `ULaneDangerSubsystem` | World (game/PIE); idle when no lanes are registered | Map |
 | `UPlaytestLogSubsystem` | World, compiled out of Shipping | Map = one sandbox session or one Siege Site run |
 | `WBP_GameHUD` | `AHeroPlayerController` | Controller lifetime; survives Hero death |
@@ -72,6 +74,8 @@ Engine features reused instead of custom code: Sound Classes, Sound Concurrency,
 
 ### 3.4 Communication flow
 
+The diagram includes P1+ proposals (markers, state presenter, lane danger and mode-driven layers). For those integrations D-19 applies: feature owners push/pop `EPlayerMode` through `AHeroPlayerController`, then presentation observes `OnPlayerModeChanged`. `SetHUDLayerActive` is an existing presentation setter, not an alternate player-mode authority. Automatic controller-to-layer synchronization is not implemented in P0 and must be integrated/verified with the relevant mode-owning task; widgets never set mapping contexts or input mode.
+
 ```mermaid
 flowchart LR
   G[Owners: CMB DeliverHit, SYN, SQD, DEF, RUN, CSM, TFM, PRK, BOS] -- Play(tag, ctx) --> FS[UFeedbackSubsystem]
@@ -82,7 +86,8 @@ flowchart LR
   FS --> HS[Hit stop: CustomTimeDilation on instigator + target]
   FS -- OnFeedbackPlayed --> UI[Alert feed, vitals flash, perk tray]
   FS -- OnFeedbackPlayed --> LOG[UPlaytestLogSubsystem .jsonl]
-  L[TFM CSM SQD DEF PRK RUN] -- SetHUDLayerActive --> FS
+  L[Mode owners: SQD DEF TFM CSM PRK RUN] -- PushMode / PopMode --> PC[AHeroPlayerController]
+  PC -- OnPlayerModeChanged: presentation projection --> FS
   FS -- OnHUDLayersChanged --> HUD[WBP_GameHUD panels] & MK[UWorldMarkerComponent tactical display]
   CS[UCombatStateComponent OnStateAdded/Removed] --> PR[UCombatStatePresenterComponent] -- reads --> CSP[(DT_CombatStatePresentation)]
   EN[Enemies: lane + threat] -- 2 Hz scan --> LD[ULaneDangerSubsystem]
@@ -159,7 +164,7 @@ Play(Tag, Ctx):
   heroInvolved = local Hero is Ctx.Instigator or Ctx.Target
   if Row.HitStopSeconds > 0 and heroInvolved and tag is a large impact (R-UXF-07): HitStop({Instigator, Target}, Row.HitStopSeconds)
   if Row.CameraShake: radius 0 → direct shake if heroInvolved; else world shake with radii; stop previous instance of this tag
-  broadcast OnFeedbackPlayed(Tag, Ctx)
+  broadcast OnFeedbackPlayed(Row.Tag, Ctx) // resolved variant tag, only after outputs play
 ```
 
 ### 4.2 Hit stop
@@ -177,7 +182,7 @@ sequenceDiagram
   FS->>A: restore saved original CustomTimeDilation (skip destroyed actors)
 ```
 
-Restore timing in real time (NEW-UXF-7): use a timer whose duration is scaled by the current global time dilation, or a core ticker on real time (verify which is reliable in the pinned UE version). Convention: only `UFeedbackSubsystem` writes `CustomTimeDilation`.
+Restore timing in real time (NEW-UXF-7): use the implemented core ticker with `FPlatformTime::Seconds()` deadlines. Do not substitute a world timer scaled once by the current global dilation: that becomes wrong if dilation changes before restore. Only `UFeedbackSubsystem` writes gameplay hit-stop `CustomTimeDilation`.
 
 Implementation (UE 5.8.3): core ticker checks a monotonic real-time deadline only while an actor is stopped. Overlaps extend that deadline and preserve the original actor dilation. R-UXF-07 takes precedence over the earlier generic row pseudocode: only Heavy (including Armored), Parry, BlockBreak or Staggered.Applied with Hero involvement can stop actors; bHeroOnly cannot opt other fights into hit stop.
 
@@ -214,6 +219,8 @@ stateDiagram-v2
 ```
 
 Layers are flags; visibility uses the highest active: Modal > CommanderSpirit > TacticalFocus > Build > CommandWheel > Combat. Marker tactical display = TacticalFocus or CommanderSpirit flag set (and Modal not set).
+
+The diagram shows presentation contexts, not an input-mode switch implementation. D-19's reason-keyed stack determines the actual return context: closing Modal over Spirit restores Spirit; closing Build over Spirit restores Spirit; ending Focus removes only its own entry. Each future mode integration must project that controller state into presentation layers and test stacked/out-of-order removal instead of hard-coding a return to Combat.
 
 ### 4.5 Lane danger
 

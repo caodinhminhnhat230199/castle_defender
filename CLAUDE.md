@@ -9,6 +9,11 @@ All rules above apply. These notes cover what only Claude Code has.
 - **Skills** in `.claude/skills/`:
   - `game-development-workflow`: planning, prototypes, playtests, QA, gates.
   - `ue5-project-architecture`: any UE5 design choice.
+  - `ue5-combat-components`: existing melee, montage timing, hit pipeline and buffering.
+  - `ue5-dodge-parry`: directional dodge, i-frames, Block, first-hit Parry and counter.
+  - `ue5-animation-combat`: existing animation assembly and timing-preserving polish.
+  - `ue5-abilities-scope`: approved Warlord trait scope and phase routing.
+  - `ue5-vfx-impact`: Niagara, surface sounds, hit stop and feedback-table integration.
   - `source-driven-development`: check Unreal APIs against the official docs.
   - `debugging-and-error-recovery`: build errors, crashes, bugs.
   - `code-review-and-quality`: run before moving a task to `Review`.

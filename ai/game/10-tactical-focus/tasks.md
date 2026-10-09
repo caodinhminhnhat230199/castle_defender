@@ -41,7 +41,7 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 - [ ] Focus category in `UGameTuningSettings` (§5 table); validation: `FocusTimeScale` in 0.1–0.9 (warn outside 0.2–0.3), capacity > `MinMeterToEnterSeconds`, rate > 0.
 - [ ] `UTacticalFocusComponent` on `AHeroPlayerController`: bind `IA_TacticalFocus` Started → `TryEnter`, Completed/Canceled → `Exit(Released)`.
 - [ ] Real delta: read `UWorld::DeltaRealTimeSeconds` or `FApp::GetDeltaTime()` (verify which excludes dilation); tick enabled only while active or recharging.
-- [ ] Enter: `SetGlobalTimeDilation(EffectiveTimeScale)` then `SetInputMode(TacticalFocus)`; exit: dilation 1.0 first, then input mode back, then `Meter.OnExit`.
+- [ ] Enter: `SetGlobalTimeDilation(EffectiveTimeScale)` then controller `PushMode(EPlayerMode::Focus, Reason)`; exit: dilation 1.0 first, then `PopMode(Reason)` restores the remaining stack, then `Meter.OnExit`. Presentation observes `OnPlayerModeChanged` (D-19); no feature/widget input-mode writes.
 - [ ] Forced exit + entry block on: Hero `OnHeroDeath`, `ARunGameState::OnRunPhaseChanged` to PerkChoice/Resolve, CSM spirit state ≠ Alive; meter frozen while dead.
 - [ ] `EndPlay` and `ARunGameMode::StartRun` force dilation 1.0.
 - [ ] CVar `game.debug.Focus 1`: meter, state, current global dilation on screen.
@@ -129,7 +129,7 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 **Dependencies** T-TFM-02, T-SQD-05, T-SQD-06
 
 **Implementation Notes**
-- [ ] `IMC_TacticalFocus`: `IA_Move`, `IA_Look`, `IA_TacticalFocus`, `IA_CommandWheel`. `SetInputMode(TacticalFocus)` removes `IMC_Combat` and adds this context; SQD adds `IMC_CommandWheel` on top when the wheel opens.
+- [ ] `IMC_TacticalFocus`: `IA_Move`, `IA_Look`, `IA_TacticalFocus`, `IA_CommandWheel`. Register the context in controller `ModeInput` for Focus; only `AHeroPlayerController` applies contexts. SQD requests Wheel through its own push/pop reason, preserving Focus's movement/command behavior and restoring Focus on wheel close (D-19; verify composed contexts in the controller).
 - [ ] Verify SQD target resolution uses the active view target (tactical camera centre) and that the wheel works with the camera at height (trace length ≥ camera distance + `MaxCommandDistance`).
 - [ ] Focus release / depletion while the wheel is open: Focus exits, the input mode returns to Combat with `IMC_CommandWheel` still on top, the wheel stays open (coordinate with SQD on mode switching while open).
 - [ ] Wheel Hold trigger timing under dilation: check in T-TFM-10; if the hold threshold stretches, enable the trigger's time-dilation option (verify name) or document.

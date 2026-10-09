@@ -2,7 +2,7 @@
 
 Tài liệu tổng hợp cấu trúc dự án: repo có gì, tài liệu nằm ở đâu, làm theo thứ tự nào. Chi tiết kỹ thuật và kế hoạch đầy đủ nằm trong [ai/game/main_implement_plan.md](ai/game/main_implement_plan.md).
 
-Updated: 2026-10-04
+Updated: 2026-10-09
 
 ---
 
@@ -27,10 +27,10 @@ Game Action Strategy Roguelite góc nhìn thứ ba. Người chơi trực tiếp
 | Hạng mục | Trạng thái |
 |---|---|
 | GDD v2 | Xong |
-| Bộ skill Claude Code (`.claude/skills/`) | Đã cài |
+| Bộ skill Claude Code (`.claude/skills/`) | 15 project-local skills, including five adapted combat/defense/animation/ability/VFX guides; [integration](ai/game/skill-integration.md) |
 | Kế hoạch tổng, kiến trúc, production plan | Xong |
-| Spec / plan / task cho từng feature | Xong: 19 folder, 59 file, 271 task. Đã kiểm tra tham chiếu chéo: không thiếu ID nào, không trùng ID task. |
-| Project UE5 (`.uproject`, `Source/`) | Created: `CastleDefender.uproject`, one runtime module, Foundation code and assets. Phase F passed on 2026-10-04; P0 is in progress and later gameplay classes remain proposals until implemented. |
+| Spec / plan / task cho từng feature | 19 feature folders; 273 unique tasks in the overview tables (checked 2026-10-09). CMB has 21 tasks, including T-CMB-20/21; links and current dependency examples validated. |
+| Project UE5 (`.uproject`, `Source/`) | `CastleDefender.uproject`, one runtime module. Foundation passed 2026-10-04; P0/G0 recorded passed 2026-10-09; current phase is P1 Combined Arms. P1+ additions remain planned until their tasks land. |
 | Git | Initialized with Git LFS; binary assets use LFS. |
 | Quy tắc cho coding agent | Xong: `AGENTS.md` dùng chung cho mọi agent, `CLAUDE.md` cho Claude Code, nhật ký `ai/game/progress.md` |
 
@@ -79,7 +79,7 @@ ai/game/
 │
 ├── 00-foundation/                F      Setup project UE5 + kiến trúc chung            10 task
 │
-├── 01-hero-combat/               P0     Combat của Warlord                              19 task
+├── 01-hero-combat/               P0     Combat của Warlord                              21 task
 ├── 02-enemies/                   P0→P2  Enemy và hành vi theo lane                      17 task
 ├── 03-squad-command/             P1     Squad, Command Wheel, AI squad                  21 task
 ├── 04-battlefield-synergy/       P0→P2  State Staggered / Armor Broken / Marked         11 task
@@ -112,7 +112,7 @@ ai/game/
 
 Riêng `00-foundation/technical-plan.md` là **kiến trúc UE5 chung** cho cả dự án. Mọi feature phải theo file này.
 
-Tổng cộng 271 task: 217 cho Foundation và prototype (P0–P3), 54 cho Vertical Slice (tạm).
+Current total: 273 tasks. Features FND..UXF contain 219 (including 14 provisional VS tasks); features 20–24 contain another 54 provisional VS tasks. By phase: F 10, P0 32, P1 33, P2 55, P3 75, VS 68.
 
 ### Hợp đồng giữa các feature
 
@@ -148,11 +148,11 @@ Không đặt deadline cứng. Chỉ chuyển phase khi qua gate (GDD §32). Che
 | Demo | Sau phase | Chơi được gì | Task để chơi được | Task để qua gate |
 |---|---|---|---|---|
 | D0 | Một phần F | Nhân vật đi lại trong map trống | 9 | — |
-| **D1** | **P0** | Warlord đánh với enemy cận chiến. Lần đầu test cảm giác chơi. | 29 | 40 |
-| D2 | P1 | Hero cùng 2 squad, Command Wheel | ~60 | 73 |
-| D3 | P2 | Xây tower, enemy phá công trình, 3 wave. Lần đầu thấy bản sắc của game. | ~110 | 128 |
-| **D4** | **P3** | Run đầy đủ khoảng 25 phút. Bản đầu tiên đúng là game. | ~180 | 203 |
-| D5 | VS | Bản polish cho người ngoài xem | — | 271 |
+| **D1** | **P0** | Warlord đánh với enemy cận chiến. Lần đầu test cảm giác chơi. | 31 | 42 |
+| D2 | P1 | Hero cùng 2 squad, Command Wheel | ~60 | 75 |
+| D3 | P2 | Xây tower, enemy phá công trình, 3 wave. Lần đầu thấy bản sắc của game. | ~110 | 130 |
+| **D4** | **P3** | Run đầy đủ khoảng 25 phút. Bản đầu tiên đúng là game. | ~180 | 205 |
+| D5 | VS | Bản polish cho người ngoài xem | — | 273 |
 
 **Critical path:** Foundation → Hero Combat → Enemy → Squad → Synergy → Structures & Pathing → Director → Run Flow → Boss.
 
@@ -211,6 +211,11 @@ Tên asset: `BP_`, `DA_`, `DT_`, `ABP_`, `AM_`, `IA_`, `IMC_`, `WBP_`, `NS_`, `L
 |---|---|
 | `game-development-workflow` | Spec, kế hoạch, task, prototype, playtest, QA, gate |
 | `ue5-project-architecture` | Chọn class UE, module, data, AI, UI, save, performance |
+| `ue5-combat-components` | Existing action/timing/trace pipeline and hero-time input buffering |
+| `ue5-dodge-parry` | Current stamina dodge, i-frames, Block, single-use Parry and counter |
+| `ue5-animation-combat` | Existing locomotion/montage assembly and timing-preserving visual QA |
+| `ue5-abilities-scope` | Approved Warlord traits and phase/scope routing |
+| `ue5-vfx-impact` | Existing feedback tables, Niagara, physical surfaces and profiling |
 | `planning-with-files` | Lưu tiến độ ra file để làm tiếp qua nhiều session |
 | `debugging-and-error-recovery` | Lỗi build, crash, bug |
 | `code-review-and-quality` | Review trước khi merge |
@@ -237,10 +242,10 @@ Quy tắc đầy đủ cho agent nằm trong [AGENTS.md](AGENTS.md). Tóm tắt:
 
 ## 10. Việc cần làm tiếp
 
-1. Bắt đầu P0: `01-hero-combat`, phần P0 của `02-enemies`, `04-battlefield-synergy` (T-SYN-01) và `13-hud-feedback`.
+1. Continue P1 after the recorded G0 pass. T-SQD-01 is In Progress (squad definition/registry/spawning); see the newest [handoff](ai/game/progress.md) for verification limits. T-ENM-13 and T-SYN-02 remain eligible Todo. T-UXF-04 waits for T-SQD-01 and T-ENM-06. The [alignment review](ai/game/skill-alignment-review-2026-10-09.md) records the preceding snapshot.
 2. Xem lại 11 giả định (A-01…A-11) và 17 câu hỏi mở (Q-01…Q-17) trong main plan, mục 11.
 3. Chốt các câu hỏi cấp feature quan trọng (main plan mục 8a, "Feature-level open questions"):
-   - **Trước P0:** parry thành công thì gây stagger hay mở vulnerability window? Parry có nút riêng không? (NEW-CMB-01)
+   - **Resolved at G0:** NEW-CMB-01 retains separate Parry input, one successful parry, poise damage and Counter Window. Keep the recorded decision.
    - **Trước P1:** GDD đang mâu thuẫn. §10.2 và §19.1 nói Heavy của Warlord gây Armor Broken mặc định, nhưng ví dụ run ở §33 lại cho đó là perk. Bên nào đúng? (NEW-SYN-02)
    - **Trước P2:** enemy có được đi vòng qua khe hở trong lane không (maze), hay luôn phá thẳng? (NEW-DEF-02)
 4. Mỗi `spec.md` có mục 12 liệt kê câu hỏi `NEW-<FEAT>-n` kèm giá trị mặc định. Nếu không trả lời thì dùng mặc định.

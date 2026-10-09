@@ -2,12 +2,14 @@
 
 ## Current handoff (2026-10-09, Codex)
 
-This section supersedes the historical snapshot below. Branch: `feat/01-hero-combat`. CMB now has **14 Done, 1 Review, 6 Todo**. Current uncommitted session work/evidence is recorded in [progress.md](../progress.md); no commit/push requested in this session.
+This section supersedes the historical snapshot below. Branch: `feat/01-hero-combat`. CMB has **17 Done, 4 Todo, no Review tasks**. All P0 CMB tasks are Done; [G0 passed on 2026-10-09](../playtests/G0_2026-10-09_combat-sandbox.md), opening P1. Check [tasks.md](tasks.md), [progress.md](../progress.md) and the live Git diff before acting.
 
-- **T-CMB-20 Done** and **T-ENM-01 Done** after Windows build, 119/119 Automation and user PIE sign-off. The P0A checkpoint is recorded in [tasks.md](tasks.md); P0B is open.
-- **Remaining P0 CMB:** 14 is implemented with a successful ten-minute rendered soak, Review for NEW-CMB-10 wording and shutdown-exit audit; 15 has combat prerequisites Done and owns final Functional Tests; 16 closes P0B/G0 after enemy/synergy/feedback/telemetry/content gates. T-UXF-02 HUD and T-UXF-08 telemetry are Done; T-UXF-11 template and T-ENM-11 playable melee content/feel await owner review. Latest full gate: 180/180, editor/game builds pass; telemetry also has Shipping exclusion evidence. Owner queue: `../owner-review.md`.
-- **Later phases:** 12 (P2) and 17/18/19 (VS) remain closed by phase gates.
-- **Delivery:** source commits `b0c6057` (T-CMB-20) and `22eaaf1` (T-ENM-01). User authorized pushing `feat/01-hero-combat` for continuation on the Windows PC. See the latest progress entry for remote verification. Existing user instruction/log edits preserved.
+- **Completed P0:** T-CMB-01..11, 13..16, 20..21. T-ENM-11/12 and T-UXF-09/10/11 are recorded Done; the [owner review](../owner-review.md) records G0 resolutions. Skill adaptation does not reopen these tasks.
+- **Remaining CMB:** T-CMB-12 (Interact, P2); T-CMB-17/18/19 (provisional VS proximity buff, trait design spike and production animation polish). None is eligible in current P1, even when individual dependencies are Done.
+- **Current P1 path:** T-SQD-01 is In Progress (squad spawning/registry foundation); see the newest progress entry for build/content/PIE limits. T-ENM-13 and T-SYN-02 remain dependency-ready Todo. T-UXF-04 waits for T-SQD-01/T-ENM-06. Retain the shared branch and phase rules.
+- **Skills:** use the [five adapted guides](../skill-integration.md) and [alignment review](../skill-alignment-review-2026-10-09.md). Components, stamina, the three-hit chain/reset on Dodge, single-use Parry and existing animation/feedback ownership remain the design.
+- **Fresh verification:** editor build and full automation gate pass, 235/235, zero warnings/failures/NotRun, editor exit 0 (`Saved/skill-recheck-editor-build.log`, `Saved/skill-recheck-full-tests.log`). Build has the existing MSVC preference notice. This review did not repeat rendered PIE, human feel/audio testing or packaging; use the recorded G0 acceptance for those results.
+- **Delivery:** this session preserves uncommitted skill/documentation work and original uploads. No branch change, commit, push or PR. Earlier push authorization/checkpoints are historical, not a new remote verification or permission to publish this review.
 
 ## Historical snapshot (superseded where it conflicts with the handoff above)
 

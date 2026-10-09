@@ -139,10 +139,9 @@ namespace EnemyCombatTestPrivate
 	}
 }
 
-using namespace EnemyCombatTestPrivate;
-
 bool UEnemyCombatTestLibrary::RunEnemyCombatScenario(UObject* WorldContextObject, const FString& ScenarioName, FString& OutMessage)
 {
+	using namespace EnemyCombatTestPrivate; // Function scope avoids leaking helper names into other unity-build sources.
 	UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull) : nullptr;
 	if (!World)
 	{

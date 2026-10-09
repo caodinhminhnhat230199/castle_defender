@@ -112,21 +112,21 @@ Owners of other panels and rows are listed in technical plan §5.3 and spec §14
 
 **Implementation Notes**
 - [x] Physical surfaces in Project Settings: Flesh, Armor, Shield, Wood, Stone; `PM_*` assets on placeholder meshes (hero shield = Shield, Armored = Armor). Confirm with CMB that melee traces return physical materials (`bReturnPhysicalMaterial`, verify) and fill `Ctx.Surface`.
-- [x] Hit stop: on rows with `HitStopSeconds > 0` and `bHeroOnly` satisfied, set `CustomTimeDilation = HitStopDilation` on Instigator and Target only; restore after real-time duration (technical plan §4.2; verify approach with a global dilation of 0.25 active); overlaps extend; cap `MaxHitStopSeconds`. Never call global time dilation.
-- [x] Camera shake: radius 0 → `StartCameraShake` on the local player only if Hero involved; otherwise `PlayWorldCameraShake` with radii; stop the previous instance of the same tag; scale × `CameraShakeScale`.
+- [x] Hit stop: R-UXF-07 large-impact tags with Hero involvement only; `bHeroOnly` cannot opt other fights into stopping. Set hit actors' `CustomTimeDilation`, preserve original values, restore via the implemented monotonic real-time ticker; overlaps extend and duration is capped by `MaxHitStopSeconds`. Verify under global dilation 0.25; never write global dilation.
+- [x] Camera shake: retain/replace the exact instance per resolved tag via `StartCameraShake`; apply Hero-only direct routing or pinned-engine radial attenuation, then row `ShakeScale` times global `CameraShakeScale`. The void `PlayWorldCameraShake` helper cannot meet retained-instance/global-scale requirements.
 - [x] Rows: `Hit.Light` (no stop/shake), `Hit.Heavy` (stop ~0.08 s, light shake), `.Armored` variants (dull sparks, metal sound), `Block`, `BlockBreak` (stop + shake), `Parry` (longest stop ~0.12 s, unique sound), `State.Staggered.Applied` (stop + shake when Hero instigated, burst limit). Four clearly different VFX colors/shapes (production plan).
-- [x] Input check with CMB: buffered input during hit stop executes after it (CMB buffer must use real time or tolerate actor dilation).
+- [x] Input check with CMB: buffered input during hit stop executes after it; the buffer and Counter Window use hero dilated time (D-20), not real-time/world deadlines.
 
 **Expected Files / Assets** edits `FeedbackSubsystem.*`; `Content/<Game>/Feedback/PM_*`, `BP_Shake_HitHeavy`, `BP_Shake_BlockBreak`, `BP_Shake_Parry`, `NS_Hit_*`, `SFX_Hit_*` placeholders, rows in `DT_Feedback`; `Content/<Game>/Maps/Test/FT_Feedback_HitStop`
 
 **Test Case** PIE vs P0 enemy and an Armor-PM dummy: Light → spark, no freeze. Heavy → hero + target freeze ~0.08 s while a second enemy keeps moving. Parry → freeze + unique ring. Heavy on Armor dummy → armored variant VFX/SFX. `CameraShakeScale 0` → no shakes. `FT_Feedback_HitStop`: global dilation set to 0.25 by test → heavy hit → global dilation still 0.25 after restore. Buffer Light during a Heavy hit stop → Light executes.
 
 **Acceptance Criteria**
-- [ ] Blind test: tester names hit type in ≥ 8/10 (AC-UXF-03).
+- [x] Blind test: tester names hit type in ≥ 8/10 (AC-UXF-03); recorded passed at G0 in [the gate review](../playtests/G0_2026-10-09_combat-sandbox.md) and [owner review](../owner-review.md). This documentation correction does not claim a fresh listening test.
 - [x] Global time dilation never written by UXF (grep + FT).
 - [x] No input lost.
 
-**Verification** Automation Specs `<Game>.Feedback.Impact`, `<Game>.Feedback.HitPipeline`; Functional Test `FT_Feedback_HitStop`; blind test queued in `owner-review.md`.
+**Verification** Automation Specs `<Game>.Feedback.Impact`, `<Game>.Feedback.HitPipeline`; Functional Test `FT_Feedback_HitStop`; blind test recorded resolved at G0 in `owner-review.md`. The original Done note below is historical; its pending-owner sentence is superseded by that G0 record.
 
 **Done (2026-10-09, Antigravity):** Editor and game targets build with 0 errors. Full automated test suite passes 192/192 tests (0 failures, 0 warnings, editor exit code 0) including `FeedbackImpact.spec.cpp` (hit stop dilation isolation and restoration under slow motion, radial/direct camera shakes, and action buffering across hit stop) and `FT_Feedback_HitStop` functional test map. Physical surfaces Flesh, Armor, Shield, Wood, Stone configured in `DefaultEngine.ini`; `PM_*` assets, camera shake BPs, and `DT_Feedback` authored and verified via idempotent script `Tools/create_feedback_assets.bat`. Blind audio/visual identification (AC-UXF-03) queued for human owner review at G0.
 

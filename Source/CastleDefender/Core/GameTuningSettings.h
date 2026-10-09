@@ -22,6 +22,10 @@ public:
 
 	static const UGameTuningSettings* Get() { return GetDefault<UGameTuningSettings>(); }
 
+	/** R-SQD-01: prototype limit; registry lives on the controller across Hero respawns. */
+	UPROPERTY(Config, EditAnywhere, Category = "Army", meta = (ClampMin = "1"))
+	int32 MaxActiveSquads = 3;
+
 	/** R-SYN-08: duration for a state applied without one (no hit duration, not a poise break). 0 or missing = not applied. */
 	UPROPERTY(Config, EditAnywhere, Category = "Combat", meta = (ForceInlineRow, Categories = "State.Combat"))
 	TMap<FGameplayTag, float> StateDefaultDurations;

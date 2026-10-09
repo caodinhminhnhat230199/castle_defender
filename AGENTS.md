@@ -12,6 +12,7 @@ These rules apply to every coding agent working in this repo, including Codex, A
 
 - Keep shared project rules here. Tool-specific entry files should reference this file and contain only tool-specific notes; do not copy the gameplay or architecture rules into separate files.
 - Guides under `.claude/skills/` are readable Markdown for all three tools. If a tool cannot invoke a skill natively, read its `SKILL.md` and only the needed reference files directly. Do not assume Claude slash commands, plugins or MCP configuration are available in another tool.
+- For combat, defense, animation, abilities or VFX work, follow the adapted skill routing in [ai/game/skill-integration.md](ai/game/skill-integration.md). The five root-level uploads are source material; use the project guides, which preserve the current design and D-xx decisions.
 - Use the tools actually available in the current session. For CodeGraph, follow the conditional lookup rule below; if neither MCP nor CLI is available, report that limitation and inspect the relevant source directly. Do not install tools or create an index automatically.
 
 ## 1. Project

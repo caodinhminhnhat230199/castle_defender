@@ -25,6 +25,7 @@ This file is the index for all implementation work. It summarizes every phase, f
    - `[DEFERRED]`: do not build in prototype or launch scope unless re-requested.
 5. New ideas during implementation go through the intake check in Section 10. A good idea is not automatically in scope.
 6. Coding agents (Claude Code, Codex, Cursor, Copilot, …) follow [/AGENTS.md](../../AGENTS.md); Claude Code loads it through `/CLAUDE.md`.
+7. For combat, dodge/parry, animation, abilities and VFX, use the five adapted [project skill guides](skill-integration.md). They support existing requirements and do not change the design, decisions, phase gates or task acceptance.
 
 ### Document layout
 
@@ -74,6 +75,8 @@ Features `20-*` to `24-*` are provisional. Re-validate their specs and re-plan t
 
 ## 3. Delivery Phases and Gates
 
+Current phase: **P1 (Combined Arms), in progress**. Foundation passed on 2026-10-04; G0 passed on 2026-10-09, as recorded in [the G0 review](playtests/G0_2026-10-09_combat-sandbox.md). This status records the existing gate decision; later gates remain closed.
+
 No hard deadlines until real velocity is measured (GDD §32). Each phase ends in a gate review. A failed gate loops back inside the same phase; it does not unlock the next one.
 
 ```mermaid
@@ -105,11 +108,13 @@ flowchart LR
 Gate reviews use these checks (from GDD §32 and §36). Each gate also needs: build succeeds, no blocker bugs, playtest notes recorded in `ai/game/playtests/` (see `13-hud-feedback` and each feature's QA tasks), and a KEEP / CHANGE / DELETE decision per hypothesis.
 
 **G0: Combat Sandbox** (GDD §32 P0, §36 Combat Core DoD)
-- [ ] Light / Heavy / Dodge / Block / Parry all responsive.
-- [ ] Stamina loop is clear to the player.
-- [ ] Hit feedback (hit stop, reaction, camera shake, SFX/VFX placeholders) is strong enough.
-- [ ] One melee enemy is enough for 3–5 minutes of combat without getting boring.
-- [ ] If any check fails: do **not** add towers or army. Iterate combat.
+- [x] Light / Heavy / Dodge / Block / Parry all responsive.
+- [x] Stamina loop is clear to the player.
+- [x] Hit feedback (hit stop, reaction, camera shake, SFX/VFX placeholders) is strong enough.
+- [x] One melee enemy is enough for 3–5 minutes of combat without getting boring.
+- [x] Gate review records no failed G0 check. If a later re-check fails, iterate combat before adding towers or army.
+
+Evidence/owner decision: [G0 review, 2026-10-09](playtests/G0_2026-10-09_combat-sandbox.md), T-CMB-16 and [progress.md](progress.md). A passing automation re-run does not independently re-approve feel, audio or engagement.
 
 **G1: Combined Arms** (GDD §32 P1, §36 Command Core DoD)
 - [ ] Player issues all 4 base commands mid-combat without pausing.
@@ -179,15 +184,15 @@ All 19 feature folders have `spec.md`, `technical-plan.md` and `tasks.md`. Cross
 | Feature | Tasks | Feature | Tasks |
 |---|---|---|---|
 | FND | 10 | DIR | 17 |
-| CMB | 19 | RUN | 18 |
+| CMB | 21 | RUN | 18 |
 | ENM | 17 | CSM | 10 |
 | SQD | 21 | TFM | 12 |
 | SYN | 11 | PRK | 14 |
 | DEF | 25 | BOS | 15 |
 | ZON | 8 | UXF | 20 |
-| **Prototype + Foundation total** | **217** | MET / WLD / ECO / CNV / ONB (provisional) | 12 / 12 / 12 / 8 / 10 = **54** |
+| **FND..UXF feature total (includes provisional VS tasks)** | **219** | MET / WLD / ECO / CNV / ONB (provisional) | 12 / 12 / 12 / 8 / 10 = **54** |
 
-Grand total: **271** tasks, a few of them provisional VS tasks inside prototype features (e.g. T-CMB-17..19, T-SQD-18..21, T-DEF-24..25, T-BOS-11..15).
+Grand total: **273** tasks, a few of them provisional VS tasks inside prototype features (e.g. T-CMB-17..19, T-SQD-18..21, T-DEF-24..25, T-BOS-11..15). Counts checked against task overview tables on 2026-10-09; T-CMB-20/21 account for the two additions since the original draft.
 
 ---
 
@@ -196,7 +201,7 @@ Grand total: **271** tasks, a few of them provisional VS tasks inside prototype 
 What must exist at the end of each phase. Task IDs live in each feature `tasks.md`.
 
 ### Phase F: Foundation
-Status: **Passed 2026-10-04.** P0 is open.
+Status: **Passed 2026-10-04.** P0 subsequently passed G0 on 2026-10-09; current work is P1.
 
 - UE5 C++ project, one runtime module `<Game>`, domain folder layout (D-01, D-02).
 - Git + LFS + `.gitignore` for UE5 generated folders and `.codegraph/`.
@@ -209,6 +214,8 @@ Status: **Passed 2026-10-04.** P0 is open.
 - Packaged Development build smoke test. Reference PC spec recorded.
 
 ### Phase P0: Combat Sandbox
+Status: **Passed G0 on 2026-10-09**, [gate record](playtests/G0_2026-10-09_combat-sandbox.md).
+
 - `AHeroCharacter` (Warlord) with locomotion + sprint, 3-hit light chain, heavy attack, dodge with i-frames, block, parry, stamina, lock-on, animation commitment and cancel windows.
 - Poise on enemies → Staggered state.
 - One melee enemy (`ENM` base enemy + simple melee brain) that attacks, blocks/telegraphs, takes poise damage.
@@ -217,6 +224,8 @@ Status: **Passed 2026-10-04.** P0 is open.
 - Combat sandbox map + tuning via data assets.
 
 ### Phase P1: Combined Arms
+Status: **In progress** (phase opened by G0; implementation tasks remain Todo until started).
+
 - `ASquad` (anchor + slot formation) with Infantry and Archer squad definitions; soldiers with local avoidance.
 - Squad FSM: Idle → Follow → MoveToOrder → Guard → Engage → Reform → Retreat → Recover.
 - Command Wheel (hold key, aim, pick squad, pick command, release); commands Guard / Attack / Follow / Retreat; context-sensitive target.
@@ -259,16 +268,16 @@ Each phase ends in a playable demo. "To play" is the smallest task set that lets
 
 | Demo | After | What you can play | Tasks to play | Tasks to pass gate | Status |
 |---|---|---|---|---|---|
-| **D0: Walk around** | Steps 1–2 below | Hero runs, sprints, camera orbits in an empty map | 9 | — | Not started |
-| **D1: Combat Sandbox** | **P0** | Warlord vs melee enemy: light/heavy, dodge, block, parry, stamina, stagger, hit feel. **First real feel test.** | 29 | 40 (G0) | Not started |
-| **D2: Combined Arms** | P1 | Hero + Infantry and Archer squads vs Swarm and Armored, Command Wheel orders | ~60 | 73 (G1) | Not started |
-| **D3: Defense & Pathing** | P2 | Siege Site with 2 lanes: build Ballista/Bombard/Barricade, enemies stop and break structures, 3 waves, Core loss = defeat. **First time the game's identity shows.** | ~110 | 128 (G2) | Not started |
-| **D4: Full Run** | **P3** | Complete ~25-minute run: forecast, 5 waves, perks, Tactical Focus, Commander Spirit, two-phase boss. **First version that is the actual game loop.** | ~180 | 203 (G3) | Not started |
-| **D5: Vertical Slice** | VS | Polished slice for external viewers | — | 271 (VS Gate) | Not started |
+| **D0: Walk around** | Steps 1–2 below | Hero runs, sprints, camera orbits in an empty map | 9 | — | Playable; superseded by D1 |
+| **D1: Combat Sandbox** | **P0** | Warlord vs melee enemy: light/heavy, dodge, block, parry, stamina, stagger, hit feel. **First real feel test.** | 31 | 42 (G0) | G0 passed 2026-10-09 |
+| **D2: Combined Arms** | P1 | Hero + Infantry and Archer squads vs Swarm and Armored, Command Wheel orders | ~60 | 75 (G1) | Phase open; demo not yet implemented |
+| **D3: Defense & Pathing** | P2 | Siege Site with 2 lanes: build Ballista/Bombard/Barricade, enemies stop and break structures, 3 waves, Core loss = defeat. **First time the game's identity shows.** | ~110 | 130 (G2) | Not started |
+| **D4: Full Run** | **P3** | Complete ~25-minute run: forecast, 5 waves, perks, Tactical Focus, Commander Spirit, two-phase boss. **First version that is the actual game loop.** | ~180 | 205 (G3) | Not started |
+| **D5: Vertical Slice** | VS | Polished slice for external viewers | — | 273 (VS Gate) | Not started |
 
 Prototype demos D1–D4 use placeholder art (production-plan.md): they test feel and decisions, not visuals.
 
-#### D0 and D1 minimal path (29 tasks, dependency-checked)
+#### D0 and D1 minimal path (31 tasks, dependency-checked)
 
 | Step | Tasks | Result |
 |---|---|---|
@@ -276,7 +285,7 @@ Prototype demos D1–D4 use placeholder art (production-plan.md): they test feel
 | 2 | `T-CMB-01`, `T-CMB-13` | Hero walks around `L_CombatSandbox` (**D0**, 9 tasks) |
 | 3 | `T-FND-10`, `T-UXF-01`, `T-CMB-02, 03, 04, 05` | Test harness + feedback subsystem; light 3-hit chain, stamina cost, hits deal damage |
 | 4 | `T-ENM-01, 02, 03` | Enemy chases and attacks back with a telegraph |
-| 5 | `T-CMB-06, 07, 08, 09`, `T-SYN-01`, `T-ENM-04` | Heavy, dodge, block, parry; poise break → Staggered. Rough combat is playable here. |
+| 5 | `T-CMB-06, 07, 20, 21, 08, 09`, `T-SYN-01`, `T-ENM-04` | Heavy/dodge, required assist/debugger before Block/Parry; poise break → Staggered. Rough combat is playable here. |
 | 6 | `T-UXF-02, 03` | HP/stamina bars, hit stop, camera shake, hit SFX/VFX (what G0 judges) |
 | 7 | `T-CMB-10, 11`, `T-ENM-11` | Lock-on, Hero takes damage/dies, enemy tuned for 3–5 minutes of combat (**D1 playable**) |
 
@@ -286,7 +295,7 @@ To pass G0, finish the rest of Phase F and P0 (11 tasks): `T-FND-02, 08`, `T-CMB
 
 | F | P0 | P1 | P2 | P3 | VS | Total |
 |---|---|---|---|---|---|---|
-| 10 | 30 | 33 | 55 | 75 | 68 | 271 |
+| 10 | 32 | 33 | 55 | 75 | 68 | 273 |
 
 VS includes the 54 tasks of features 20–24 and 14 provisional VS tasks inside prototype features.
 
@@ -452,8 +461,9 @@ Agreements between features that one feature defines and another consumes. When 
 |---|---|---|
 | `AHeroPlayerController::PushMode(EPlayerMode, Reason)` / `PopMode(Reason)`, `OnPlayerModeChanged(Old, New)`; per-mode contexts in `BP_HeroPlayerController.ModeInput`; key map `00-foundation/input-keymap.md` (D-19) | T-FND-06 | T-SQD (Wheel), T-DEF-07 (Build), T-TFM-01 (Focus), T-CSM (Spirit), UXF/PRK modals, HUD listeners |
 | `UCombatLibrary::DeliverHit` is the only way to apply a hit | T-CMB-04 | T-ENM-03, T-SQD-07/10, T-DEF-09, BOS attacks, T-SYN-07 (multipliers) |
-| `FCombatResolutionEvent` / `OnCombatResolved` (spec v2, proposed): one resolution ID/context/result per hit attempt, participant roles; separate from conditional UXF feedback, no global bus | T-CMB-04 | CMB debugger T-CMB-21, T-UXF-08 telemetry, ENM/SQD/DEF/BOS hit producers; T-CMB-15 verifies counts |
-| `FCombatHit` interrupt strength/category + per-action authored resistance (spec v2, proposed); resistance defaults off, damage still applies, SYN Staggered remains authoritative | T-CMB-04 (hit data), T-CMB-06/11 (hero consumer) | ENM/SQD/DEF/BOS attack data, T-CMB-15 threshold tests |
+| `AHeroPlayerController::GetCommandComponent()`; `UCommandComponent::RegisterSquad(ASquad*)`, `UnregisterSquad(ASquad*)`, `GetSquads()`, `OnSquadsChanged`; `USquadDefinition : UGameDefinition` type `SquadDefinition`; controller registry cap from `MaxActiveSquads`, registration before spawning | T-SQD-01 (source in progress; verification pending) | T-SQD-02..06/10/12/13, T-CSM command continuity, UXF squad observers. No separate registry on Hero; no commands/FSM behavior is implied by the skeleton |
+| `FCombatResolutionEvent` / `OnCombatResolved` (implemented P0): one resolution ID/context/result per attempt reaching resolution, participant roles; separate from conditional UXF feedback, no global bus. Invalid/dead/no-health/same-team targets return Ignored before creating an event | T-CMB-04 | CMB debugger T-CMB-21 and T-CMB-15 count tests; ENM/SQD/DEF/BOS producers. T-UXF-08 currently records action-state, health and played-feedback events; subscribing to raw resolution is not implied by this contract |
+| `FCombatHit.InterruptData` (`bCanInterrupt`, `InterruptStrength`) + per-action authored resistance (implemented P0); resistance defaults off, damage still applies, SYN Staggered remains authoritative | T-CMB-04 (hit data), T-CMB-06/11 (hero consumer) | ENM/SQD/DEF/BOS attack data, T-CMB-15 threshold tests |
 | `FCombatHit.bWasBlocked` resolved metadata (overwritten by DeliverHit before OnDamaged); `AHeroCharacter.OnFeedbackRequested(Tag, Hit)` for non-hit death presentation | T-CMB-04/11 | Hero hit-reaction suppression; UXF death feedback consumer (T-UXF-01/03). Never replay hit feedback from OnDamaged. OnHeroDeath observers see committed Dead state. |
 | `FCombatHit.Surface` (`EPhysicalSurface`, default unknown); `UMeleeTraceComponent::TryHitTarget(Target, ImpactPoint, Surface)` optional third argument; `DeliverHit` fills `FFeedbackEventContext.Surface/Magnitude` and emits one impact outcome plus `Hero.Damaged` only for positive Hero HP loss | T-UXF-03 with T-CMB-04 | UXF per-surface sound, armored variant and damage HUD; melee sweeps request physical materials. Existing two-argument callers remain valid. Damage magnitude is actual applied HP loss, not incoming force. |
 | `UMeleeTraceComponent` (+ native `OnHitWindowBegin`, T-ENM-03), `ICombatHitInterceptor` | T-CMB-04 | T-ENM-03, soldier melee (T-SQD-10), boss |
@@ -642,6 +652,6 @@ If questions 2, 3 and 7 are all close to "no", it stays out of scope. Classify e
 
 ## 14. Next Actions
 
-1. Start P0 with `01-hero-combat/tasks.md`, `02-enemies/tasks.md` (P0 tasks only) and `13-hud-feedback/tasks.md` (P0 tasks only).
-2. Optional early de-risk: run the DEF navigation spike (`T-DEF-01`) in a throwaway map now that Foundation is done; its result may change D-09 before P2 starts.
-3. Hold the G0 review with the checklist in Section 3 before touching squads or towers.
+1. Continue P1. `T-SQD-01` is In Progress (squad definition/registry/spawn foundation). Other dependency-ready Todo tasks include `T-ENM-13` and `T-SYN-02`; follow the live handoff and finish verification before starting dependent squad work.
+2. Use the [adapted skill routing](skill-integration.md) and recorded [alignment review](skill-alignment-review-2026-10-09.md). `T-UXF-04` still waits for `T-SQD-01` and `T-ENM-06`; do not start it just because P1 is open.
+3. Record G1 evidence as Combined Arms tasks finish. P2 navigation/structures and provisional VS abilities/animation remain behind their phase gates; skill integration does not unlock them.

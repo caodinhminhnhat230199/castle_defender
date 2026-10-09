@@ -37,7 +37,7 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 **Implementation Notes**
 - [ ] `UCommanderSpiritComponent` on `AHeroPlayerController`; `ESpiritState { Alive, Dying, Spirit, Ended }`; bind `AHeroCharacter::OnHeroDeath` whenever the controller possesses a Hero (possessed-pawn-changed hook; verify delegate name).
 - [ ] On death (only if `Alive`): state `Dying`; cancel the Command Wheel via `UCommandComponent` (no order issued); cancel any placement preview via `UStructurePlacementComponent`; `ARunPlayerState` `HeroDeaths++`.
-- [ ] After `DeathPresentationSeconds`: spawn `BP_CommanderSpiritPawn` above the death location; `SetViewTargetWithBlend(SpiritPawn, SpiritBlendSeconds)`; possess it (verify that possessing keeps the blend; otherwise possess after the blend); destroy the dead Hero pawn; `SetInputMode(CommanderSpirit)`; state `Spirit`.
+- [ ] After `DeathPresentationSeconds`: spawn `BP_CommanderSpiritPawn` above the death location; `SetViewTargetWithBlend(SpiritPawn, SpiritBlendSeconds)`; possess it (verify that possessing keeps the blend; otherwise possess after the blend); destroy the dead Hero pawn; `PushMode(EPlayerMode::Spirit, Reason)` through the controller; state `Spirit`. Presentation derives layers from `OnPlayerModeChanged` (D-19); no direct input-mode/context writes.
 - [ ] `IMC_CommanderSpirit` contains pan/rotate/zoom/revive, `IA_CommandWheel`, the DEF build-mode entry action; it has no `IA_TacticalFocus`, no combat actions, no `IA_Interact`.
 - [ ] Bind `ARunGameState::OnRunPhaseChanged`: Resolve → clear timers, state `Ended`.
 - [ ] Remove reliance on CMB's sandbox respawn: `BP_RunGameMode` has no `OnHeroDeath` binding (check).
@@ -101,7 +101,7 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 - [ ] `FRespawnRules` + `CommanderSpirit::ComputeRespawnSeconds` (technical-plan §5) + Spec `<Game>.Spirit.RespawnFormula` (base, per death, per wave, cap, cap < base, negative inputs).
 - [ ] On death: prior deaths = `HeroDeaths - 1`; wave index from `ARunGameState` (Boss step = `WaveCount + 1`); schedule the respawn timer from the death time; broadcast `OnRespawnScheduled(EndGameTime)`; schedule the `RespawnWarningSeconds` warning.
 - [ ] Timer end: if the Command Wheel is open, set `bRespawnDeferred` and respawn on wheel close; cancel any placement preview.
-- [ ] Respawn: find `APlayerStart` tagged `HeroRespawn` (fallback `FindPlayerStart` + warning); `GetAuthGameMode()->RestartPlayerAtPlayerStart(PC, Start)`; destroy the spirit pawn; `SetInputMode(Combat)`; state `Alive`; rebind `OnHeroDeath` on the new pawn.
+- [ ] Respawn: find `APlayerStart` tagged `HeroRespawn` (fallback `FindPlayerStart` + warning); `GetAuthGameMode()->RestartPlayerAtPlayerStart(PC, Start)`; destroy the spirit pawn; `PopMode(Reason)` removes the owned Spirit entry and restores the remaining stack; state `Alive`; rebind `OnHeroDeath` on the new pawn.
 - [ ] Place one `HeroRespawn` start near the Core in `L_SiegeSite_Proto`; keep build zones off it (note to DEF/level).
 - [ ] State `Ended` (Resolve) cancels the timer.
 - [ ] Telemetry `hero_respawn` (time dead, revive=false, orders/placements while dead).
@@ -160,7 +160,7 @@ Spec: [spec.md](spec.md) · Plan: [technical-plan.md](technical-plan.md)
 
 **Implementation Notes**
 - [ ] Entering build mode from spirit mode uses DEF's `UStructurePlacementComponent` (controller-owned, R-DEF-34); placement aim from the active view target.
-- [ ] On build-mode exit, return to `CommanderSpirit` input mode if the spirit state is `Spirit` (add the check where DEF restores the previous mode, or make `SetInputMode` callers ask the spirit component).
+- [ ] On build-mode exit, DEF pops only its owned Build reason; verify the controller restores Spirit while dead (including nested/out-of-order removal). Do not branch around a mode switch or make another component the mode owner (D-19).
 - [ ] Same spend path (`ARunGameMode::TrySpend`) and same phase rules as when alive.
 - [ ] `IA_Interact` is not in `IMC_CommanderSpirit`; Interact prompts hidden while dead.
 - [ ] Count placements while dead for telemetry.

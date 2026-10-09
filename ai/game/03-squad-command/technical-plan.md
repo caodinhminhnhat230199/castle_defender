@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | Spec | [spec.md](spec.md) |
-| Architecture baseline | [00-foundation/technical-plan.md](../00-foundation/technical-plan.md), master plan D-01..D-18 |
+| Architecture baseline | [00-foundation/technical-plan.md](../00-foundation/technical-plan.md), master plan D-01..D-20 |
 | Phases | P1 (core), P2 (Core retreat, structure rule, zone hook), VS (provisional) |
 
-> No UE project exists yet. Every class, file and asset path below is a **proposal**.
+> Foundation and P0 exist. T-SQD-01's registry/definition/spawn source is being implemented; its editor content and verification remain pending. Later squad command/formation/combat classes and behavior below remain proposals until their owning tasks land.
 
 ## 1. Technical Overview
 
@@ -21,7 +21,7 @@
 | System | Impact |
 |---|---|
 | Combat contract (FND/CMB) | Soldiers use `UHealthComponent`, `UCombatStateComponent`, `FCombatHit` (source layer `Army`). Every soldier hit goes through `UCombatLibrary::DeliverHit`. Melee soldiers reuse the CMB hit-window notify state + `UMeleeTraceComponent` (`T-CMB-04`) |
-| Input (FND) | Adds `IMC_CommandWheel` (higher priority than `IMC_Combat`, movement and dodge stay in `IMC_Combat`) |
+| Input (FND) | Future wheel integration requests `PushMode(EPlayerMode::Wheel, Reason)` / `PopMode(Reason)`; controller ModeInput owns composed contexts, preserving movement/dodge where specified (D-19). T-SQD-01 adds only the controller-lifetime registry |
 | Enemies (ENM) | Enemies already target soldiers in P1 (R-ENM-15, no SQD change). SQD reads archetype tag + HP from `AEnemyCharacter` |
 | Synergy (SYN) | Target scorer = priority tier + numeric score; SYN adds state weights (Staggered / Armor Broken / Marked) to the score term (`T-SYN-05`) |
 | UI/Feedback (UXF) | Fires `Feedback.Command.*` / `Feedback.Squad.*`; uses the world marker component; adds `WBP_CommandWheel` and a squad strip in `WBP_GameHUD` |
@@ -45,7 +45,7 @@
 
 | Type | Kind | Folder | Responsibility |
 |---|---|---|---|
-| `USquadDefinition` | `UPrimaryDataAsset` | `Army/` | All squad tuning (spec §13 data model), incl. `BaseArmor` and an embedded `FCombatStateConfig` (MaxPoise, regen delay, regen rate, StaggerDuration; same struct as enemy definitions) used to init soldier `UHealthComponent` / `UCombatStateComponent`, and `TMap<FGameplayTag, float> StateScoreWeights` (filled by SYN). `IsDataValid` checks soldier class, count > 0, columns > 0, engage ≤ leash, at least one target rule |
+| `USquadDefinition` | `UGameDefinition` (foundation §9), Primary Asset Type `SquadDefinition` | `Army/` | All squad tuning (spec §13 data model), incl. `BaseArmor` and an embedded `FCombatStateConfig` (MaxPoise, regen delay, regen rate, StaggerDuration; same struct as enemy definitions) used to init soldier `UHealthComponent` / `UCombatStateComponent`, and `TMap<FGameplayTag, float> StateScoreWeights` (filled by SYN). `IsDataValid` checks soldier class, count > 0, columns > 0, engage ≤ leash, at least one target rule |
 | `ASquad` | `AActor` (root scene component, no mesh) | `Army/` | Anchor transform, order, FSM, formation, `TArray<FSoldierRuntime>`, candidate cache, strength, timers, delegates |
 | `ASoldierCharacter` | `ACharacter` + `IGenericTeamAgentInterface` | `Army/` | Body; health/state components; `MoveToSlot(Location)`, `AttackTarget(Actor)`, `StopAttack()`, `HiddenTeleport(Location)`; attack execution (melee montage or projectile) |
 | `ASoldierAIController` | `ADetourCrowdAIController` | `Army/` | Team id; crowd avoidance group setup; move requests |
@@ -88,7 +88,7 @@ sequenceDiagram
   participant S as ASquad
   participant F as UFeedbackSubsystem
   P->>CC: IA_CommandWheel Started
-  CC->>CC: add IMC_CommandWheel, enable tick
+  CC->>CC: controller PushMode(Wheel, reason); enable wheel-only tick
   CC-->>W: OnWheelOpened(view state)
   loop each frame while open
     CC->>CC: camera trace → ResolveContext(hit, current squad)

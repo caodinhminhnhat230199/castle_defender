@@ -6,15 +6,17 @@
 | Spec | [spec.md](spec.md) (Draft v2: R-CMB-01…54, AC-CMB-01…26) |
 | Architecture baseline | [00-foundation/technical-plan.md](../00-foundation/technical-plan.md), decisions D-01…D-20 in [main_implement_plan.md §7](../main_implement_plan.md#7-architecture-baseline) |
 | Phases | P0A/P0B (internal slices of P0, single G0 at end of P0B), P2 (Interact), VS (provisional) |
-| Status | Draft v2 aligned to spec v2. Foundation exists in `Source/CastleDefender` / `Content/CastleDefender`; new CMB types/assets are **proposals** (`<Game>` = `CastleDefender`) |
+| Status | P0 implemented and G0 recorded passed 2026-10-09. P2 interaction, P1 state-multiplier integration and provisional VS traits/polish remain planned until their tasks land (`<Game>` = `CastleDefender`) |
 
 ## 1. Technical Overview
+
+Supporting implementation/content guidance: [uploaded-skill integration](../skill-integration.md) routes to `ue5-combat-components`, `ue5-dodge-parry`, `ue5-animation-combat` and `ue5-abilities-scope`. Use their project-adapted instructions; existing rules, D-xx decisions, section 8a and task acceptance remain authoritative.
 
 The Warlord is a C++ `AHeroCharacter` with small components: one action state machine (`UHeroCombatComponent`), stamina (`UStaminaComponent`), lock-on (`ULockOnComponent`) and, in P2, interaction (`UInteractionComponent`). The FND combat contract components (`UHealthComponent`, `UCombatStateComponent`) sit on the same actor.
 
 Animation montages author Startup → Active/Hit → Recovery plus applicable Chain, Cancel, RotationAssist, I-frame, Parry and optional InterruptResistance windows. `FCombatActionTiming` derives runtime/validation/debug views from those windows; it does not own another timing schedule. Designers tune timing by moving notifies; numbers that are not timing (damage, poise, stamina, ranges) live in `DA_HeroClass_Warlord`.
 
-Every hit in the game, hero or not, goes through one static entry point, `UCombatLibrary::DeliverHit(Target, Hit)`. It lets the target intercept the hit first (i-frames, block, parry via `ICombatHitInterceptor`), then applies damage, poise and states through the FND/SYN components, then produces exactly one `FCombatResolutionEvent`. Presentation outcomes route one matching UXF feedback event; Evaded/Ignored may remain silent. Resolution is observable independently of presentation. A reusable `UMeleeTraceComponent` turns a montage hit window into traces and `DeliverHit` calls with the one-hit-per-target-per-swing rule.
+Every hit in the game, hero or not, goes through one static entry point, `UCombatLibrary::DeliverHit(Target, Hit)`. Valid attempts reach target interception (i-frames, block, parry via `ICombatHitInterceptor`), HP/poise/states through FND/SYN, and exactly one `FCombatResolutionEvent`; invalid/dead/no-health/same-team targets return Ignored before event creation. Presentation selects one impact outcome, plus the independent Hero.Damaged cue for positive Hero HP loss and SYN state cues when applicable. Evaded/Ignored may remain silent. Resolution is observable independently of presentation. `UMeleeTraceComponent` reuses this path with one hit per target per swing.
 
 P0A implements movement, Light/Heavy/Dodge, basic stamina, timing/validation, rotation assist, hit reaction/death/reset, debug and a simple hostile/test attacker. P0B extends the same pipeline with Block/Parry/Lock-on, complete feedback and stamina tuning, regression coverage and G0. The P0A checkpoint is sequencing evidence, not a new production gate.
 
@@ -55,7 +57,7 @@ No GAS (D-04). Per-frame work is limited to movement/camera, open hit/assist win
 | `UMeleeTraceComponent` | `UActorComponent` (Combat/) | Hit window traces, hit set per swing, `DeliverHit` per new target | P0 |
 | `UCombatLibrary` | `UBlueprintFunctionLibrary` (Combat/) | `DeliverHit`, `IsInFrontArc`, team/alive checks; SYN adds `GetStateDamageMultiplier` | P0 |
 | `ICombatHitInterceptor` | `UInterface` (Combat/) | `InterceptHit(FCombatHit&) -> ECombatHitResult` for i-frames/block/parry (hero) and enemy block (ENM, optional) | P0 |
-| `UAnimNotifyState_CombatHitWindow` / `_CancelWindow` / `_Invulnerable` / `_ParryWindow` | `UAnimNotifyState` (Combat/) | Timing windows authored in montages; extend with phase/chain/rotation-assist/interrupt-resistance authoring | P0A → P0B |
+| `UAnimNotifyState_CombatHitWindow`, `UAnimNotifyState_CancelWindow`, `UAnimNotifyState_Invulnerable`, `UAnimNotifyState_ParryWindow`, `UAnimNotifyState_RotationAssist`, `UAnimNotifyState_InterruptResistance` | `UAnimNotifyState` (Combat/) | Implemented montage windows; Chain is a CancelWindow allowing Light, phases derive from authored bounds. HitWindow has its own header; other notify classes live in CombatActionTiming.h | P0A → P0B |
 | `FCombatActionTiming` | derived struct (Combat/) | Inspected windows and current phase for validation/debug; no independently configured durations | P0A |
 | `FCombatResolutionEvent` | struct (existing CombatTypes.h) | Resolution ID, incoming/outgoing participants, hit context, result and feedback selection; separate from UXF playback | P0A → P0B |
 | `UInteractionComponent`, `IInteractable` | component + `UInterface` (Core/) | Focus best interactable, prompt, trigger | P2 |
@@ -73,7 +75,7 @@ No GAS (D-04). Per-frame work is limited to movement/camera, open hit/assist win
 | HP, poise, states | `UHealthComponent`, `UCombatStateComponent` (FND/SYN) | Yes, transient |
 | Feedback rows | `DT_Feedback` (UXF) | Never |
 
-`UHeroClassDefinition` layout (structs proposed): `FHeroMovementData`, `FHeroCameraData`, `FStaminaConfig`, `TArray<FHeroAttackData> LightChain` (3 entries), `FHeroAttackData Heavy`, `FHeroDodgeData`, `FHeroBlockData`, `FHeroParryData`, `FHeroHitReactData`, `FHeroLockOnData`, `FHeroInputData Input` (InputBufferTime), `float MaxHealth`, `FCombatStateConfig CombatState` (SYN struct; hero poise off), `FHeroAttackAssistData AttackAssist` (35° / 400 cm / 720°/s starting values), `FHeroInteractData` (P2). `FHeroAttackData` = montage, damage, poise damage, stamina cost, trace radius, `AppliedStates` (tag container), `StateDuration`, `StateDamageMultipliers` (`FStateDamageMultipliers`, added by T-SYN-07), interrupt-resistance config (disabled by default; enabled/threshold/category tuned in data, active only in an authored window). Block includes `BlockRegenSuppressAfterHit` (0.6 s) and `ArcDegrees` (140°). No runtime writes to the definition.
+Implemented `UHeroClassDefinition` fields include Movement, Camera, LockOn, Input, Stamina, LightChain (three attacks), Heavy, AttackAssist, Dodge, Block, Parry, HitReact and MaxHealth; inspect the header/`HeroCombatTypes.h` for exact struct/property names. Attack data already owns montage, damage, poise damage, stamina cost, trace radius, AppliedStates, StateDuration and optional interrupt resistance. InputBufferTime lives in Input; Block owns ArcDegrees and BlockRegenSuppressAfterHit. Shared combat-state configuration is reused from SYN, with hero poise disabled. P1 `StateDamageMultipliers` / `FStateDamageMultipliers` are planned T-SYN-07, and interaction data waits for T-CMB-12 in P2; do not assume those fields exist yet. No runtime writes to the definition.
 
 `IsDataValid` calls Super and validates each required action/montage pair: exactly three Light entries; references present; positive/ordered/bounded phase windows; exactly one Active/Hit window per attack; Chain windows for Light 1–2; required cancel, Dodge i-frame and Parry windows; duplicate/impossible/incompatible windows rejected (compatible assist/cancel windows may overlap). Whiff Parry must not gain a Block/Dodge cancel. Validate Heavy damage/poise above every Light, Light stamina cost below Heavy, assist bounds and nonnegative suppression. P0A validates available actions; P0B adds required defensive data. Runtime validates before spending stamina/entering an action, refuses invalid actions, and logs action/montage/window once through `LogGameCombat`. Cache timing inspection only with invalidation on data reload; montage windows stay authoritative.
 
@@ -116,7 +118,9 @@ See §9. Summary: one hero, negligible cost if traces and lock-on stay event/win
 ### 3.11 Existing systems reused
 FND combat contract and team interface, Enhanced Input base and `AHeroPlayerController`, `UGameTuningSettings`, Primary Asset registration, cheat manager, CVar convention, test harness; UXF feedback subsystem, HUD, telemetry.
 
-### 3.12 New types / files proposed
+### 3.12 Implemented P0 types and planned additions
+
+P0 types exist; reuse their actual declarations. `InteractionComponent`/`Interactable` are planned P2, optional counter content is data-dependent, and P1 state multipliers remain T-SYN-07. No separate Startup/Active/Recovery or Chain notify classes are required: phases derive from bounds, and Light chaining uses the existing allowed-action CancelWindow.
 
 ```text
 Source/<Game>/Hero/        HeroCharacter.h/.cpp, HeroClassDefinition.h/.cpp, HeroCombatTypes.h (EHeroAction, EHeroActionState, FHero*Data),
@@ -125,8 +129,9 @@ Source/<Game>/Hero/        HeroCharacter.h/.cpp, HeroClassDefinition.h/.cpp, Her
                            off while a montage is active, added 2026-10-05)
 Source/<Game>/Combat/      CombatLibrary.h/.cpp, CombatHitInterceptor.h, MeleeTraceComponent.h/.cpp, CombatActionTiming.h/.cpp,
                            CombatTypes.h (extend existing FCombatHit with interrupt metadata and FCombatResolutionEvent),
-                           AnimNotifyState_CombatHitWindow / _CancelWindow / _Invulnerable / _ParryWindow (.h/.cpp),
-                           phase / Chain / RotationAssist / InterruptResistance notify authoring (proposed)
+                           AnimNotifyState_CombatHitWindow.h/.cpp,
+                           UAnimNotifyState_CancelWindow / Invulnerable / ParryWindow / RotationAssist / InterruptResistance
+                           declarations and implementations in CombatActionTiming.h/.cpp
 Source/<Game>/Core/        Interactable.h (P2)
 Source/<Game>/Tests/       StaminaRules.spec.cpp, HeroActionRules.spec.cpp, CombatArc.spec.cpp, CombatTiming.spec.cpp,
                            AttackAssist.spec.cpp, CombatResolution.spec.cpp, HeroDefense.spec.cpp
@@ -194,7 +199,7 @@ sequenceDiagram
 ```text
 DeliverHit(Target, Hit, Multipliers = {}) -> ECombatHitResult   // Multipliers added by T-SYN-07
   begin one resolution record with original hit/participants and unique ID
-  invalid/dead/non-hostile/no Health -> finalize Ignored, no feedback
+  invalid/dead/no Health/same assigned team -> return Ignored before resolution event creation, no feedback
   apply SYN target-state multiplier to working damage (when available)
   run target interceptor -> Evaded / Parried terminate damage; Blocked / BlockBroken continue
   Health.ApplyHit(working hit) -> armor/death (SYN armor in P1)
@@ -210,7 +215,7 @@ The original hit is preserved for telemetry and block stamina-force calculation.
 
 Hero interceptor order: Invulnerable window → Evaded; Parry window, not consumed, and `IsInFrontArc` → mark consumed before any callback, apply `ParryPoiseDamage` to the instigator's `UCombatStateComponent`, open Counter Window on hero clock, broadcast `OnParrySucceeded` once → Parried (all later/reentrant hits resolve normally; no automatic Block); Blocking and in arc → scale damage, stamina damage from original force and restart post-block regen suppression, on depletion apply `State.Combat.Staggered` to self → Blocked / BlockBroken; else Hit.
 
-Feedback context fields CMB fills: Instigator, Target, location, direction, `bIsHeavy`, `bTargetArmored` (target armor > 0 and not Armor Broken), material/surface variant when the shared UXF context supports it. Exact struct owned by UXF T-UXF-01.
+Implemented feedback context fields CMB fills: Instigator, Target, location, direction, `bIsHeavy`, `bTargetArmored` (target armor > 0 and not Armor Broken), `Surface` from the actual hit physical material and `Magnitude` from actual HP loss. `FFeedbackEventContext` is owned by UXF; explicit variants/base-row fallback are resolved there. P1 state-bonus context waits for the owning SYN/UXF tasks.
 
 ## 5. State / Data
 
@@ -369,7 +374,7 @@ Functional Tests drive the hero through `RequestAction` and deliver enemy hits t
 | Hit stop stretches i-frames/parry windows in real time | Verify hero clock remains aligned with montage windows under actor hit stop; record feel effects in G0 (D-20) |
 | Key conflicts with SQD/TFM contexts | Proposed keys in NEW-CMB-07; final map in T-FND-06 |
 
-No change requests to D-01…D-20. New proposed resolution and interrupt contracts are recorded in master plan §8a; their provider tasks implement them before consumers use them.
+No change requests to D-01…D-20. Resolution and interrupt contracts are implemented in P0 and recorded in master plan §8a; future consumers reuse them rather than creating parallel pipelines.
 
 ## 11. Requirement Coverage
 

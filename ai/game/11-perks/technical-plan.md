@@ -106,7 +106,7 @@ None. Perks only change numbers that AI already reads (attack rate, damage, rang
 
 ### 3.8 UI impact
 
-`WBP_PerkChoice` (modal layer of `WBP_GameHUD`, UXF), `WBP_PerkTray` (HUD slot). Opening the modal: cancel Tactical Focus, set Game+UI input with cursor, keys 1/2/3 handled by the widget's key handler (no new mapping context). Escape does nothing while an offer is pending.
+`WBP_PerkChoice` (modal layer of `WBP_GameHUD`, UXF), `WBP_PerkTray` (HUD slot). Opening the modal: cancel Tactical Focus through its owner, then call `AHeroPlayerController::PushMode(EPlayerMode::Modal, Reason)`. The controller sets Game+UI input/cursor; presentation observes `OnPlayerModeChanged`. Closing the offer pops only that reason and restores the remaining stack. Keys 1/2/3 are handled by the widget's key handler (no new mapping context); the widget never owns gameplay state or sets input mode. Escape does nothing while an offer is pending.
 
 ### 3.9 Save impact
 

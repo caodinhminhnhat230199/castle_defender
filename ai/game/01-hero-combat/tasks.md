@@ -11,7 +11,7 @@
 
 P0A builds the playable combat feel slice; P0B completes defense, lock-on, stamina/feedback tuning and the G0 evidence. Recommended order: T-CMB-13 → 01 → 02/03 → 04 → 05/06/07/11 → 20/21 → P0A checkpoint → 08/10 → 09/14 → 15 → 16. External providers T-UXF-01 and T-SYN-01 must be ready when their dependent tasks start. G0 remains the single production gate, at the end of P0B; P0A does not open P1. Interact (T-CMB-12) waits for P2. VS tasks are provisional and must be re-planned after G3.
 
-Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender`; reuse its combat, input, data, debug and test infrastructure. New CMB types/assets below remain proposals; `<Game>` means `CastleDefender`. Every task also follows the master plan Definition of Done (§8).
+Foundation and P0 CMB are implemented in `Source/CastleDefender` and `Content/CastleDefender`; reuse their combat, input, data, debug and test infrastructure. G0 passed on 2026-10-09; the P2/VS additions below remain planned until their tasks land. `<Game>` means `CastleDefender`. Every task also follows the master plan Definition of Done (§8). Current status is in the overview table; older Review/Pending notes inside completed tasks are historical and are superseded by their later verification and G0 record.
 
 ## 2. Task Overview
 
@@ -726,6 +726,8 @@ After T-CMB-01…07, 11, 13, 20 and 21 have their task verification, record a sh
 **Type** ANIM · **Phase** VS
 
 **Objective** Replace placeholder Warlord animation with the VS set without changing tuned timing.
+
+**Supporting guide** [ue5-animation-combat](../../../.claude/skills/ue5-animation-combat/SKILL.md) for retargeting, root motion, transitions and timing-reference QA. This remains a provisional VS task; skill integration does not make it eligible in P1 or change its acceptance criteria.
 
 **Related Requirements** R-CMB-42, R-CMB-34
 

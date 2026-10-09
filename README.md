@@ -48,7 +48,7 @@ Agent sẽ tự làm các việc sau:
 1. Kiểm tra và cài skill còn thiếu vào `.claude/skills/`. Skill đã có thì bỏ qua, không ghi đè.
 2. Cài plugin `caveman` và `ponytail` nếu bước 2 chưa cài.
 3. Cài **CodeGraph**: CLI và MCP server cài global, index cài riêng cho từng project. Agent sẽ hỏi trước khi tải installer và hỏi về telemetry (mặc định tắt).
-4. Chạy bước kiểm tra. Kết quả phải ra 11 dòng `PASS`.
+4. Run setup verification: 15 skill checks plus 1 CodeGraph check (16 `PASS` lines when CodeGraph is installed).
 
 Chi tiết từng bước xem trong [project_init.md](project_init.md).
 
@@ -72,6 +72,11 @@ Index lưu trong `.codegraph/`. Không commit thư mục này.
 |---|---|
 | `game-development-workflow` | Lên yêu cầu, spec, kế hoạch, prototype, vertical slice, playtest, QA, release |
 | `ue5-project-architecture` | Kiến trúc UE5: module/plugin, Gameplay Framework, C++/Blueprint, GAS, AI, UI, save |
+| `ue5-combat-components` | Existing melee, montage timing, input buffer and shared damage pipeline |
+| `ue5-dodge-parry` | Directional stamina dodge, i-frames, Block, single-use Parry and counter |
+| `ue5-animation-combat` | Existing locomotion/montages, root motion, transitions and animation QA |
+| `ue5-abilities-scope` | Scope review for approved Warlord traits; preserves phase gates |
+| `ue5-vfx-impact` | Niagara impacts, physical-surface sound, hit stop and feedback scalability |
 | `idea-refine` | Brainstorm, mài ý tưởng và cơ chế chơi |
 | `source-driven-development` | Đối chiếu với tài liệu chính thức của UE5 |
 | `debugging-and-error-recovery` | Tìm nguyên nhân gốc của lỗi build, crash, bug |
@@ -82,6 +87,8 @@ Index lưu trong `.codegraph/`. Không commit thư mục này.
 | `stop-slop` | Viết tài liệu, design doc không có văn phong AI |
 
 Gọi skill bằng `/<tên-skill>`, hoặc mô tả việc cần làm để Claude tự chọn skill phù hợp.
+
+The five UE5 guides are adapted from the uploaded references to preserve CastleDefender's current design. See [integration decisions and routing](ai/game/skill-integration.md). Codex and Antigravity can read each `SKILL.md` directly through [AGENTS.md](AGENTS.md); Claude Code can discover them in a new session. The original uploads remain at the project root.
 
 ## Lưu ý
 

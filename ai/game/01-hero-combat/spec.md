@@ -304,6 +304,8 @@ Provided to others: hit dispatch (`UCombatLibrary::DeliverHit`, used by ENM/SQD/
 | NEW-CMB-08 | How much attack rotation assistance is needed to make melee reliable without feeling magnetic? | Start at 35° / 400 cm / 720°/s, rotation-only; tune at G0 | DECIDED at G0 (Confirmed) |
 | NEW-CMB-09 | Should baseline Parry ever handle multiple simultaneous attackers? | No. First successful parry consumes the action; multi-parry is reserved for an explicit perk/trait | DECIDED at G0 (Confirmed) |
 | NEW-CMB-10 | T-CMB-14 says alive count always equals Count, but also requires a five-second respawn delay. Which count is intended? | Track capacity as alive + pending; live count returns to Count after the authored delay. Count applies only to enemies owned by the enabled preset, preserving unrelated placed actors. | DECIDED at G0 (Confirmed) |
+| NEW-CMB-11 | Uploaded skills propose GAS, Focus/Flux, combo continuity through Dodge, perfect-dodge rewards, aerials, executions, weapon forms and supernatural loadouts | Preserve the current component/stamina/three-hit design, combo reset and approved Warlord traits; no implementation of these additions. See [skill integration](../skill-integration.md), user decision 2026-10-09 | OUT OF SCOPE for this integration |
+| NEW-CMB-12 | Uploaded animation guide proposes Motion Matching/Pose Search, Chooser and Motion Warping | Preserve current locomotion/animation assembly; reuse transition QA in eligible content tasks. No migration/plugin additions; any later proposal needs scope review | IMPROVEMENT, not scheduled or approved for implementation |
 
 ## 13. System Contract (GDD §38)
 

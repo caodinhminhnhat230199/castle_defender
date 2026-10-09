@@ -11,7 +11,7 @@
 
 Two controller components and one camera actor:
 
-- `UTacticalFocusComponent` owns the Focus Meter (a plain struct with pure update functions), enter/exit rules, global time dilation, input mode switch, restrictions and telemetry counters.
+- `UTacticalFocusComponent` owns the Focus Meter (a plain struct with pure update functions), enter/exit rules, global time dilation, restrictions and telemetry counters. It requests mode-stack entry/exit; `AHeroPlayerController` owns input mode (D-19).
 - `UTacticalOverlayComponent` owns overlay visibility as a set of request reasons (`Focus`, `CommanderSpirit`, `Debug`). When the set becomes non-empty it switches UXF markers to their tactical display mode and shows the predicted-route display; when empty it hides them. CSM uses it without Focus.
 - `ATacticalFocusCamera` is a camera actor that interpolates to the tactical pose using real delta time. The controller switches its view target to it on enter and back to the Hero on exit.
 
@@ -21,7 +21,7 @@ Global time dilation is set with `UGameplayStatics::SetGlobalTimeDilation` (D-13
 
 | System | Impact |
 |---|---|
-| FND | `TacticalFocus` input mode in `AHeroPlayerController::SetInputMode`; `IMC_TacticalFocus`, `IA_TacticalFocus`; Focus category in `UGameTuningSettings`; CVar `game.debug.Focus` |
+| FND | `PushMode(EPlayerMode::Focus, Reason)` / `PopMode(Reason)` and `OnPlayerModeChanged` (D-19); `IMC_TacticalFocus`, `IA_TacticalFocus`; Focus category in `UGameTuningSettings`; CVar `game.debug.Focus` |
 | CMB | No change. Hero keeps moving at dilated speed; combat actions unmapped in Focus. Reads `OnHeroDeath` |
 | SQD | Command Wheel used unchanged; its aim from the active view target makes it work from the tactical camera. SQD never touches time (R-SQD-07) |
 | UXF | Needs a global tactical display mode on the world marker system (T-UXF-04) and lane danger values (T-UXF-07). Hit stop (T-UXF-03) must not write global time dilation |
@@ -62,7 +62,7 @@ Global time dilation is set with `UGameplayStatics::SetGlobalTimeDilation` (D-13
 ### 3.4 Communication flow
 - `IA_TacticalFocus` Started → `TryEnter()`; Completed/Canceled → `Exit(Released)`.
 - `AHeroCharacter::OnHeroDeath`, `ARunGameState::OnRunPhaseChanged`, CSM `OnSpiritStateChanged` → `Exit(Forced)` + block.
-- Component → controller: `SetInputMode(TacticalFocus/Combat)`, `SetViewTarget`.
+- Component → controller: `PushMode(EPlayerMode::Focus, Reason)` / `PopMode(Reason)`, `SetViewTarget`. Presentation derives layers from `OnPlayerModeChanged`; no direct mapping-context/UI-input writes.
 - Component → overlay: `Request(Focus, bool)` → UXF marker mode + route display.
 - DEF `OnRouteInvalidated` → route display rebuild for that lane (only while visible; otherwise mark dirty).
 - Component → HUD: `OnFocusMeterChanged` (broadcast at most every 0.05 s real time while changing).
@@ -152,9 +152,9 @@ DesignDutyCycle(S):           S.Capacity / (S.Capacity + S.RechargeDelay + S.Cap
 
 Enter / exit order (same frame):
 ```text
-Enter: SetGlobalTimeDilation(EffectiveTimeScale) → SetInputMode(TacticalFocus) → camera starts real-time blend
+Enter: SetGlobalTimeDilation(EffectiveTimeScale) → PushMode(EPlayerMode::Focus, Reason) → camera starts real-time blend
        → Overlay.Request(Focus, true) → Feedback.Focus.Enter → telemetry counter
-Exit:  SetGlobalTimeDilation(1.0) → SetInputMode(Combat or current) → SetViewTargetWithBlend(Hero, ExitBlend)
+Exit:  SetGlobalTimeDilation(1.0) → PopMode(Reason) restores the remaining stack → SetViewTargetWithBlend(Hero, ExitBlend)
        → Overlay.Request(Focus, false) → Meter.OnExit → Feedback.Focus.Exit/Depleted → telemetry
 ```
 

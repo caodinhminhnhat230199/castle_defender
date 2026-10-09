@@ -87,7 +87,7 @@ Gameplay state changes (owner feature)
 
 ### 4.5 HUD, markers, run indicators
 
-- **R-UXF-23** (§28.1; D-11) One HUD shell with fixed slots; each feature owns its panel. HUD layers are world-level presentation state on `UFeedbackSubsystem`; features set them (SQD wheel, DEF build, TFM Focus, CSM Spirit, PRK/RUN modal). Visibility matrix in technical plan §5.3. Plain UMG (D-11).
+- **R-UXF-23** (§28.1; D-11, D-19) One HUD shell with fixed slots; each feature owns its panel. HUD layers are world-level presentation state on `UFeedbackSubsystem`, derived from the controller-owned mode stack for SQD wheel, DEF build, TFM Focus, CSM Spirit and PRK/RUN modal. Features push/pop their modes; presentation listens to `OnPlayerModeChanged`, and widgets only observe. Mode-driven projection is integrated by the relevant mode-owning task from P1 onward; the P0 layer setter is not a second mode owner. Visibility matrix in technical plan §5.3. Plain UMG (D-11).
 - **R-UXF-24** (§28.1, §12.2, §18.2) World markers: squads (type, order icon, strength), enemy class (Armored/Siege/Boss), structures (HP when hit; critical state). Normal display: distance-limited [TUNABLE]. **Tactical display** (on while the Tactical Focus or Commander Spirit layer is active): all markers visible, structures show HP. Hidden in Modal.
 - **R-UXF-25** (§28.1, §12.2) Core HP bar always visible in run maps (P2+). Lane danger per lane = alive enemy threat weighted by closeness to the Core, plus temporary pulses (path opened, Core attacked, boss summons). Values are owned by `ULaneDangerSubsystem` and readable by TFM/CSM; widgets only display. Thresholds [TUNABLE] in `UGameTuningSettings`.
 - **R-UXF-26** (§34.4) Each failure/recovery case has feedback: Hero death (FC-14, FC-50), squad wipe (FC-24), tower destroyed (FC-31), blocked path opened (FC-32), Core critical HP (FC-46), leaving Siege Site (FC-49), boss reset/bug recovery (FC-66).
@@ -207,7 +207,8 @@ Feedback subsystem + table + tags + variants + cooldown/burst throttle; HUD laye
 | NEW-UXF-9 | Pass bars for blind sound tests and §28.1 quiz | TUNABLE | 8/10 hit types, 9/10 §28.3 events, 8/10 quiz frames |
 | NEW-UXF-10 | `Feedback.Combat.Hit.StateBonus` needs `DeliverHit` to flag hits whose state multiplier > 1 (SYN `T-SYN-07`) | IMPROVEMENT | Requested; row skipped if the flag never comes |
 | NEW-UXF-11 | Row cooldown and burst window (R-UXF-03) measured in real time or game time under Focus | REQUIRED | Real time, like hit stop (NEW-UXF-7): spam is heard in real time |
-| NEW-UXF-12 | Should action telemetry count every physical/requested input, including refused inputs and unchanged combo states? | IMPROVEMENT, owner review at G0 | Count the documented OnActionStateChanged entries now. Broader attempt counts require a CMB request event; do not infer presses from polling. |
+| NEW-UXF-12 | Should action telemetry count every physical/requested input, including refused inputs and unchanged combo states? | DECIDED at G0 (KEEP current telemetry), see owner-review.md | Count documented OnActionStateChanged entries and played-feedback counts. Broader attempt/raw-resolution counts require a separate approved provider/consumer change; do not infer presses from polling. |
+| NEW-UXF-13 | Uploaded VFX guide proposes afterimages, Focus glow, FOV/impact flashes, a second impact subsystem and mandatory pooling/destruction budgets | OUT OF SCOPE for this integration | Preserve current feedback contract, subsystem/tables and D-15; use only compatible effect-layer/readability/profiling guidance. No new presentation mechanics or numeric budgets. See [skill integration](../skill-integration.md), user decision 2026-10-09 |
 | Q-13 | Art direction | Master plan | Placeholder; R-UXF-15..18 hold for any art |
 | Q-16 | Leaving Siege Site boundary | Master plan | RUN rows FC-49 |
 
@@ -216,7 +217,7 @@ Feedback subsystem + table + tags + variants + cooldown/burst throttle; HUD laye
 | Item | Content |
 |---|---|
 | Responsibility | Turn gameplay events into visual/audio/camera/UI feedback from data; hold world-level presentation state (HUD layers, marker display mode, lane danger); host the HUD shell and shared indicators; record playtest telemetry; keep the contract auditable |
-| Inputs | `Play(Tag, Context)` from every feature; `SetHUDLayerActive(Layer, bool)` from SQD/DEF/TFM/CSM/PRK/RUN; `PulseLane(Lane, Seconds)` from DEF/BOS; `LogEvent(Name, Numbers, Strings)` from any feature; delegates: health, stamina, possessed pawn, state add/remove, Core health, Core critical; `DT_Feedback`, `DT_CombatStatePresentation` |
+| Inputs | `Play(Tag, Context)` from every feature; `SetHUDLayerActive(Layer, bool)` for presentation derived from `AHeroPlayerController::OnPlayerModeChanged` as mode-owning tasks integrate; `PulseLane(Lane, Seconds)` from DEF/BOS; `LogEvent(Name, Numbers, Strings)` from any feature; delegates: health, stamina, possessed pawn, state add/remove, Core health, Core critical; `DT_Feedback`, `DT_CombatStatePresentation` |
 | Outputs | Sounds, Niagara, camera shakes, per-actor hit stop, toasts, `OnFeedbackPlayed`, `OnHUDLayersChanged`, `OnLaneDangerChanged`, lane danger values, telemetry lines |
 | State | Tag → row (+ variants) map; cooldown and burst counters; active hit stops; played-tag set; HUD layer flags; lane danger levels + pulses; telemetry file + summary aggregates. All world lifetime, presentation only |
 | Events | `OnFeedbackPlayed(Tag, Context)`, `OnHUDLayersChanged(Flags)`, `OnLaneDangerChanged(Lane, Level)` |

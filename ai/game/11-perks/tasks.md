@@ -166,7 +166,7 @@
 
 **Implementation Notes**
 - [ ] `WBP_PerkChoice` (plain UMG, D-11) in the HUD modal slot: per card name, icon, category badges (icons from UXF T-UXF-12), "Hybrid" label when `IsHybrid()`, description.
-- [ ] Open on `OnOfferReady`: cancel Tactical Focus if active; `UFeedbackSubsystem::SetHUDLayerActive(Modal, true)`; Game+UI input mode, cursor on; keys 1/2/3 via the widget key handler; mouse click; Escape ignored.
+- [ ] Open on `OnOfferReady`: cancel Tactical Focus through its owner if active; perk flow calls controller `PushMode(EPlayerMode::Modal, Reason)`; presentation observes `OnPlayerModeChanged`. Controller owns Game+UI input/cursor; keys 1/2/3 via widget key handler, mouse click, Escape ignored. Close by popping only the offer's reason; verify nested mode/HUD restoration (D-19).
 - [ ] On pick: `ChoosePerk(i)`; close; restore input mode and layer.
 - [ ] `WBP_PerkTray` in the HUD perks slot: one icon per owned perk in pick order, tooltip with description; pulse animation on `OnPerkTriggered`.
 - [ ] Rows `Feedback.Perk.Offered/Chosen/Triggered` authored in `DT_Feedback` (UXF table).

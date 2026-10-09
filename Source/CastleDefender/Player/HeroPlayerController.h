@@ -10,6 +10,7 @@ class UInputMappingContext;
 class UUserWidget;
 class ULockOnComponent;
 class UGameHUDWidget;
+class UCommandComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerModeChangedSignature, EPlayerMode, OldMode, EPlayerMode, NewMode);
 
@@ -51,6 +52,8 @@ class CASTLEDEFENDER_API AHeroPlayerController : public APlayerController
 
 public:
 	AHeroPlayerController();
+	UFUNCTION(BlueprintPure, Category = "Squads")
+	UCommandComponent* GetCommandComponent() const { return Command; }
 	UFUNCTION(BlueprintPure, Category = "HUD")
 	UGameHUDWidget* GetGameHUD() const { return GameHUD; }
 
@@ -93,6 +96,8 @@ protected:
 	TObjectPtr<UInputAction> DebugToggleBuildAction;
 
 private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Squads", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCommandComponent> Command;
 	void EnsureGameHUD();
 	UPROPERTY(Transient)
 	TObjectPtr<UGameHUDWidget> GameHUD;

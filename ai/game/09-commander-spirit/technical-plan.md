@@ -24,7 +24,7 @@ No new framework: one component, one pawn, one pure function, one widget.
 | TFM | Calls the overlay request API with reason `CommanderSpirit`; relies on TFM's own force-exit on Hero death |
 | PRK | A fresh Hero pawn on respawn means pawn-side perk effects must be re-applied when the PlayerState's pawn changes (PRK must support pawn change) |
 | UXF | HUD must rebind Hero bars on pawn change; `Feedback.Spirit.*` rows; telemetry events |
-| FND | Input mode `CommanderSpirit` in `AHeroPlayerController::SetInputMode`; Respawn category in `UGameTuningSettings`; `KillHero` cheat |
+| FND | Controller mode stack: `PushMode(EPlayerMode::Spirit, Reason)` / `PopMode(Reason)`, `OnPlayerModeChanged` (D-19); Respawn category in `UGameTuningSettings`; `KillHero` cheat |
 
 ## 3. Proposed Architecture
 
@@ -54,7 +54,7 @@ No new framework: one component, one pawn, one pure function, one widget.
 
 ### 3.4 Communication flow
 - Hero → component: `OnHeroDeath` delegate (bound in the controller's possessed-pawn-changed hook; verify the UE 5.x delegate name, e.g. `OnPossessedPawnChanged`).
-- Component → controller: `Possess`, `SetViewTargetWithBlend`, `SetInputMode(CommanderSpirit/Combat)`.
+- Component → controller: `Possess`, `SetViewTargetWithBlend`, `PushMode(EPlayerMode::Spirit, Reason)` on entry / `PopMode(Reason)` on exit. Presentation observes `OnPlayerModeChanged`; CSM does not set mapping contexts or UI input mode.
 - Component → SQD/DEF: cancel wheel / cancel preview calls on their controller components.
 - Component → TFM: `RequestTacticalOverlay(Reason, bool)`.
 - Component → GameMode: `RestartPlayerAtPlayerStart(Controller, Start)` (engine API).
@@ -133,12 +133,12 @@ sequenceDiagram
   C->>C: T = ComputeRespawnSeconds(rules, prior, wave) ; schedule timers
   C->>PC: cancel wheel, cancel placement preview
   Note over C: DeathPresentationSeconds
-  C->>PC: spawn spirit pawn, SetViewTargetWithBlend, Possess, SetInputMode(CommanderSpirit)
+  C->>PC: spawn spirit pawn, SetViewTargetWithBlend, Possess, PushMode(Spirit, reason)
   C->>C: RequestTacticalOverlay(CommanderSpirit, on) ; destroy dead hero
   Note over C: respawn timer fires (or Revive)
   C->>GM: RestartPlayerAtPlayerStart(PC, HeroRespawn)
   GM-->>PC: new AHeroCharacter possessed
-  C->>PC: SetInputMode(Combat) ; overlay off ; destroy spirit pawn
+  C->>PC: PopMode(reason) ; overlay observes restored mode ; destroy spirit pawn
 ```
 
 ## 5. State / Data
@@ -215,7 +215,7 @@ ComputeRespawnSeconds(R, PriorDeaths, WaveIndex):
 | PRK pawn change | Fresh pawn requires PRK to re-apply pawn-side effects on pawn change. Not covered by a PRK anchor; raise with PRK (T-PRK-01) |
 | HUD pawn change | UXF HUD must rebind on pawn change (T-UXF-02) |
 | SQD Follow option while dead | Confirm the wheel hides Follow when no Hero pawn (T-SQD-05) |
-| Input mode return after build | FND `SetInputMode` is a switch, not a stack; DEF build exit must return to `CommanderSpirit` while dead (T-CSM-05 adds the check) |
+| Input mode return after build | D-19 uses a reason-keyed stack. DEF pops only its Build reason, restoring Spirit while dead; CSM exit pops only its own Spirit reason. T-CSM-05 verifies nested/out-of-order restoration; never force Combat or add a second mode owner |
 | Mouse wheel | Used by SQD to cycle commands while the wheel is open and by spirit zoom otherwise; `IMC_CommandWheel` must have higher priority |
 | D-xx | No change request |
 

@@ -11,6 +11,7 @@ namespace GameDebug
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarCombat;
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarCombatTrace;
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarEnemy;
+	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarSquads;
 #endif
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarAI;
 	extern CASTLEDEFENDER_API TAutoConsoleVariable<int32> CVarArmy;

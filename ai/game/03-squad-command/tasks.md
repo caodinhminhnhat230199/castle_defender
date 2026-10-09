@@ -10,13 +10,13 @@
 
 P1 builds the whole command layer: squad anchor + soldiers, FSM, 4 commands, Command Wheel with context target, targeting, leash, stuck recovery, strength/wipe, feedback, the `L_CombinedArms` map, tests, a PERF capture and the G1 gate playtest. P2 adds Core retreat and the structure-defense target rule; ZON builds on the hook from `T-SQD-06`. VS tasks (Spearman, one ability per squad) are provisional: re-validate after G3.
 
-All paths are proposals. Every task ends with the master plan Definition of Done (§8): implemented, integrated, verified in PIE and `L_CombinedArms`, no new warnings, tuning in data, verification recorded.
+Unimplemented paths remain proposals. Every task follows the master plan Definition of Done (§8): implemented, integrated, verified in tests/PIE, no new unexpected warnings/errors, tuning in data, evidence recorded. Tasks preceding T-SQD-11 use their specified isolated test map; later shared sandbox integration/acceptance belongs to T-SQD-11/15/G1 on `L_CombinedArms`.
 
 ## 2. Task Overview
 
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
-| T-SQD-01 | `ASquad` anchor + `USquadDefinition` + soldier spawning + registration with `UCommandComponent` | GAMEPLAY | P1 | Must | T-FND-03, T-FND-04, T-FND-05, T-FND-06, T-FND-07 | Todo |
+| T-SQD-01 | `ASquad` anchor + `USquadDefinition` + soldier spawning + registration with `UCommandComponent` | GAMEPLAY | P1 | Must | T-FND-03, T-FND-04, T-FND-05, T-FND-06, T-FND-07 | In Progress |
 | T-SQD-02 | `ASoldierCharacter` + crowd avoidance + formation slots, stretch and assignment | AI | P1 | Must | T-SQD-01 | Todo |
 | T-SQD-03 | Squad FSM states/transitions + decision timer | AI | P1 | Must | T-SQD-02, T-FND-10 | Todo |
 | T-SQD-04 | `UCommandComponent` + `FSquadOrder` + 4 commands via debug input | GAMEPLAY | P1 | Must | T-SQD-03, T-FND-09, T-CMB-11 | Todo |
@@ -54,7 +54,7 @@ A placed `BP_Squad_*` spawns its soldiers around its anchor and registers with t
 **Dependencies** T-FND-03, T-FND-04, T-FND-05, T-FND-06, T-FND-07
 
 **Implementation Notes**
-- [ ] `USquadDefinition` (`UPrimaryDataAsset`) with all fields from spec §13 except ability, incl. `BaseArmor` and embedded `FCombatStateConfig` (same struct as enemy definitions, from FND/SYN); register Primary Asset Type `SquadDefinition`; `IsDataValid` per technical plan §3.2.
+- [ ] `USquadDefinition : UGameDefinition` (foundation §9) with all fields from spec §13 except ability, incl. `BaseArmor` and embedded `FCombatStateConfig` (same struct as enemy definitions, from FND/SYN); register Primary Asset Type `SquadDefinition`; `IsDataValid` per technical plan §3.2.
 - [ ] `SquadTypes.h`: `ESquadState`, `FSquadOrder`, `FSquadTargetRule`, `ESquadTargetRuleType` (types only).
 - [ ] `ASquad`: root scene component, `Definition`, `HomeTransform` (BeginPlay transform), `TArray<FSoldierRuntime>`; spawn `Definition->SoldierCount` soldiers with `SpawnActorDeferred` at grid offsets (temporary until T-SQD-02), set squad back-pointer and team id 0.
 - [ ] Bare `ASoldierCharacter` (`ACharacter`, `UHealthComponent`, `UCombatStateComponent`, `IGenericTeamAgentInterface`); components initialised from the definition (HP, `BaseArmor`, `FCombatStateConfig`); behavior comes in T-SQD-02.
