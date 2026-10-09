@@ -408,3 +408,8 @@ No change requests to D-01…D-20. New proposed resolution and interrupt contrac
 | R-CMB-54 | Development debugger and trace overlay | T-CMB-21/15; AC-CMB-20/26 |
 
 AC-CMB-01…17 retain the task ownership in `tasks.md`; AC-CMB-18 is P2, AC-CMB-19 provisional VS. New AC-CMB-20…26 are mapped above and receive final integrated coverage in T-CMB-15. P0A evidence is collected per task; all P0 criteria and G0 must pass before P1 opens.
+
+### 12. Integration Checklist
+
+- Run `L_Test_HeroCombat` functional test suite and automation specs (`Tools/run_tests.bat`) before merging CMB, SYN or ENM changes. All 16 functional tests and automation specs must pass with editor exit code 0.
+

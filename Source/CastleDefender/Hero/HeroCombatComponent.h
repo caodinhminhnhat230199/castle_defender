@@ -99,9 +99,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void CloseParryWindow();
+	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void OpenInterruptResistanceWindow() { bInterruptResistanceWindowOpen = true; }
+	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void CloseInterruptResistanceWindow() { bInterruptResistanceWindowOpen = false; }
+	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void OpenRotationAssistWindow();
+	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void CloseRotationAssistWindow();
 	AActor* GetAssistTarget() const { return AssistTarget.Get(); }
 
@@ -115,6 +119,10 @@ public:
 	/** Clears any buffered input. */
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void ClearBuffer();
+
+	/** Resets component to Idle state, clearing all windows, buffers, montages, and state locks. */
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void ResetToIdle();
 	/** Called by the owning hero before publishing its death event to observers. */
 	void HandleOwnerDeath(const FCombatHit& KillingHit);
 

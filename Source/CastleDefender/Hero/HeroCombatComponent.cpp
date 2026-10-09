@@ -814,6 +814,27 @@ void UHeroCombatComponent::HandleOwnerDamaged(const FCombatHit& Hit, float NewHe
 	// DeliverHit is the sole producer of hit feedback; presentation does not replay HeroDamaged.
 }
 
+void UHeroCombatComponent::ResetToIdle()
+{
+	ForceCloseAllWindows();
+	ClearBuffer();
+	ResetChain();
+	bParryConsumed = false;
+	bBlockInputHeld = false;
+	bCounterAttackPending = false;
+	CounterTimeRemaining = 0.f;
+	AssistTarget.Reset();
+	BlockBreakPresentation = nullptr;
+	if (ActiveMontage && HeroOwner)
+	{
+		UAnimMontage* InterruptedMontage = ActiveMontage;
+		ActiveMontage = nullptr;
+		HeroOwner->StopAnimMontage(InterruptedMontage);
+	}
+	SetActionState(EHeroActionState::Idle);
+	UpdateTickEnabled();
+}
+
 void UHeroCombatComponent::HandleOwnerDeath(const FCombatHit& KillingHit)
 {
 	ConsumeCounter();

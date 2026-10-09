@@ -14,6 +14,14 @@ Newest entry first. Every agent session adds one entry (rules: `AGENTS.md` §9).
 - **Next:** next task ID
 ```
 
+### 2026-10-09: Antigravity: combat automation and functional test suite complete [T-CMB-15]
+- **Tasks:** T-CMB-15 Todo → Done.
+- **Changed:** `Source/CastleDefender/Hero/HeroCombatComponent.h/.cpp` (added `ResetToIdle()`, exposed notify window open/close methods), `Source/CastleDefender/Hero/HeroCharacter.h/.cpp` (added `ResetHeroState()`), `Source/CastleDefender/Hero/HeroCombatTestLibrary.h/.cpp` (implemented authoritative execution of 16 combat test scenarios with isolated state resets), `Source/CastleDefender/Tests/CombatSuite.spec.cpp` (automation specs for AC-CMB-14 key maps/verbs, D-20 clock domains, and deliberately broken rule failure), `Tools/create_hero_combat_tests.py/.bat/.ps1` (authored 16 `BP_FT_*` actors and `L_Test_HeroCombat` map), `Content/CastleDefender/Maps/Test/L_Test_HeroCombat.umap`, `Content/CastleDefender/Maps/Test/BP_FT_*.uasset`, `ai/game/01-hero-combat/technical-plan.md`, `ai/game/01-hero-combat/tasks.md`.
+- **Verified:** `Tools\build.bat` passes with 0 errors; focused functional tests `Tools\run_tests.bat -Filter "Project.Functional Tests.CastleDefender.Maps.Test.L_Test_HeroCombat"` pass 16/16 tests with 0 failures; focused specs `Tools\run_tests.bat -Filter "CastleDefender.Combat.Suite"` pass 4/4 specs with 0 failures; full test suite `Tools\run_tests.bat` passes 218/218 tests (both Automation Specs and Functional Tests headless) with 0 errors, 0 warnings, editor exit code 0.
+- **Manual steps for the user:** None.
+- **Open questions / blockers:** None.
+- **Next:** Next eligible P0 task (e.g. T-UXF-09 Feedback audit tooling + G0 audit, T-UXF-11 Audio mix/ducking, or T-CMB-16 G0 gate playtest preparation).
+
 ### 2026-10-09: Antigravity: P0 poise break, parry stagger and poise regen tests [T-SYN-08]
 - **Tasks:** T-SYN-08 Todo → Done.
 - **Changed:** `Source/CastleDefender/Tests/PoiseStagger.spec.cpp` (poise break via Heavy + Light + Light interrupting attack montage, MaxPoise 0 regression guard, parry stagger on attack hit window, poise regen timing at 2s delay + 1s regen to 35), `Tools/create_synergy_assets.py/.bat/.ps1` (idempotent test map `L_Test_CombatStates` and functional test actor `BP_FT_CombatStates`), `Content/CastleDefender/Maps/Test/L_Test_CombatStates.umap`, `Content/CastleDefender/Maps/Test/BP_FT_CombatStates.uasset`, `ai/game/04-battlefield-synergy/tasks.md`.

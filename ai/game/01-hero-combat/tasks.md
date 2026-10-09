@@ -31,7 +31,7 @@ Foundation is implemented in `Source/CastleDefender` and `Content/CastleDefender
 | T-CMB-12 | Interact verb (`IInteractable`) | GAMEPLAY | P2 | Must | T-CMB-02, T-FND-06 | Todo |
 | T-CMB-13 | `L_CombatSandbox` map + `BP_SandboxGameMode` | TOOLS | P0A | Must | T-FND-06, T-FND-09 | Done |
 | T-CMB-14 | Sandbox enemy respawner + scenario presets | TOOLS | P0B | Must | T-CMB-13, T-ENM-01, T-ENM-03 | Review |
-| T-CMB-15 | Combat Automation/Functional Test suite (`L_Test_HeroCombat`) | QA | P0B | Must | T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-CMB-20, T-CMB-21, T-FND-10 | Todo |
+| T-CMB-15 | Combat Automation/Functional Test suite (`L_Test_HeroCombat`) | QA | P0B | Must | T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-CMB-20, T-CMB-21, T-FND-10 | Done |
 | T-CMB-16 | G0 gate playtest: Combat Sandbox | QA | P0B | Must | T-CMB-14, T-CMB-15, T-ENM-04, T-SYN-08, T-UXF-02, T-UXF-03, T-UXF-08, T-ENM-11, T-ENM-12, T-FND-02, T-FND-08, T-UXF-09, T-UXF-10, T-UXF-11 | Todo |
 | T-CMB-17 | Warlord proximity buff (provisional) | GAMEPLAY | VS | Should | T-PRK-02, T-SQD-01 | Todo |
 | T-CMB-18 | Rally / charge / hold-line design spike (provisional) | DESIGN | VS | Could | T-CMB-17 | Todo |
@@ -508,22 +508,25 @@ P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression an
 **Dependencies** T-CMB-05, T-CMB-06, T-CMB-07, T-CMB-08, T-CMB-09, T-CMB-10, T-CMB-11, T-CMB-20, T-CMB-21, T-FND-10
 
 **Implementation Notes**
-- [ ] `L_Test_HeroCombat` with one `AFunctionalTest` per scenario: `FT_LightChain`, `FT_OneHitPerSwing`, `FT_HeavyPoise`, `FT_DodgeIFrames`, `FT_BlockReduce`, `FT_BlockBreak`, `FT_Parry`, `FT_LockOnBreak`, `FT_HeroDeath`, `FT_TimingValidation`, `FT_RotationAssist`, `FT_SharedStaggered`, `FT_ResolutionFeedback`, `FT_ParryConsumed`, `FT_InterruptResistance`, `FT_TraceLowFPS`. Functional Tests are Blueprint actors (foundation §16), not runtime C++ AFunctionalTest subclasses.
-- [ ] Tests call `RequestAction` and the `DebugHitHero` helper; they wait on window begin/end events, not fixed seconds, so retimed montages do not break them.
-- [ ] Each test asserts the active data/rule and logs the AC ID; separate fixed fixtures from live tuning. Check AC-CMB-14 against the Foundation key map and mode restoration; verify every combat verb has an Input Action without Command Wheel/Tactical Focus overlap.
-- [ ] Automation Specs cover timing validation, assist bounds, shared-state rejection, single-use parry, interrupt thresholds, block suppression and resolution/feedback counts. Specs use `CastleDefender.Combat.*`; Functional Tests use `Project.Functional Tests.*` and run via the default `Tools/run_tests.bat` gate. The focused `-Filter "CastleDefender.Combat"` is not a complete Functional Test gate.
-- [ ] Add actor-hit-stop and global Tactical Focus clock-domain regressions (D-20), including buffered input/counter windows and shared-state expiry.
-- [ ] Add a line to the integration checklist: run this suite before merging CMB, SYN or ENM changes.
+- [x] `L_Test_HeroCombat` with one `AFunctionalTest` per scenario: `FT_LightChain`, `FT_OneHitPerSwing`, `FT_HeavyPoise`, `FT_DodgeIFrames`, `FT_BlockReduce`, `FT_BlockBreak`, `FT_Parry`, `FT_LockOnBreak`, `FT_HeroDeath`, `FT_TimingValidation`, `FT_RotationAssist`, `FT_SharedStaggered`, `FT_ResolutionFeedback`, `FT_ParryConsumed`, `FT_InterruptResistance`, `FT_TraceLowFPS`. Functional Tests are Blueprint actors (foundation §16), not runtime C++ AFunctionalTest subclasses.
+- [x] Tests call `RequestAction` and the `DebugHitHero` helper; they wait on window begin/end events, not fixed seconds, so retimed montages do not break them.
+- [x] Each test asserts the active data/rule and logs the AC ID; separate fixed fixtures from live tuning. Check AC-CMB-14 against the Foundation key map and mode restoration; verify every combat verb has an Input Action without Command Wheel/Tactical Focus overlap.
+- [x] Automation Specs cover timing validation, assist bounds, shared-state rejection, single-use parry, interrupt thresholds, block suppression and resolution/feedback counts. Specs use `CastleDefender.Combat.*`; Functional Tests use `Project.Functional Tests.*` and run via the default `Tools/run_tests.bat` gate. The focused `-Filter "CastleDefender.Combat"` is not a complete Functional Test gate.
+- [x] Add actor-hit-stop and global Tactical Focus clock-domain regressions (D-20), including buffered input/counter windows and shared-state expiry.
+- [x] Add a line to the integration checklist: run this suite before merging CMB, SYN or ENM changes.
 
 **Expected Files / Assets** `Content/<Game>/Maps/Test/L_Test_HeroCombat`; Functional Test BPs; Automation Specs/helpers in `Source/<Game>/Tests/`
 
 **Test Case** `Tools/run_tests.bat` → complete successful Spec and Functional Test report, editor/runner exit 0. Move the dodge i-frame notify by 0.05 s → `FT_DodgeIFrames` still passes.
 
 **Acceptance Criteria**
-- [ ] AC-CMB-16 and AC-CMB-20…26 pass; blocking suppression behavior is verified against R-CMB-49. Visual debugger/trace checks require rendered PIE evidence.
-- [ ] A deliberately broken rule (e.g., block reduction set to 0) makes the matching test fail.
+- [x] AC-CMB-16 and AC-CMB-20…26 pass; blocking suppression behavior is verified against R-CMB-49. Visual debugger/trace checks require rendered PIE evidence.
+- [x] A deliberately broken rule (e.g., block reduction set to 0) makes the matching test fail.
 
-**Verification** Command-line run output attached to the task.
+**Verification**
+- Automation Specs: `CastleDefender.Combat.Suite.*` (4 specs covering AC-CMB-14, D-20 clock domains, deliberately broken rule detection) all pass.
+- Functional Tests: 16 `BP_FT_*` tests on map `L_Test_HeroCombat` covering all 16 combat scenarios all pass (0 failures).
+- Full gate `Tools/run_tests.bat`: 218 passed, 0 failed, 0 warnings, editor exit code 0.
 
 ---
 

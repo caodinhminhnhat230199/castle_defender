@@ -191,6 +191,47 @@ void AHeroCharacter::ApplyTuning()
 	UpdateMaxWalkSpeed();
 }
 
+void AHeroCharacter::ResetHeroState()
+{
+	bDeathHandled = false;
+	bIsSprinting = false;
+	MovementInputAxes = FVector2D::ZeroVector;
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->SetMovementMode(MOVE_Walking);
+		MoveComp->StopMovementImmediately();
+	}
+	if (Health)
+	{
+		Health->InitializeHealth(HeroClassDefinition ? HeroClassDefinition->MaxHealth : 200.f, 0.f);
+	}
+	if (StaminaComponent)
+	{
+		if (HeroClassDefinition)
+		{
+			StaminaComponent->InitializeFromConfig(HeroClassDefinition->Stamina);
+		}
+		else
+		{
+			StaminaComponent->InitializeFromConfig(StaminaComponent->GetConfig());
+		}
+	}
+	if (CombatState)
+	{
+		CombatState->ClearAllStates();
+	}
+	if (LockOnComponent)
+	{
+		LockOnComponent->Release();
+	}
+	if (CombatComponent)
+	{
+		CombatComponent->ResetToIdle();
+	}
+	UpdateFacingPolicy();
+	UpdateMaxWalkSpeed();
+}
+
 void AHeroCharacter::StartSprint()
 {
 	if (Health && Health->IsDead()) { return; }

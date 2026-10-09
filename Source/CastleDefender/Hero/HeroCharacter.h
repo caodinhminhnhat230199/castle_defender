@@ -47,6 +47,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Hero")
 	void ApplyTuning();
 
+	/** Resets death state, movement, health, stamina, states, lock-on, and combat component to Idle. */
+	UFUNCTION(BlueprintCallable, Category = "Hero")
+	void ResetHeroState();
+
 	/** Initiates sprint locomotion. */
 	UFUNCTION(BlueprintCallable, Category = "Hero")
 	void StartSprint();
