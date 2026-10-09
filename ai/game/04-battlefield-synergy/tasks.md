@@ -26,7 +26,7 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 | T-SYN-05 | Army consumers of states (Infantry/Archer target preference) | AI | P1 | Must | T-SQD-07, T-SQD-10, T-SYN-02, T-SYN-03 | Todo |
 | T-SYN-06 | Tower consumers (Ballista vs Armor Broken/Marked, heavy tower impact poise) | GAMEPLAY | P2 | Must | T-DEF-09, T-DEF-10, T-DEF-11, T-SYN-02, T-SYN-07 | Todo |
 | T-SYN-07 | Hero consumers (follow-up on Staggered, Marked bonus) | GAMEPLAY | P1 | Must | T-SYN-01, T-SYN-03, T-CMB-05, T-CMB-06 | Todo |
-| T-SYN-08 | P0 Functional Tests: poise → Staggered on the P0 enemy | QA | P0 | Must | T-SYN-01, T-CMB-06, T-CMB-09, T-ENM-04 | Todo |
+| T-SYN-08 | P0 Functional Tests: poise → Staggered on the P0 enemy | QA | P0 | Must | T-SYN-01, T-CMB-06, T-CMB-09, T-ENM-04 | Done |
 | T-SYN-09 | P1 synergy Functional Tests (`L_Test_SynergyArmy`) | QA | P1 | Must | T-SYN-02, T-SYN-03, T-SYN-04, T-SYN-05, T-SYN-07 | Todo |
 | T-SYN-10 | G1 synergy playtest + synergy matrix review | QA | P1 | Must | T-SYN-09, T-UXF-05 | Todo |
 | T-SYN-11 | P2 tower synergy Functional Tests + G2 regression + burst perf check | QA | P2 | Must | T-SYN-06, T-DEF-12 | Todo |
