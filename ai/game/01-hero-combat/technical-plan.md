@@ -418,3 +418,16 @@ AC-CMB-01…17 retain the task ownership in `tasks.md`; AC-CMB-18 is P2, AC-CMB-
 
 - Run `L_Test_HeroCombat` functional test suite and automation specs (`Tools/run_tests.bat`) before merging CMB, SYN or ENM changes. All 16 functional tests and automation specs must pass with editor exit code 0.
 
+
+
+## P1 custom dodge and perfect dodge: T-CMB-22
+
+Approved user answers on 2026-10-10: "Animation + afterimage/sound + counter opportunity" and "can u custom for me ?". Reuse HeroCombatComponent/DeliverHit/FeedbackSubsystem and existing montage sources. No D-xx decision changes.
+
+Arm one early hero-clock countdown at the first i-frame opening of an accepted Dodge; consume before delegates, never rearm that action. Validate duration against its authored i-frame span. Only an actual positive-damage hostile intercepted hit qualifies. Keep Evaded outcome and emit resolver-owned metadata/cue. Refresh the existing counter clock without changing committed action; retain first-payload consumption. Close/interrupt/death/reset/EndPlay remove eligibility, interruption also clears counter.
+
+FFeedbackRow adds optional AfterimageMaterial/Seconds/Opacity. FeedbackSubsystem snapshots a transient UPoseableMeshComponent at the target skeletal mesh world pose, disables collisions/shadows/tick, and fades GhostOpacity using its real-time ticker. Its owner/world cleanup destroys snapshots and removes ticker handles. No new actor/subsystem/module or global dilation.
+
+HeroCombatLibrary editor-only animation authoring bakes original bone transforms from a licensed mannequin idle starting pose via IAnimationDataController, at 60 fps. Output remains editable AnimSequence data. Root translation is directional; pelvis/limbs provide tuck/roll/lean without spinning capsule/camera. Authoring backs up existing saved montage/definition/table packages, preserves notify timings, and adds dedicated material/sound. Existing assets are not deleted.
+
+Pinned engine API references: [Animation data controller](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/IAnimationDataController), [poseable mesh](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/UPoseableMeshComponent). Acceptance/evidence: R-CMB-55..58, AC-CMB-27..28; rendered and owner checks remain distinct.

@@ -4,6 +4,8 @@ Date: 2026-10-09. Owner: Codex. The user explicitly chose **integrate guidance a
 
 Follow-up: [alignment review and fixes](skill-alignment-review-2026-10-09.md) records the fresh build/test check, corrected planning mismatches and a minimal test-helper unity-build repair. The original integration's documentation-only validation below remains historical; the follow-up contains current verification and limits.
 
+Runtime follow-up (2026-10-10): the user requested compatible gameplay implementation from the four combat/dodge/animation/ability uploads. [Implementation and verification record](uploaded-guidance-runtime-2026-10-10.md) documents T-SYN-02's armor-break integration, reproduced/fixed defensive/montage teardown, saved-content rendered PIE and remaining acceptance limits. The original documentation work below does not imply every uploaded mechanic was implemented.
+
 ## Installed project guides
 
 The five original uploads remain intact at the project root as source material. The adapted skills live in `.claude/skills/`, following the existing project convention; Codex and Antigravity can read them directly through `AGENTS.md`, without assuming Claude-specific invocation is available.
@@ -46,3 +48,8 @@ The skills add implementation and content-review guidance, not new requirements.
 This integration was grounded in current source: HeroCombatComponent, HeroClassDefinition, CombatLibrary, MeleeTraceComponent, CombatActionTiming, FeedbackTypes/FeedbackSubsystem, HeroAnimInstance, the hero authoring script and current module/project configuration. `.codegraph/` and its CLI were unavailable; source inspection used `rg` directly. No tool/index was installed.
 
 Validation for this work checks skill frontmatter/names, local Markdown links, setup/catalog coverage and whitespace. Unreal build/automation/PIE are not applicable because no source, assets or runtime configuration change. Skill selection in a fresh Claude/Antigravity session remains untested; the portable route is the explicit skill links in `AGENTS.md`.
+
+
+### User-approved exception: custom perfect dodge (2026-10-10)
+
+The user explicitly requested original custom dodge animations and chose afterimage/sound plus a counter opportunity. NEW-CMB-13 / T-CMB-22 narrowly supersede the imported-guidance exclusion of perfect dodge. Reuse current components, counter and central feedback; preserve D-04/D-05/D-20. No GAS, global dilation or Motion Matching migration is included. See CMB spec R-CMB-55..58 and task acceptance before treating this as complete.

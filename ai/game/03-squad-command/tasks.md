@@ -31,7 +31,7 @@ Unimplemented paths remain proposals. Every task follows the master plan Definit
 | T-SQD-13 | Command and squad feedback wiring (markers, squad strip, ack/invalid, pings) | UI | P1 | Must | T-SQD-05, T-SQD-12, T-UXF-01, T-UXF-04, T-UXF-06 | Todo |
 | T-SQD-14 | Functional Test suite `L_Test_Squad` + regression list | QA | P1 | Must | T-SQD-08, T-SQD-09, T-SQD-10, T-SQD-12 | Todo |
 | T-SQD-15 | PERF capture: 3 squads engaged on reference PC | PERF | P1 | Should | T-SQD-10, T-SQD-11, T-FND-08 | Todo |
-| T-SQD-16 | G1 gate playtest: Hero alone vs Hero + squads | QA | P1 | Must | T-SQD-05, T-SQD-10, T-SQD-11, T-SQD-13, T-SQD-14, T-SQD-15, T-ENM-05, T-ENM-06, T-SYN-05, T-UXF-08, T-UXF-09, T-ENM-14, T-SYN-04, T-SYN-07, T-SYN-09, T-SYN-10, T-UXF-05, T-UXF-12, T-UXF-13, T-UXF-14 | Todo |
+| T-SQD-16 | G1 gate playtest: Hero alone vs Hero + squads | QA | P1 | Must | T-SQD-05, T-SQD-10, T-SQD-11, T-SQD-13, T-SQD-14, T-SQD-15, T-ENM-05, T-ENM-06, T-SYN-05, T-UXF-08, T-UXF-09, T-ENM-14, T-SYN-04, T-SYN-07, T-SYN-09, T-SYN-10, T-UXF-05, T-UXF-12, T-UXF-13, T-UXF-14, T-CMB-22 | Todo |
 | T-SQD-17 | Retreat to Core + Infantry structure-defense rule | AI | P2 | Must | T-SQD-07, T-SQD-12, T-DEF-03, T-ENM-09 | Todo |
 | T-SQD-18 | Spearman squad (provisional) | GAMEPLAY | VS | Could | T-SQD-10, T-SYN-02 | Todo |
 | T-SQD-19 | Squad ability slot + Shield Wall (provisional) | GAMEPLAY | VS | Could | T-SQD-05, T-SQD-10, T-PRK-02 | Todo |
@@ -513,7 +513,7 @@ Answer the G1 question: does Hero + squads play better than the Hero alone? (§3
 
 **Related Requirements** R-SQD-08, R-SQD-15, R-SQD-22 · AC-SQD-01, AC-SQD-02, AC-SQD-14, AC-SQD-16
 
-**Dependencies** T-SQD-05, T-SQD-10, T-SQD-11, T-SQD-13, T-SQD-14, T-SQD-15, T-ENM-05, T-ENM-06, T-SYN-05, T-UXF-08, T-UXF-09. Gate evidence (all phase QA/content tasks): T-ENM-14, T-SYN-04, T-SYN-07, T-SYN-09, T-SYN-10, T-UXF-05, T-UXF-12, T-UXF-13, T-UXF-14
+**Dependencies** T-SQD-05, T-SQD-10, T-SQD-11, T-SQD-13, T-SQD-14, T-SQD-15, T-ENM-05, T-ENM-06, T-SYN-05, T-UXF-08, T-UXF-09. Gate evidence (all phase QA/content tasks): T-ENM-14, T-SYN-04, T-SYN-07, T-SYN-09, T-SYN-10, T-UXF-05, T-UXF-12, T-UXF-13, T-UXF-14, user-approved custom dodge acceptance T-CMB-22
 
 **Implementation Notes**
 - [ ] Hypothesis: "With Infantry + Archer and the wheel, players clear Encounter A better and enjoy it more than alone, and can order mid-combat in ≤ 3 s." Evidence: telemetry + ratings below. KEEP / CHANGE / DELETE per hypothesis.

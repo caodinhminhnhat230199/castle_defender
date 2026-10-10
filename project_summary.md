@@ -29,7 +29,7 @@ Game Action Strategy Roguelite góc nhìn thứ ba. Người chơi trực tiếp
 | GDD v2 | Xong |
 | Bộ skill Claude Code (`.claude/skills/`) | 15 project-local skills, including five adapted combat/defense/animation/ability/VFX guides; [integration](ai/game/skill-integration.md) |
 | Kế hoạch tổng, kiến trúc, production plan | Xong |
-| Spec / plan / task cho từng feature | 19 feature folders; 273 unique tasks in the overview tables (checked 2026-10-09). CMB has 21 tasks, including T-CMB-20/21; links and current dependency examples validated. |
+| Spec / plan / task cho từng feature | 19 feature folders; 274 unique tasks after approved P1 custom dodge T-CMB-22 (2026-10-10). CMB has 22 tasks; prior 273-task audit is historical evidence. |
 | Project UE5 (`.uproject`, `Source/`) | `CastleDefender.uproject`, one runtime module. Foundation passed 2026-10-04; P0/G0 recorded passed 2026-10-09; current phase is P1 Combined Arms. P1+ additions remain planned until their tasks land. |
 | Git | Initialized with Git LFS; binary assets use LFS. |
 | Quy tắc cho coding agent | Xong: `AGENTS.md` dùng chung cho mọi agent, `CLAUDE.md` cho Claude Code, nhật ký `ai/game/progress.md` |
@@ -112,7 +112,7 @@ ai/game/
 
 Riêng `00-foundation/technical-plan.md` là **kiến trúc UE5 chung** cho cả dự án. Mọi feature phải theo file này.
 
-Current total: 273 tasks. Features FND..UXF contain 219 (including 14 provisional VS tasks); features 20–24 contain another 54 provisional VS tasks. By phase: F 10, P0 32, P1 33, P2 55, P3 75, VS 68.
+Current total: 274 tasks. Features FND..UXF contain 220 (including 14 provisional VS tasks); features 20–24 contain another 54 provisional VS tasks. By phase: F 10, P0 32, P1 34, P2 55, P3 75, VS 68.
 
 ### Hợp đồng giữa các feature
 
@@ -149,10 +149,10 @@ Không đặt deadline cứng. Chỉ chuyển phase khi qua gate (GDD §32). Che
 |---|---|---|---|---|
 | D0 | Một phần F | Nhân vật đi lại trong map trống | 9 | — |
 | **D1** | **P0** | Warlord đánh với enemy cận chiến. Lần đầu test cảm giác chơi. | 31 | 42 |
-| D2 | P1 | Hero cùng 2 squad, Command Wheel | ~60 | 75 |
-| D3 | P2 | Xây tower, enemy phá công trình, 3 wave. Lần đầu thấy bản sắc của game. | ~110 | 130 |
-| **D4** | **P3** | Run đầy đủ khoảng 25 phút. Bản đầu tiên đúng là game. | ~180 | 205 |
-| D5 | VS | Bản polish cho người ngoài xem | — | 273 |
+| D2 | P1 | Hero cùng 2 squad, Command Wheel | ~60 | 76 |
+| D3 | P2 | Xây tower, enemy phá công trình, 3 wave. Lần đầu thấy bản sắc của game. | ~110 | 131 |
+| **D4** | **P3** | Run đầy đủ khoảng 25 phút. Bản đầu tiên đúng là game. | ~180 | 206 |
+| D5 | VS | Bản polish cho người ngoài xem | — | 274 |
 
 **Critical path:** Foundation → Hero Combat → Enemy → Squad → Synergy → Structures & Pathing → Director → Run Flow → Boss.
 

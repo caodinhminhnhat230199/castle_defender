@@ -1,6 +1,15 @@
 # Hero Combat — WIP và handoff
 
-## Current handoff (2026-10-09, Codex)
+## Current handoff (2026-10-10, Codex)
+
+This section supersedes the historical handoffs below. Branch: `feat/01-hero-combat`. CMB now has **17 Done, 1 Review, 4 Todo**. P1 T-CMB-22 was explicitly approved by the user: original custom directional dodge animations, afterimage/sound and shared counter reward. The old imported-skill exclusion is superseded only for this scope (NEW-CMB-13).
+
+- **Implemented/integrated:** 60 fps F/B roll and L/R evasive step clips, existing montage/input/windows, one-shot actual-hit perfect window, existing counter, central cue and real-time frozen afterimage. See [detailed evidence and manual acceptance](custom-dodge-verification-2026-10-10.md), [tasks](tasks.md) and newest [progress](../progress.md).
+- **Status:** T-CMB-22 Review pending owner feel/readability/shorter travel and placeholder audio, shared full gate and intermittent editor-shutdown limits. Rendered actual input/notify/counter and frozen cyan pose are recorded. New tests pass; four existing Army.Spawn failures belong to unfinished T-SQD-01. No phase advances; T-SQD-16 G1 includes T-CMB-22 acceptance.
+- **Preserved:** prior unstaged armor/lifecycle work, all P0 Done acceptance, original uploads, current skeleton/animation graph and feature branch. No commit/push/PR. T-CMB-12 remains P2; T-CMB-17/18/19 remain VS.
+- **Next:** owner acceptance for T-CMB-22 and T-SYN-02; finish existing T-SQD-01 saved squad/controller checks. Inspect live Git status/progress before making edits.
+
+## Previous handoff (2026-10-09, Codex; historical)
 
 This section supersedes the historical snapshot below. Branch: `feat/01-hero-combat`. CMB has **17 Done, 4 Todo, no Review tasks**. All P0 CMB tasks are Done; [G0 passed on 2026-10-09](../playtests/G0_2026-10-09_combat-sandbox.md), opening P1. Check [tasks.md](tasks.md), [progress.md](../progress.md) and the live Git diff before acting.
 

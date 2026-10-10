@@ -13,14 +13,14 @@ P0 fills `UCombatStateComponent` with poise and timed states so Heavy and Parry 
 
 Recommended order: T-SYN-01 → T-SYN-08 (P0) · T-SYN-02 → 03 → 04 → 07 → 05 → 09 → 10 (P1) · T-SYN-06 → 11 (P2).
 
-All paths are proposals (no UE project exists yet). Every task also follows the master plan Definition of Done (§8).
+P0 shared states are implemented in CastleDefender. T-SYN-02's P1 runtime/content integration is in Review; other additions follow the task statuses below. Every task also follows the master plan Definition of Done (§8).
 
 ## 2. Task Overview
 
 | ID | Task | Type | Phase | Priority | Dependencies | Status |
 |---|---|---|---|---|---|---|
 | T-SYN-01 | `UCombatStateComponent` logic: timed states + poise damage/regen + poise break → Staggered | GAMEPLAY | P0 | Must | T-FND-05, T-FND-07, T-FND-09, T-FND-10, T-UXF-01 | Done |
-| T-SYN-02 | Armor Broken from Warlord Heavy + armor reduction | GAMEPLAY | P1 | Must | T-SYN-01, T-CMB-06, T-ENM-01 | Todo |
+| T-SYN-02 | Armor Broken from Warlord Heavy + armor reduction | GAMEPLAY | P1 | Must | T-SYN-01, T-CMB-06, T-ENM-01 | Review |
 | T-SYN-03 | Marked state infrastructure (debug/perk source only, A-06) | GAMEPLAY | P1 | Must | T-SYN-01, T-FND-09 | Todo |
 | T-SYN-04 | State presentation contract via UXF | UI | P1 | Must | T-SYN-01, T-UXF-01 | Todo |
 | T-SYN-05 | Army consumers of states (Infantry/Archer target preference) | AI | P1 | Must | T-SQD-07, T-SQD-10, T-SYN-02, T-SYN-03 | Todo |
@@ -120,25 +120,25 @@ All paths are proposals (no UE project exists yet). Every task also follows the 
 **Consumers (not dependencies)** T-ENM-06 Armored archetype builds on this task
 
 **Implementation Notes**
-- [ ] `UHealthComponent`: `BaseArmor` (clamped 0–0.9) set by the owner from its definition; in `ApplyHit` damage × (1 − effective armor), effective = `BaseArmor × (HasState(ArmorBroken) ? ArmorBrokenArmorMultiplier : 1)`.
-- [ ] `UGameTuningSettings`: `ArmorBrokenArmorMultiplier` (0.25), `StateDefaultDurations[ArmorBroken]` (6 s).
-- [ ] `UCombatStateComponent` eligibility: `State.Combat.ArmorBroken` only when the sibling `UHealthComponent::GetBaseArmor() > 0`.
-- [ ] `DA_HeroClass_Warlord` Heavy: `AppliedStates = {State.Combat.ArmorBroken}`, `StateDuration 0` (default).
-- [ ] `DT_CombatStatePresentation` Armor Broken row (feedback tags; icon in T-SYN-04).
-- [ ] `ArmorMath` Automation Spec on a pure helper `ComputeDamageAfterArmor(Damage, BaseArmor, bArmorBroken, Multiplier)`.
-- [ ] Cheat `DebugHitTarget <Damage> <Poise>` delivers a hit from a simulated Army source to the crosshair target through `DeliverHit`.
-- [ ] Note NEW-SYN-02 in the DA field tooltip: if Armor Broken becomes perk-granted, move this entry into a PRK effect.
+- [x] `UHealthComponent`: `BaseArmor` (clamped 0–0.9) set by the owner from its definition; in `ApplyHit` damage × (1 − effective armor), effective = `BaseArmor × (HasState(ArmorBroken) ? ArmorBrokenArmorMultiplier : 1)`.
+- [x] `UGameTuningSettings`: `ArmorBrokenArmorMultiplier` (0.25), `StateDefaultDurations[ArmorBroken]` (6 s).
+- [x] `UCombatStateComponent` eligibility: `State.Combat.ArmorBroken` only when the sibling `UHealthComponent::GetBaseArmor() > 0`.
+- [x] `DA_HeroClass_Warlord` Heavy: `AppliedStates = {State.Combat.ArmorBroken}`, `StateDuration 0` (default).
+- [x] `DT_CombatStatePresentation` Armor Broken row (feedback tags; icon in T-SYN-04).
+- [x] `ArmorMath` Automation Spec on a pure helper `ComputeDamageAfterArmor(Damage, BaseArmor, bArmorBroken, Multiplier)`.
+- [x] Cheat `DebugHitTarget <Damage> <Poise>` delivers a hit from a simulated Army source to the crosshair target through `DeliverHit`.
+- [x] Note NEW-SYN-02 in the DA field tooltip: if Armor Broken becomes perk-granted, move this entry into a PRK effect.
 
 **Expected Files / Assets** `Source/<Game>/Combat/HealthComponent.cpp`, `CombatStateComponent.cpp`; `Source/<Game>/Tests/ArmorMath.spec.cpp`; `DA_HeroClass_Warlord`; `DT_CombatStatePresentation`
 
-**Test Case** Armored test enemy (`DA_Enemy_Test` with `BaseArmor 0.5`): `DebugHitTarget 20 0` → 10 damage. Warlord Heavy → Armor Broken added. `DebugHitTarget 20 0` → 17.5. After 6 s → 10 again. Heavy on a `BaseArmor 0` unit → no state, no feedback.
+**Test Case** Armored fixture `DA_Enemy_ArmorTest` (`BaseArmor 0.5`, duplicate of `DA_Enemy_Test` with existing body/AI): `DebugHitTarget 20 0` → 10 damage. Warlord Heavy → Armor Broken added. `DebugHitTarget 20 0` → 17.5. After 6 s → 10 again. Heavy on a `BaseArmor 0` unit → no state, no feedback. This fixture does not implement T-ENM-06's Armored archetype.
 
 **Acceptance Criteria**
-- [ ] AC-SYN-07 and AC-SYN-08 pass.
-- [ ] `ArmorMath` Spec passes (0, 0.5, 0.9 armor; with and without Armor Broken).
-- [ ] The Heavy hit that applies Armor Broken is itself reduced by full armor (state affects later hits only).
+- [x] AC-SYN-07 and AC-SYN-08 pass (saved-content rendered PIE for AC-SYN-07; native hit/state eligibility regression for AC-SYN-08).
+- [x] `ArmorMath` Spec passes (0, 0.5, 0.9 armor; with and without Armor Broken).
+- [x] The Heavy hit that applies Armor Broken is itself reduced by full armor (state affects later hits only).
 
-**Verification** Automation Spec `<Game>.Combat.Armor`; PIE with `game.debug.CombatStates 1`.
+**Verification (2026-10-10, Codex)** `CastleDefender.Combat.Armor` 3/3 pass; editor and Development game builds pass. Rendered `L_CombatSandbox` with saved hero/enemy data and Enhanced Input Heavy confirms 15 damage on 0.5 armor (base Heavy 30), Armor Broken for 6 s, Army 20-damage hits 10 -> 17.5 -> 10 and one application feedback event. Native regression covers every Hero/Army/Tower layer and unarmored refusal. Final full suite: 244 passed, 4 failed, 0 NotRun; failures belong to unfinished T-SQD-01's spawn/content tests. No test disabled. Task remains Review pending owner sound/readability acceptance and the full-suite blocker. Evidence and exact manual steps: [runtime integration record](../uploaded-guidance-runtime-2026-10-10.md).
 
 ---
 

@@ -360,3 +360,16 @@ This revision hardens P0 implementation sequencing and combat feel without addin
 - Expanded `game.debug.Combat` into a required combat timing/state debugger and added trace visualization.
 - Added acceptance criteria and edge cases for all new contracts while preserving existing rule/AC IDs where possible.
 - Updated the Player Actions phase column to show P0A vs P0B sequencing; this is an internal implementation split only.
+
+
+## 13. User-approved P1 custom dodge extension (2026-10-10)
+
+- NEW-CMB-13: **REQUIRED, approved by user**: original custom directional dodge animation, perfect-dodge afterimage/sound and counter opportunity. This narrowly supersedes NEW-CMB-11's perfect-dodge exclusion. Original source uploads and GDD remain unchanged; T-CMB-19 stays VS.
+- R-CMB-55: A positive-damage hostile hit intercepted during the first `Dodge.PerfectWindowSeconds` of the authored i-frame window earns perfect dodge once per accepted Dodge. Default 0.12 hero seconds, enabled on saved Warlord data. Later hits still evade while i-frames last. Empty dodges, allied/environmental/zero-damage attempts earn nothing. Reopening a notify cannot rearm the same action.
+- R-CMB-56: Perfect dodge retains Dodge commitment and zero damage/poise. It refreshes the existing Parry counter window (default 1 second, existing multiplier 1.5); normal recovery Light/Heavy inputs use its existing first-payload consumption. There is no extra input/resource, attacker stagger, or time dilation. Expiry uses hero time; reset, interruption, death and teardown clear eligibility/reward.
+- R-CMB-57: DeliverHit owns `FCombatHit.bWasPerfectDodged` and produces one `Feedback.Combat.PerfectDodge` cue per success. A frozen pose fades in real time through row-authored material/lifetime/opacity and the existing feedback subsystem; it has no collision/shadow/gameplay effect and is destroyed on expiry/owner removal/world teardown. Normal evades remain silent.
+- R-CMB-58: Original baked directional animations replace saved dodge sources, preserving stamina, facing/lock-on, chain reset, root scaling, 0.6-second montage and its existing i-frame/recovery notifies. Forward/back use a compact shoulder roll; sides use a low evasive step. Start/end blend to the existing idle, with no copied game assets.
+- AC-CMB-27: Automated early/late/outside/no-hit/hostility/reentrancy/expiry/interruption tests prove one reward/cue and unchanged HP/poise. Saved-content PIE proves actual input/notifies/counter payload and afterimage lifetime/cleanup.
+- AC-CMB-28: Inspect rendered forward/back/left/right animation frames in the saved combat sandbox: direction, readable tuck/step, no capsule/camera spin, floor penetration or new gameplay warnings. Owner feel and audible cue acceptance are recorded separately from automation.
+
+All durations/colors/opacity/multipliers are data-authored tunables. Prototype visuals require owner acceptance before T-CMB-22 is Done.

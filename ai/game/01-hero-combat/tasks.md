@@ -4,7 +4,7 @@
 |---|---|
 | Feature | CMB (`01-hero-combat`) |
 | Spec / plan | [spec.md](spec.md), [technical-plan.md](technical-plan.md) |
-| Phases | P0A/P0B (internal slices of P0; T-CMB-01…11, 13…16, 20…21) · P2 (T-CMB-12) · VS provisional (T-CMB-17…19) |
+| Phases | P0A/P0B (internal slices of P0; T-CMB-01…11, 13…16, 20…21) · P1 (user-approved T-CMB-22) · P2 (T-CMB-12) · VS provisional (T-CMB-17…19) |
 | Gate | G0 Combat Sandbox ([master plan §3](../main_implement_plan.md#gate-checklists)) |
 
 ## 1. Summary
@@ -38,6 +38,7 @@ Foundation and P0 CMB are implemented in `Source/CastleDefender` and `Content/Ca
 | T-CMB-19 | Combat animation polish with production animation (provisional) | ANIM | VS | Should | T-CMB-15, T-CMB-16 | Todo |
 | T-CMB-20 | Bounded attack rotation assist | GAMEPLAY | P0A | Must | T-CMB-02, T-CMB-04, T-CMB-05, T-CMB-06 | Done |
 | T-CMB-21 | Combat timing/state debugger + trace visualization | TOOLS | P0A | Must | T-CMB-02, T-CMB-03, T-CMB-04 | Done |
+| T-CMB-22 | User-requested custom directional dodge + perfect dodge presentation/counter | GAMEPLAY | P1 | Must | T-CMB-07, T-CMB-09, T-CMB-10, T-CMB-15, T-UXF-01, T-UXF-03 | Review |
 
 P0A uses T-CMB-03 for basic spend/reject/regen plumbing; blocking suppression and final stamina tuning land in T-CMB-08/15/16. T-CMB-04 establishes resolution/feedback separation early; P0B completes outcome coverage as defenses land. T-CMB-15 owns final suite acceptance, but each P0A task runs its own focused tests before the checkpoint. Keep every task `Todo` until implementation starts.
 
@@ -863,3 +864,25 @@ flowchart TD
 - [x] NEW-CMB-01…05, 08…09 decided or explicitly carried to P1 with a default.
 - [ ] P2: Interact works with the first DEF consumer and `FT_Interact` passes.
 - [ ] VS tasks re-validated after G3 before any work starts.
+
+
+## P1 approved extension
+
+### T-CMB-22 — Custom directional dodge and perfect dodge
+
+**Type** GAMEPLAY · **Phase** P1 · **Status** Review
+
+**Objective:** fulfill the user's original custom animation + afterimage/sound + counter request.
+
+**Requirements:** R-CMB-55..58; AC-CMB-27..28; NEW-CMB-13.
+
+**Dependencies:** T-CMB-07/09/10/15, T-UXF-01/03 (all Done).
+
+- [x] Implement and validate one-shot early actual-hit detection and shared counter reward.
+- [x] Add central cue, frozen pose afterimage and real-time cleanup.
+- [x] Author/save four custom animation sources, preserving current notifies and input rules.
+- [x] Editor/game builds and focused/full automation; record unrelated failures separately.
+- [x] Rendered saved-content directional and perfect-dodge/counter PIE checks.
+- [ ] Owner animation feel and audible cue acceptance; no new warnings/errors.
+
+**Review handoff (2026-10-10, Codex):** original custom animations, saved afterimage/sound and shared counter are integrated. See [detailed verification](custom-dodge-verification-2026-10-10.md) and [progress](../progress.md). All 11 new tests pass; full gate has four existing T-SQD-01 failures. Rendered gameplay passes, but intermittent nonzero editor shutdown exits are recorded separately. Owner prototype feel/shorter travel and placeholder sound acceptance remain pending; no Done or G1 claim.

@@ -7,7 +7,7 @@
 | Architecture baseline | [00-foundation/technical-plan.md §7](../00-foundation/technical-plan.md#7-shared-combat-contract-d-05) (D-05), decisions D-01…D-18 in [main_implement_plan.md §7](../main_implement_plan.md#7-architecture-baseline) |
 | Hit pipeline | `UCombatLibrary::DeliverHit` from [01-hero-combat/technical-plan.md §4.2](../01-hero-combat/technical-plan.md#42-hit-resolution-deliverhit) |
 | Phases | P0 (T-SYN-01, T-SYN-08), P1 (T-SYN-02…05, 07, 09, 10), P2 (T-SYN-06, 11) |
-| Status | Draft v1. No UE project exists yet: every path, class and asset name is a **proposal** |
+| Status | P0 shared states implemented; P1 T-SYN-02 implemented and in Review (2026-10-10). Other P1/P2 additions remain planned; see tasks.md. |
 
 ## 1. Technical Overview
 
@@ -17,12 +17,14 @@ States arrive two ways: inside an `FCombatHit` through `DeliverHit` (poise damag
 
 Consumers are small data-driven terms added to existing systems:
 - `UHealthComponent::ApplyHit` reduces armor while Armor Broken is active.
-- `DeliverHit` gets an optional `FStateDamageMultipliers` argument; attackers (hero attacks, tower weapons, later Spearman) pass their per-state multipliers.
+- Planned T-SYN-07: `DeliverHit` gets an optional `FStateDamageMultipliers` argument; attackers (hero attacks, tower weapons, later Spearman) pass their per-state multipliers. This argument/data is not implemented by T-SYN-02.
 - SQD and DEF target scoring add a state preference term from their definition data.
 
 Presentation goes through `UFeedbackSubsystem` (one-shots) plus a `DT_CombatStatePresentation` table that UXF widgets read for icon, colour, priority and looping VFX (D-10, D-11).
 
 No GAS (D-04). No new module or plugin (D-01).
+
+T-SYN-02 now uses `UHealthComponent::ComputeDamageAfterArmor` inside `ApplyHit`, the existing shared state timer/eligibility, Game Tuning multiplier/default duration and Heavy's saved AppliedStates. `Tools/create_armor_break_content.py` adds missing content with backups and preserves existing tuning/rows/montages. Armor break has a dedicated placeholder sound; expiry is silent (RemovedFeedback unset), with `OnStateRemoved` notifying observers. Icons/body VFX remain T-SYN-04/UXF work. See [runtime integration and verification](../uploaded-guidance-runtime-2026-10-10.md).
 
 ## 2. Existing System Impact
 
@@ -173,6 +175,7 @@ sequenceDiagram
   participant S as Soldier attack
   participant HC as Armored enemy Health
   H->>D: hit, AppliedStates={ArmorBroken}
+  D->>HC: ApplyHit using existing armor (no self-bonus)
   D->>CS: ApplyState(ArmorBroken) (BaseArmor > 0)
   CS-->>SQ: (next decision tick) HasState(ArmorBroken) → preference bonus in tier
   SQ->>S: target = Armor Broken enemy
