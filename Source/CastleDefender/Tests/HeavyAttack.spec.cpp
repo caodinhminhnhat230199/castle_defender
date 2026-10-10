@@ -4,6 +4,7 @@
 #include "Tests/CombatTestListener.h"
 #include "Combat/CombatLibrary.h"
 #include "Combat/CombatStateComponent.h"
+#include "Combat/HealthComponent.h"
 #include "Combat/MeleeTraceComponent.h"
 #include "Combat/TestDummy.h"
 #include "Core/GameTags.h"
@@ -120,13 +121,13 @@ void FHeavyAttackSpec::Define()
 		FHeroCombatFixture Fixture;
 		Fixture.BeginPlay();
 		UHeroClassDefinition* Def = Fixture.Hero->GetHeroClassDefinition();
-		TestTrue("P0 Heavy applies no states", Def->Heavy.AppliedStates.IsEmpty());
-		Def->Heavy.AppliedStates.AddTag(GameTags::State_Combat_ArmorBroken);
+		TestTrue("P1 saved Heavy applies Armor Broken", Def->Heavy.AppliedStates.HasTagExact(GameTags::State_Combat_ArmorBroken));
 		Def->Heavy.StateDuration = 6.f;
 		ATestDummy* Dummy = Fixture.World->SpawnActor<ATestDummy>(FVector(150.f, 0.f, 0.f), FRotator::ZeroRotator);
 		Dummy->DispatchBeginPlay();
+		Dummy->GetHealth()->InitializeHealth(100.f, 0.5f);
 
-		// The authored presentation table gets its Armor Broken row in T-SYN-04; use a transient one meanwhile.
+		// Isolate hit-payload propagation from presentation; authored P1 content is checked separately.
 		UGameTuningSettings* Settings = GetMutableDefault<UGameTuningSettings>();
 		const TSoftObjectPtr<UDataTable> SavedTable = Settings->CombatStatePresentationTable;
 		UDataTable* Table = NewObject<UDataTable>(GetTransientPackage());

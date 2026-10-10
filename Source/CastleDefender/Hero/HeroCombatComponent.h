@@ -31,6 +31,7 @@ public:
 	UHeroCombatComponent();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	/** Attempts to start a requested action. Buffers if currently committed but cancel window may open soon. */
@@ -144,6 +145,10 @@ public:
 	FOnBlockBrokenSignature OnBlockBroken;
 	UPROPERTY(BlueprintAssignable, Category = "Combat")
 	FOnParrySucceededSignature OnParrySucceeded;
+	UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnParrySucceededSignature OnPerfectDodgeSucceeded;
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	float GetPerfectDodgeTimeRemaining() const { return PerfectDodgeTimeRemaining; }
 	UFUNCTION(BlueprintPure, Category = "Combat")
 	bool HasCounterWindow() const { return CounterTimeRemaining > 0.f && !bCounterAttackPending; }
 	UFUNCTION(BlueprintPure, Category = "Combat")
@@ -221,10 +226,14 @@ private:
 	EHeroDodgeDirection LastDodgeDirection = EHeroDodgeDirection::Backward;
 	float PreviousRootMotionScale = 1.f;
 	bool bDodgeRootMotionScaleApplied = false;
+	bool bEndingPlay = false;
 	bool bInterruptResistanceWindowOpen = false;
 	bool bRotationAssistWindowOpen = false;
 	bool bBlockInputHeld = false;
 	bool bParryConsumed = false;
+	bool bPerfectDodgeArmed = false;
+	bool bPerfectDodgeConsumed = false;
+	float PerfectDodgeTimeRemaining = 0.f;
 	bool bCounterAttackPending = false;
 	float CounterTimeRemaining = 0.f;
 	float AttackIntentYaw = 0.f;

@@ -99,6 +99,7 @@ void FCombatResolutionSpec::Define()
 		{
 			// ATestDummy owns a UCombatStateComponent (T-SYN-01).
 			UCombatStateComponent* StateComp = Defender->GetCombatState();
+			Defender->GetHealth()->InitializeHealth(100.f, 0.5f);
 
 			FCombatHit StatusHit;
 			StatusHit.Damage = 20.f;

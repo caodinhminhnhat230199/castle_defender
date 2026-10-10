@@ -57,6 +57,9 @@ public:
 	/** Dispatches a synthetic FCombatHit against the controlled hero via DeliverHit. */
 	UFUNCTION(Exec)
 	void DebugHitHero(float Damage = 25.f, float Delay = 0.f, bool bFromFront = true);
+	/** Simulated Army hit on the crosshair target, through the shared resolver (T-SYN-02). */
+	UFUNCTION(Exec)
+	void DebugHitTarget(float Damage = 20.f, float Poise = 0.f);
 	/** Sets current poise on the crosshair target (T-SYN-01). */
 	UFUNCTION(Exec)
 	void SetPoise(float Value);
@@ -70,6 +73,6 @@ public:
 	void ClearStates();
 
 private:
-	/** First actor with a UCombatStateComponent under the crosshair (lock-on target once T-CMB-10 lands). */
+	/** Locked combat target first, otherwise crosshair target (pawn capsules respect world occlusion). */
 	class UCombatStateComponent* FindCrosshairCombatState() const;
 };

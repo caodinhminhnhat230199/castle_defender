@@ -56,7 +56,7 @@ namespace HeroCombatTestPrivate
 			Dummy->SetGenericTeamId(FGenericTeamId(Team));
 			if (UHealthComponent* Health = Dummy->GetHealth())
 			{
-				Health->InitializeHealth(100.f, 100.f);
+				Health->InitializeHealth(100.f, 0.f);
 			}
 			if (UCombatStateComponent* States = Dummy->GetCombatState())
 			{
@@ -460,7 +460,7 @@ bool UHeroCombatTestLibrary::RunHeroCombatScenario(UObject* WorldContextObject, 
 	if (ScenarioName.Equals(TEXT("FT_HeroDeath"), ESearchCase::IgnoreCase))
 	{
 		Hero->ResetHeroState();
-		Hero->GetHealthComponent()->InitializeHealth(10.f, 200.f);
+		Hero->GetHealthComponent()->InitializeHealth(10.f, 0.f);
 		FCombatHit LethalHit;
 		LethalHit.Damage = 25.f;
 		LethalHit.HitDirection = Hero->GetActorForwardVector();

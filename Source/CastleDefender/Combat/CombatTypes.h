@@ -97,6 +97,10 @@ struct FCombatHit
 
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	FCombatInterruptData InterruptData;
+
+	/** Resolver-owned outcome metadata; attackers cannot assert perfect-dodge success. */
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	bool bWasPerfectDodged = false;
 };
 
 /** Telemetry / resolution record emitted by UCombatLibrary::DeliverHit (R-CMB-53). */

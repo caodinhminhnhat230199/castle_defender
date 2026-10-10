@@ -4,6 +4,10 @@
 #include "Core/GameDebug.h"
 #include "Core/GameLog.h"
 #include "Core/GameTags.h"
+#include "Combat/HealthComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/PoseableMeshComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Core/GameTuningSettings.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -67,6 +71,7 @@ void UFeedbackSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UFeedbackSubsystem::Deinitialize()
 {
+	ClearAfterimages();
 	RestoreHitStops();
 	StopCameraShakes();
 	SetFeedbackTable(nullptr);
@@ -177,7 +182,66 @@ void UFeedbackSubsystem::PlayOutputs(const FFeedbackRow& Row, const FFeedbackEve
 		}
 	}
 	ApplyHitStop(Row, Context);
+	SpawnAfterimage(Row, Context);
 	ApplyCameraShake(Row, Context, Location);
+}
+
+void UFeedbackSubsystem::SpawnAfterimage(const FFeedbackRow& Row, const FFeedbackEventContext& Context)
+{
+	AActor* Target = Context.Target.Get();
+	USkeletalMeshComponent* Source = Target ? Target->FindComponentByClass<USkeletalMeshComponent>() : nullptr;
+	if (!Source || !Source->GetSkinnedAsset() || !Row.AfterimageMaterial
+		|| !FMath::IsFinite(Row.AfterimageSeconds) || Row.AfterimageSeconds <= 0.f
+		|| !FMath::IsFinite(Row.AfterimageOpacity) || Row.AfterimageOpacity <= 0.f) { return; }
+	Afterimages.RemoveAll([](const FAfterimage& Entry) { return !Entry.Mesh.IsValid(); });
+	UPoseableMeshComponent* Ghost = NewObject<UPoseableMeshComponent>(Target, NAME_None, RF_Transient);
+	Target->AddInstanceComponent(Ghost);
+	Ghost->SetSkinnedAssetAndUpdate(Source->GetSkinnedAsset());
+	Ghost->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Ghost->SetGenerateOverlapEvents(false);
+	Ghost->SetCanEverAffectNavigation(false);
+	Ghost->SetCastShadow(false);
+	Ghost->SetWorldTransform(Source->GetComponentTransform());
+	Ghost->RegisterComponent();
+	Ghost->CopyPoseFromSkeletalComponent(Source);
+	Ghost->RefreshBoneTransforms();
+	Ghost->SetComponentTickEnabled(false);
+	UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(Row.AfterimageMaterial, Ghost);
+	for (int32 Index = 0; Index < Ghost->GetNumMaterials(); ++Index) { Ghost->SetMaterial(Index, Material); }
+	const float Opacity = FMath::Clamp(Row.AfterimageOpacity, 0.f, 1.f);
+	Material->SetScalarParameterValue(TEXT("GhostOpacity"), Opacity);
+	const double Started = FPlatformTime::Seconds();
+	const float Duration = Row.AfterimageSeconds;
+	const TWeakObjectPtr<UPoseableMeshComponent> WeakGhost(Ghost);
+	const TWeakObjectPtr<UMaterialInstanceDynamic> WeakMaterial(Material);
+	// Real-time per-frame presentation fade is active only while a frozen afterimage exists (D-20).
+	const auto Handle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateWeakLambda(this,
+		[WeakGhost, WeakMaterial, Started, Duration, Opacity](float)
+		{
+			UPoseableMeshComponent* Mesh = WeakGhost.Get();
+			if (!Mesh) { return false; }
+			const AActor* Owner = Mesh->GetOwner();
+			const UHealthComponent* Health = Owner ? Owner->FindComponentByClass<UHealthComponent>() : nullptr;
+			const float Progress = (FPlatformTime::Seconds() - Started) / Duration;
+			if (!IsValid(Owner) || (Health && Health->IsDead()) || Progress >= 1.f)
+			{
+				Mesh->DestroyComponent();
+				return false;
+			}
+			if (UMaterialInstanceDynamic* MID = WeakMaterial.Get()) { MID->SetScalarParameterValue(TEXT("GhostOpacity"), Opacity * (1.f - Progress)); }
+			return true;
+		}));
+	Afterimages.Add({ Ghost, Handle });
+}
+
+void UFeedbackSubsystem::ClearAfterimages()
+{
+	for (const FAfterimage& Entry : Afterimages)
+	{
+		FTSTicker::GetCoreTicker().RemoveTicker(Entry.Handle);
+		if (UPoseableMeshComponent* Mesh = Entry.Mesh.Get()) { Mesh->DestroyComponent(); }
+	}
+	Afterimages.Reset();
 }
 
 void UFeedbackSubsystem::ApplyCameraShake(const FFeedbackRow& Row, const FFeedbackEventContext& Context, const FVector& Location)

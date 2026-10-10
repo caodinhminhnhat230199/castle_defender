@@ -3,7 +3,7 @@
 #include "NativeGameplayTags.h"
 
 // Feedback.* leaves: row names in DT_Feedback (D-10). The Feedback root lives in Core/GameTags.
-// P0 leaves only; later phases add theirs in their own feedback tasks.
+// Phase leaves are added with their owning feedback/feature task.
 // A child such as Hit.Light.Armored is a variant row of its parent, picked from FFeedbackEventContext.
 namespace FeedbackTags
 {
@@ -14,6 +14,7 @@ namespace FeedbackTags
 	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_Block);
 	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_BlockBreak);
 	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_Parry);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Combat_PerfectDodge);
 
 	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Hero_Damaged);
 	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Hero_Death);
@@ -26,4 +27,5 @@ namespace FeedbackTags
 
 	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Staggered_Applied);
 	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Staggered_Removed);
+	CASTLEDEFENDER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_ArmorBroken_Applied);
 }

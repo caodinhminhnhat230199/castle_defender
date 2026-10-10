@@ -11,6 +11,7 @@ class UCameraShakeBase;
 class UNiagaraSystem;
 class USoundBase;
 class UTexture2D;
+class UMaterialInterface;
 
 /** One DT_Feedback row: everything a Feedback.* event plays (R-UXF-02). Row name must equal Tag. */
 USTRUCT(BlueprintType)
@@ -37,6 +38,14 @@ struct CASTLEDEFENDER_API FFeedbackRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VFX")
 	bool bAttachToTarget = false;
+
+	/** Optional frozen target pose; material must expose GhostOpacity. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Afterimage")
+	TObjectPtr<UMaterialInterface> AfterimageMaterial = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Afterimage", meta = (ClampMin = "0", Units = "s"))
+	float AfterimageSeconds = 0.35f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Afterimage", meta = (ClampMin = "0", ClampMax = "1"))
+	float AfterimageOpacity = 0.55f;
 
 	/** Played from T-UXF-03. Radius 0 = direct shake, Hero-involved only. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera")

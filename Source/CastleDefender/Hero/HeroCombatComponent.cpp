@@ -44,10 +44,63 @@ void UHeroCombatComponent::BeginPlay()
 	}
 }
 
+void UHeroCombatComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// Teardown must release the same transient state as an interruption without broadcasting a new action.
+	bEndingPlay = true;
+	ForceCloseAllWindows();
+	ClearBuffer();
+	CurrentChainIndex = 0;
+	CounterTimeRemaining = 0.f;
+	bCounterAttackPending = false;
+	bBlockInputHeld = false;
+	if (HeroOwner)
+	{
+		if (UMeleeTraceComponent* Trace = HeroOwner->GetMeleeTraceComponent())
+		{
+			Trace->OnHitResolved.RemoveDynamic(this, &UHeroCombatComponent::HandleMeleeHitResolved);
+			Trace->OnParryCounterConsumed.RemoveAll(this);
+		}
+		HeroOwner->GetHealthComponent()->OnDamaged.RemoveDynamic(this, &UHeroCombatComponent::HandleOwnerDamaged);
+		HeroOwner->GetStaminaComponent()->SetBlocking(false);
+		if (bDodgeRootMotionScaleApplied)
+		{
+			HeroOwner->SetAnimRootMotionTranslationScale(PreviousRootMotionScale);
+			bDodgeRootMotionScaleApplied = false;
+		}
+		if (UAnimInstance* Anim = HeroOwner->GetMesh()->GetAnimInstance())
+		{
+			UAnimMontage* Montage = ActiveMontage;
+			ActiveMontage = nullptr;
+			if (Montage)
+			{
+				FOnMontageEnded NoCallback;
+				Anim->Montage_SetEndDelegate(NoCallback, Montage);
+				Anim->Montage_Stop(0.f, Montage);
+			}
+			if (BlockBreakPresentation && BlockBreakPresentation != Montage) { Anim->Montage_Stop(0.f, BlockBreakPresentation); }
+		}
+	}
+	if (CombatStateComp)
+	{
+		CombatStateComp->OnStateAdded.RemoveDynamic(this, &UHeroCombatComponent::HandleStateAdded);
+		CombatStateComp->OnStateRemoved.RemoveDynamic(this, &UHeroCombatComponent::HandleStateRemoved);
+	}
+	ActiveMontage = nullptr;
+	BlockBreakPresentation = nullptr;
+	SetComponentTickEnabled(false);
+	Super::EndPlay(EndPlayReason);
+}
+
 void UHeroCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	if (IsRegistered()) { Super::TickComponent(DeltaTime, TickType, ThisTickFunction); }
-	// D-20: owner-dilated DeltaTime gates buffer/counter expiry and authored assist; no inactive tick.
+	// D-20: owner-dilated DeltaTime gates buffer/counter/perfect expiry and assist; no inactive tick.
+	if (PerfectDodgeTimeRemaining > 0.f)
+	{
+		PerfectDodgeTimeRemaining = FMath::Max(0.f, PerfectDodgeTimeRemaining - DeltaTime);
+		UpdateTickEnabled();
+	}
 	if (CounterTimeRemaining > 0.f)
 	{
 		CounterTimeRemaining = FMath::Max(0.f, CounterTimeRemaining - DeltaTime);
@@ -98,7 +151,7 @@ FString UHeroCombatComponent::GetCombatDebugString() const
 		Hero ? Hero->GetStaminaComponent()->GetCurrentStamina() : 0.f, Hero ? Hero->GetStaminaComponent()->GetMaxStamina() : 0.f,
 		CombatStateComp ? *CombatStateComp->GetActiveStates().ToStringSimple() : TEXT(""),
 		*GetNameSafe(Hero ? Hero->GetLockOnComponent()->GetLockOnTarget() : nullptr), *GetNameSafe(AssistTarget.Get()), bRotationAssistWindowOpen)
-		+ FString::Printf(TEXT("\nParry consumed %d | Counter %.3f (reserved %d)"), bParryConsumed, CounterTimeRemaining, bCounterAttackPending);
+		+ FString::Printf(TEXT("\nParry consumed %d | Counter %.3f (reserved %d)\nPerfect dodge %.3f (consumed %d)"), bParryConsumed, CounterTimeRemaining, bCounterAttackPending, PerfectDodgeTimeRemaining, bPerfectDodgeConsumed);
 }
 #endif
 
@@ -177,6 +230,7 @@ bool UHeroCombatComponent::CanStartAction(EHeroAction Action) const
 
 bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 {
+	if (bEndingPlay) { return false; }
 	HeroOwner = GetHeroOwner();
 	if (Action == EHeroAction::BlockStart) { bBlockInputHeld = true; }
 	else if (Action == EHeroAction::BlockEnd) { bBlockInputHeld = false; }
@@ -322,6 +376,8 @@ bool UHeroCombatComponent::RequestAction(EHeroAction Action)
 		}
 		case EHeroAction::Dodge:
 		{
+			bPerfectDodgeArmed = false;
+			bPerfectDodgeConsumed = false;
 			CurrentChainIndex = 0;
 			const FVector Input = HeroOwner->GetMovementInputWorldDirection();
 			const bool bSideDodge = LastDodgeDirection == EHeroDodgeDirection::Left || LastDodgeDirection == EHeroDodgeDirection::Right;
@@ -491,11 +547,21 @@ void UHeroCombatComponent::CloseCancelWindow()
 void UHeroCombatComponent::OpenInvulnerableWindow()
 {
 	bInvulnerableWindowOpen = true;
+	const AHeroCharacter* Hero = GetHeroOwner();
+	const UHeroClassDefinition* Def = Hero ? Hero->GetHeroClassDefinition() : nullptr;
+	if (!bEndingPlay && CurrentState == EHeroActionState::Dodge && !bPerfectDodgeArmed && Def && Def->Dodge.bEnablePerfectDodge)
+	{
+		bPerfectDodgeArmed = true; // A second notify opening must not rearm this action.
+		PerfectDodgeTimeRemaining = Def->Dodge.PerfectWindowSeconds;
+		UpdateTickEnabled();
+	}
 }
 
 void UHeroCombatComponent::CloseInvulnerableWindow()
 {
 	bInvulnerableWindowOpen = false;
+	PerfectDodgeTimeRemaining = 0.f;
+	UpdateTickEnabled();
 }
 
 void UHeroCombatComponent::OpenParryWindow()
@@ -541,7 +607,7 @@ void UHeroCombatComponent::ClearBuffer()
 
 void UHeroCombatComponent::UpdateTickEnabled()
 {
-	SetComponentTickEnabled(BufferedInput.bValid || bRotationAssistWindowOpen || CounterTimeRemaining > 0.f);
+	SetComponentTickEnabled(BufferedInput.bValid || bRotationAssistWindowOpen || CounterTimeRemaining > 0.f || PerfectDodgeTimeRemaining > 0.f);
 }
 
 void UHeroCombatComponent::ConsumeCounter()
@@ -718,6 +784,7 @@ bool UHeroCombatComponent::PlayActionMontage(UAnimMontage* Montage, EHeroActionS
 
 void UHeroCombatComponent::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
+	if (bEndingPlay) { return; }
 	if (ActiveMontage == Montage)
 	{
 		// A queued end from an older instance must not close a restarted montage of the same asset.
@@ -725,6 +792,7 @@ void UHeroCombatComponent::HandleMontageEnded(UAnimMontage* Montage, bool bInter
 			&& HeroOwner->GetMesh()->GetAnimInstance()->Montage_IsActive(Montage)) { return; }
 		ActiveMontage = nullptr;
 		ForceCloseAllWindows();
+		if (bInterrupted) { ConsumeCounter(); }
 
 		if (CurrentState != EHeroActionState::Dead)
 		{
@@ -785,6 +853,7 @@ void UHeroCombatComponent::HandleOwnerDamaged(const FCombatHit& Hit, float NewHe
 		&& Hit.InterruptData.InterruptStrength < Attack->InterruptResistance;
 	if (bResisted || !Hit.InterruptData.bCanInterrupt) { return; }
 
+	ConsumeCounter();
 	ForceCloseAllWindows();
 	ClearBuffer();
 	if (ActiveMontage)
@@ -857,6 +926,23 @@ ECombatHitResult UHeroCombatComponent::InterceptHit(FCombatHit& Hit)
 {
 	if (IsInInvulnerableWindow())
 	{
+		AHeroCharacter* Hero = GetHeroOwner();
+		const UHeroClassDefinition* Def = Hero ? Hero->GetHeroClassDefinition() : nullptr;
+		const AActor* Attacker = Hit.Instigator.Get();
+		const UHealthComponent* AttackerHealth = Attacker ? Attacker->FindComponentByClass<UHealthComponent>() : nullptr;
+		if (!bEndingPlay && CurrentState == EHeroActionState::Dodge && Def && Def->Dodge.bEnablePerfectDodge
+			&& !bPerfectDodgeConsumed && PerfectDodgeTimeRemaining > 0.f && FMath::IsFinite(Hit.Damage) && Hit.Damage > 0.f
+			&& (Attacker ? AreHostile(Hero, Attacker) && (!AttackerHealth || !AttackerHealth->IsDead()) : Hit.SourceLayer == ECombatLayer::Enemy))
+		{
+			// R-CMB-55: consume before callbacks so reentrant hits cannot award another counter/cue.
+			bPerfectDodgeConsumed = true;
+			PerfectDodgeTimeRemaining = 0.f;
+			Hit.bWasPerfectDodged = true;
+			CounterTimeRemaining = FMath::Max(CounterTimeRemaining, Def->Parry.CounterWindow);
+			bCounterAttackPending = false;
+			UpdateTickEnabled();
+			OnPerfectDodgeSucceeded.Broadcast(Hit.Instigator.Get());
+		}
 		return ECombatHitResult::Evaded;
 	}
 

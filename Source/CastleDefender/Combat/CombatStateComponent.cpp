@@ -135,6 +135,12 @@ void UCombatStateComponent::AddState(FGameplayTag State, float Duration, AActor*
 	{
 		return;
 	}
+	// R-SYN-12: unarmored units never gain Armor Broken or its feedback.
+	if (State == GameTags::State_Combat_ArmorBroken)
+	{
+		const UHealthComponent* Health = GetOwner() ? GetOwner()->FindComponentByClass<UHealthComponent>() : nullptr;
+		if (!Health || Health->GetBaseArmor() <= 0.f) { return; }
+	}
 	if (Duration <= 0.f)
 	{
 		const float* Default = UGameTuningSettings::Get()->StateDefaultDurations.Find(State);

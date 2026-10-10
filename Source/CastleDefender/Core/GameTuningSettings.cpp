@@ -4,6 +4,7 @@
 
 UGameTuningSettings::UGameTuningSettings()
 {
-	// T-SYN-01 fallback for Staggered; T-SYN-02/03 add Armor Broken and Marked.
+	// World-time fallback durations; explicit hit/unit durations take precedence.
 	StateDefaultDurations.Add(GameTags::State_Combat_Staggered, 1.5f);
+	StateDefaultDurations.Add(GameTags::State_Combat_ArmorBroken, 6.f);
 }

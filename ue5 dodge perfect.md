@@ -3,7 +3,7 @@ name: ue5-dodge-perfect-dodge
 description: Use when implementing or tuning defense in the UE 5.8 game - dodge, Wukong-style perfect dodge with afterimage and Focus reward, counter window, combo continuity after dodge, diminishing agility, parry, attack-through counter, and enemy attack telegraph tagging.
 ---
 
-# Dodge and Perfect Dodge (smooth, generous, rewarding)
+# Dodge and Perfect Dodge (smooth, ju generous, rewarding)
 
 Design intent (GAME_DESIGN.md §5.2): one button, fast, never resets offense; perfect timing pays out Focus, Flux and a counter. Original implementation; reference only the feel.
 

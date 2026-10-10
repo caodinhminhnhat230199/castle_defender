@@ -73,6 +73,8 @@ private:
 	void RestoreHitStops();
 	void ApplyCameraShake(const FFeedbackRow& Row, const FFeedbackEventContext& Context, const FVector& Location);
 	void StopCameraShakes();
+	void SpawnAfterimage(const FFeedbackRow& Row, const FFeedbackEventContext& Context);
+	void ClearAfterimages();
 	void ShowRecentTags() const;
 
 	UPROPERTY(Transient)
@@ -97,4 +99,10 @@ private:
 		TWeakObjectPtr<class UCameraShakeBase> Instance;
 	};
 	TMap<FGameplayTag, FCameraShake> CameraShakes;
+	struct FAfterimage
+	{
+		TWeakObjectPtr<class UPoseableMeshComponent> Mesh;
+		FTSTicker::FDelegateHandle Handle;
+	};
+	TArray<FAfterimage> Afterimages;
 };

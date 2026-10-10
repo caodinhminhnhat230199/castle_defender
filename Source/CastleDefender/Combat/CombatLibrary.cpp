@@ -68,6 +68,8 @@ ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hi
 	Resolution.bTargetArmored = (Health->GetBaseArmor() > 0.f) && !bArmorBroken;
 
 	FCombatHit WorkingHit = Hit;
+	WorkingHit.bWasPerfectDodged = false;
+	Resolution.Hit.bWasPerfectDodged = false;
 
 	// Interceptor phase (defensive mitigation, parry, dodge i-frames)
 	ICombatHitInterceptor* TargetInterceptor = FindHitInterceptor(Target);
@@ -80,6 +82,7 @@ ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hi
 	// Defensive termination: Evaded, Parried, or Ignored terminate damage pipeline
 	if (InterceptorResult == ECombatHitResult::Evaded || InterceptorResult == ECombatHitResult::Parried || InterceptorResult == ECombatHitResult::Ignored)
 	{
+		Resolution.Hit.bWasPerfectDodged = InterceptorResult == ECombatHitResult::Evaded && WorkingHit.bWasPerfectDodged;
 		Resolution.Result = InterceptorResult;
 		Resolution.DamageApplied = 0.f;
 		Resolution.PoiseDamageApplied = 0.f;
@@ -89,6 +92,13 @@ ECombatHitResult UCombatLibrary::DeliverHit(AActor* Target, const FCombatHit& Hi
 			if (UFeedbackSubsystem* Feedback = UFeedbackSubsystem::Get(Target))
 			{
 				Feedback->Play(FeedbackTags::Combat_Parry, MakeFeedbackContext(Resolution));
+			}
+		}
+		if (Resolution.Hit.bWasPerfectDodged)
+		{
+			if (UFeedbackSubsystem* Feedback = UFeedbackSubsystem::Get(Target))
+			{
+				Feedback->Play(FeedbackTags::Combat_PerfectDodge, MakeFeedbackContext(Resolution));
 			}
 		}
 		return InterceptorResult;

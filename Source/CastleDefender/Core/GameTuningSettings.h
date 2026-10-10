@@ -30,6 +30,10 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Combat", meta = (ForceInlineRow, Categories = "State.Combat"))
 	TMap<FGameplayTag, float> StateDefaultDurations;
 
+	/** R-SYN-13: remaining fraction of BaseArmor during Armor Broken. */
+	UPROPERTY(Config, EditAnywhere, Category = "Combat", meta = (ClampMin = "0", ClampMax = "1"))
+	float ArmorBrokenArmorMultiplier = 0.25f;
+
 	/** DT_CombatStatePresentation (FCombatStatePresentationRow rows): feedback per state. */
 	UPROPERTY(Config, EditAnywhere, Category = "Combat", meta = (RequiredAssetDataTags = "RowStructure=/Script/CastleDefender.CombatStatePresentationRow"))
 	TSoftObjectPtr<UDataTable> CombatStatePresentationTable;

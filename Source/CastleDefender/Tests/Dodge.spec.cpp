@@ -6,6 +6,7 @@
 #include "Hero/StaminaComponent.h"
 #include "Combat/CombatLibrary.h"
 #include "Combat/HealthComponent.h"
+#include "Combat/MeleeTraceComponent.h"
 #include "Hero/HeroCombatLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -104,6 +105,27 @@ void FDodgeSpec::Define()
         AddExpectedError(TEXT("refused: Dodge requires"), EAutomationExpectedErrorFlags::Contains, 1);
         TestFalse("Invalid dodge refused", Fixture.Hero->GetCombatComponent()->RequestAction(EHeroAction::Dodge));
         TestEqual("Stamina not spent", Fixture.Hero->GetStaminaComponent()->GetCurrentStamina(), 100.f);
+    });
+
+    It("cleans defensive windows, buffered input, montage and root-motion override when the component ends play", [this]()
+    {
+        FHeroCombatFixture Fixture;
+        Fixture.BeginPlay();
+        auto* Combat = Fixture.Hero->GetCombatComponent();
+        Fixture.Hero->SetAnimRootMotionTranslationScale(0.75f);
+        TestTrue("Dodge accepted", Combat->RequestAction(EHeroAction::Dodge));
+        Combat->OpenInvulnerableWindow();
+        Combat->OpenParryWindow();
+        TestFalse("Repeated press buffered", Combat->RequestAction(EHeroAction::Dodge));
+        Fixture.Hero->GetMeleeTraceComponent()->BeginHitWindow();
+        Combat->DestroyComponent();
+        TestFalse("I-frames closed", Combat->IsInInvulnerableWindow());
+        TestFalse("Parry closed", Combat->IsInParryWindow());
+        TestFalse("Buffer cleared", Combat->HasBufferedInput());
+        TestFalse("Trace closed", Fixture.Hero->GetMeleeTraceComponent()->IsHitWindowActive());
+        TestFalse("Late action refused", Combat->RequestAction(EHeroAction::Light));
+        TestFalse("Montage stopped", Fixture.Hero->GetMesh()->GetAnimInstance()->Montage_IsPlaying(nullptr));
+        TestEqual("Root-motion override restored", Fixture.Hero->GetAnimRootMotionTranslationScale(), 0.75f);
     });
 
     It("consumes a buffered dodge at recovery but drops expired input on the hero clock", [this]()

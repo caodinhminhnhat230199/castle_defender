@@ -9,6 +9,7 @@ namespace FeedbackTags
 	UE_DEFINE_GAMEPLAY_TAG(Combat_Block, "Feedback.Combat.Block");
 	UE_DEFINE_GAMEPLAY_TAG(Combat_BlockBreak, "Feedback.Combat.BlockBreak");
 	UE_DEFINE_GAMEPLAY_TAG(Combat_Parry, "Feedback.Combat.Parry");
+	UE_DEFINE_GAMEPLAY_TAG(Combat_PerfectDodge, "Feedback.Combat.PerfectDodge");
 
 	UE_DEFINE_GAMEPLAY_TAG(Hero_Damaged, "Feedback.Hero.Damaged");
 	UE_DEFINE_GAMEPLAY_TAG(Hero_Death, "Feedback.Hero.Death");
@@ -21,4 +22,5 @@ namespace FeedbackTags
 
 	UE_DEFINE_GAMEPLAY_TAG(State_Staggered_Applied, "Feedback.State.Staggered.Applied");
 	UE_DEFINE_GAMEPLAY_TAG(State_Staggered_Removed, "Feedback.State.Staggered.Removed");
+	UE_DEFINE_GAMEPLAY_TAG(State_ArmorBroken_Applied, "Feedback.State.ArmorBroken.Applied");
 }

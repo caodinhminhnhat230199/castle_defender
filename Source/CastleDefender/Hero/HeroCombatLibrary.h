@@ -19,6 +19,9 @@ class CASTLEDEFENDER_API UHeroCombatLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
+	/** Editor-only original 60fps dodge bake from an idle starting pose; preserves montage windows. */
+	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Authoring")
+	static bool AuthorCustomDodge(UAnimSequence* Output, UAnimSequence* ReferenceIdle, EHeroDodgeDirection Direction, float Duration, float TravelDistance);
 	/** Editor-only placeholder: keep a side-step pose and copy the dash's travel profile laterally. */
 	UFUNCTION(BlueprintCallable, Category = "Hero Combat|Authoring")
 	static bool AuthorSideDodge(UAnimSequence* SideStep, UAnimSequence* Dash, float DashEndTime, bool bRight);

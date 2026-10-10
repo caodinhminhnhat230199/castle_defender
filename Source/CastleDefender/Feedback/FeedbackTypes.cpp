@@ -140,13 +140,19 @@ FFeedbackAuditResult FFeedbackTableAuditor::Audit(const UDataTable* FeedbackTabl
 		const bool bHasOutput = (Row.Sound != nullptr)
 			|| (Row.SurfaceSounds.Num() > 0)
 			|| (Row.Niagara != nullptr)
+			|| (Row.AfterimageMaterial != nullptr && Row.AfterimageSeconds > 0.f && Row.AfterimageOpacity > 0.f)
 			|| (Row.CameraShake != nullptr)
 			|| (Row.HitStopSeconds > 0.f)
 			|| (!Row.ToastText.IsEmpty());
 
 		if (!bHasOutput)
 		{
-			Result.Errors.Add(FString::Printf(TEXT("Row %s has no outputs (requires sound, surface sound, niagara, camera shake, hit stop, or toast)."), *RowName.ToString()));
+			Result.Errors.Add(FString::Printf(TEXT("Row %s has no outputs (requires sound, surface sound, niagara, afterimage, camera shake, hit stop, or toast)."), *RowName.ToString()));
+		}
+		if (Row.AfterimageMaterial && (!FMath::IsFinite(Row.AfterimageSeconds) || Row.AfterimageSeconds <= 0.f
+			|| !FMath::IsFinite(Row.AfterimageOpacity) || Row.AfterimageOpacity <= 0.f || Row.AfterimageOpacity > 1.f))
+		{
+			Result.Errors.Add(FString::Printf(TEXT("Row %s afterimage requires finite positive seconds and opacity in (0, 1]."), *RowName.ToString()));
 		}
 
 		for (const auto& Pair : Row.SurfaceSounds)

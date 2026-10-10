@@ -1,4 +1,7 @@
 #include "Combat/HealthComponent.h"
+#include "Combat/CombatStateComponent.h"
+#include "Core/GameTags.h"
+#include "Core/GameTuningSettings.h"
 
 UHealthComponent::UHealthComponent()
 {
@@ -24,6 +27,13 @@ void UHealthComponent::InitializeHealth(float InMaxHealth, float InBaseArmor)
 	bInitialized = true;
 }
 
+float UHealthComponent::ComputeDamageAfterArmor(float Damage, float Armor, bool bArmorBroken, float ArmorBrokenMultiplier)
+{
+	const float EffectiveArmor = FMath::Clamp(Armor, 0.f, 0.9f)
+		* (bArmorBroken ? FMath::Clamp(ArmorBrokenMultiplier, 0.f, 1.f) : 1.f);
+	return FMath::Max(0.f, Damage) * (1.f - EffectiveArmor);
+}
+
 float UHealthComponent::ApplyHit(const FCombatHit& Hit)
 {
 	const AActor* Owner = GetOwner();
@@ -32,7 +42,10 @@ float UHealthComponent::ApplyHit(const FCombatHit& Hit)
 		return 0.f;
 	}
 
-	const float Applied = FMath::Min(Hit.Damage, CurrentHealth);
+	const UCombatStateComponent* States = Owner ? Owner->FindComponentByClass<UCombatStateComponent>() : nullptr;
+	const float DamageAfterArmor = ComputeDamageAfterArmor(Hit.Damage, BaseArmor,
+		States && States->HasState(GameTags::State_Combat_ArmorBroken), UGameTuningSettings::Get()->ArmorBrokenArmorMultiplier);
+	const float Applied = FMath::Min(DamageAfterArmor, CurrentHealth);
 	CurrentHealth -= Applied;
 	// Commit this hit's transition before observers can deliver reentrant hits.
 	const bool bKilledByThisHit = CurrentHealth <= 0.f;

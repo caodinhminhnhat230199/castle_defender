@@ -23,10 +23,12 @@ public:
 
 	/**
 	 * Applies damage and returns the amount applied. Fires OnDeath once.
-	 * Armor math and the Armor Broken multiplier arrive in T-SYN-02.
+	 * Uses the target's armor and shared Armor Broken state for every source layer.
 	 * Ignored while the owner cannot be damaged (the engine `God` cheat).
 	 */
 	float ApplyHit(const FCombatHit& Hit);
+	/** R-SYN-13/14: pure armor math; a hit's newly applied states affect subsequent hits only. */
+	static float ComputeDamageAfterArmor(float Damage, float Armor, bool bArmorBroken, float ArmorBrokenMultiplier);
 	float Heal(float Amount);
 
 	UPROPERTY(BlueprintAssignable, Category = "Combat")

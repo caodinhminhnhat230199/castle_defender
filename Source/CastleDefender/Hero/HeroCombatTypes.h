@@ -29,7 +29,8 @@ struct CASTLEDEFENDER_API FHeroAttackData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (ClampMin = "0.0"))
 	float TraceRadius = 25.f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack")
+	/** NEW-SYN-02: Warlord Heavy grants Armor Broken by default; move to a PRK effect if later perk-gated. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (Categories = "State.Combat"))
 	FGameplayTagContainer AppliedStates;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack", meta = (ClampMin = "0.0"))
@@ -221,6 +222,13 @@ struct CASTLEDEFENDER_API FHeroDodgeData
 	float StaminaCost = 20.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dodge", meta = (ClampMin = "0.001"))
 	float RootMotionScale = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Perfect Dodge")
+	bool bEnablePerfectDodge = false;
+
+	/** Hero seconds from the first authored i-frame opening; cannot exceed that window. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Perfect Dodge", meta = (ClampMin = "0", Units = "s"))
+	float PerfectWindowSeconds = 0.12f;
 
 	UAnimMontage* GetMontage(EHeroDodgeDirection Direction) const
 	{

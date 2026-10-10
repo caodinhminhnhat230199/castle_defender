@@ -5,6 +5,7 @@
 #include "Combat/HealthComponent.h"
 #include "Combat/CombatActionTiming.h"
 #include "Hero/HeroCombatComponent.h"
+#include "Hero/LockOnComponent.h"
 #include "Combat/TestDummy.h"
 #include "Core/GameLog.h"
 #include "Core/GameTags.h"
@@ -317,12 +318,33 @@ UCombatStateComponent* UGameCheatManager::FindCrosshairCombatState() const
 {
 #if UE_WITH_CHEAT_MANAGER
 	APlayerController* PC = GetOuterAPlayerController();
+	if (const AHeroCharacter* Hero = Cast<AHeroCharacter>(PC->GetPawn()))
+	{
+		if (AActor* LockedTarget = Hero->GetLockOnComponent()->GetLockOnTarget())
+		{
+			if (UCombatStateComponent* State = LockedTarget->FindComponentByClass<UCombatStateComponent>()) { return State; }
+		}
+	}
 	FVector ViewLocation;
 	FRotator ViewRotation;
 	PC->GetPlayerViewPoint(ViewLocation, ViewRotation);
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(CheatCrosshair), false, PC->GetPawn());
 	TArray<FHitResult> Hits;
-	GetWorld()->LineTraceMultiByChannel(Hits, ViewLocation, ViewLocation + ViewRotation.Vector() * 10000.f, ECC_Visibility, Params);
+	FVector TraceEnd = ViewLocation + ViewRotation.Vector() * 10000.f;
+	GetWorld()->LineTraceMultiByChannel(Hits, ViewLocation, TraceEnd, ECC_Visibility, Params);
+	for (const FHitResult& Hit : Hits)
+	{
+		if (UCombatStateComponent* State = Hit.GetActor() ? Hit.GetActor()->FindComponentByClass<UCombatStateComponent>() : nullptr)
+		{
+			return State;
+		}
+	}
+	// Pawn/CharacterMesh profiles ignore Visibility; query pawn capsules up to the first world occluder.
+	if (!Hits.IsEmpty() && Hits.Last().bBlockingHit) { TraceEnd = Hits.Last().ImpactPoint; }
+	FCollisionObjectQueryParams PawnObjects;
+	PawnObjects.AddObjectTypesToQuery(ECC_Pawn);
+	Hits.Reset();
+	GetWorld()->LineTraceMultiByObjectType(Hits, ViewLocation, TraceEnd, PawnObjects, Params);
 	for (const FHitResult& Hit : Hits)
 	{
 		if (UCombatStateComponent* State = Hit.GetActor() ? Hit.GetActor()->FindComponentByClass<UCombatStateComponent>() : nullptr)
@@ -333,6 +355,29 @@ UCombatStateComponent* UGameCheatManager::FindCrosshairCombatState() const
 	UE_LOG(LogGameCombat, Warning, TEXT("No actor with a UCombatStateComponent under the crosshair."));
 #endif
 	return nullptr;
+}
+
+void UGameCheatManager::DebugHitTarget(float Damage, float Poise)
+{
+#if UE_WITH_CHEAT_MANAGER
+	if (UCombatStateComponent* State = FindCrosshairCombatState())
+	{
+		AActor* Target = State->GetOwner();
+		UHealthComponent* Health = Target->FindComponentByClass<UHealthComponent>();
+		if (!Health) { return; }
+		const float Before = Health->GetCurrentHealth();
+		FCombatHit Hit;
+		Hit.Instigator = GetOuterAPlayerController()->GetPawn();
+		Hit.SourceLayer = ECombatLayer::Army;
+		Hit.DamageType = GameTags::Damage_Physical;
+		Hit.Damage = FMath::Max(0.f, Damage);
+		Hit.PoiseDamage = FMath::Max(0.f, Poise);
+		Hit.HitLocation = Target->GetActorLocation();
+		UCombatLibrary::DeliverHit(Target, Hit);
+		UE_LOG(LogGameCombat, Log, TEXT("DebugHitTarget %s: %.2f Army damage (HP %.2f -> %.2f)"),
+			*GetNameSafe(Target), Before - Health->GetCurrentHealth(), Before, Health->GetCurrentHealth());
+	}
+#endif
 }
 
 void UGameCheatManager::SetPoise(float Value)

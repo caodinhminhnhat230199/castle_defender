@@ -171,6 +171,13 @@ bool UHeroClassDefinition::ValidateDodge(EHeroDodgeDirection Direction, FString&
 		OutError = TEXT("Dodge requires one bounded i-frame window followed by Light/Heavy/Block recovery cancels, and no attack/parry window.");
 		return false;
 	}
+	if (Dodge.bEnablePerfectDodge && (!FMath::IsFinite(Dodge.PerfectWindowSeconds)
+		|| Dodge.PerfectWindowSeconds <= 0.f
+		|| Dodge.PerfectWindowSeconds > Timing.InvulnerableWindowEnd - Timing.InvulnerableWindowStart + KINDA_SMALL_NUMBER))
+	{
+		OutError = TEXT("Perfect dodge requires a positive finite duration inside the authored i-frame span.");
+		return false;
+	}
 	return true;
 }
 
